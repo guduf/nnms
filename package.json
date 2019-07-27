@@ -1,0 +1,38 @@
+{
+  "name": "nandms-repo",
+  "version": "0.1.0",
+  "description": "NodeJS framework for micro services",
+  "scripts": {
+    "build:core": "CURRENT_PACKAGE=core node scripts/build.js",
+    "test": "jest --config packages/core/jest.config.js"
+  },
+  "keywords": [
+    "node",
+    "typescript"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/guduf/nandms.git"
+  },
+  "author": "Guillaume Dufour <contact@guduf.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/dotenv": "^6.1.1",
+    "@types/jest": "^24.0.0",
+    "eslint": "^6.1.0",
+    "jest": "^24.8.0",
+    "rimraf": "^2.6.3",
+    "rollup": "^1.17.0",
+    "rollup-plugin-typescript2": "^0.22.0",
+    "tar": "^4.4.10",
+    "ts-jest": "^24.0",
+    "typescript": "^3.5.0"
+  },
+  "dependencies": {
+    "dotenv": "^8.0.0",
+    "nandms": "file:dist/nandms-0.1.0.tgz",
+    "reflect-metadata": "^0.1.13",
+    "typedi": "^0.8.0",
+    "winston": "^3.2.1"
+  }
+}

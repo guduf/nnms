@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "./",
+    "declaration": true
+  },
+  "files": [
+    "src/index.ts"
+  ],
+  "exclude": [
+    "src/test",
+    "src/*.test.ts"
+  ]
+}

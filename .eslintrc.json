@@ -1,0 +1,62 @@
+{
+  "extends": [
+    "plugin:react/recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
+  "rules": {
+    "indent": "off",
+    "max-len": ["error", 100],
+    "require-jsdoc": "off",
+    "semi": ["error", "never"],
+    "@typescript-eslint/indent": ["error", 2],
+    "@typescript-eslint/no-object-literal-type-assertion": "off",
+    "@typescript-eslint/member-delimiter-style": [
+      "error",
+      {
+          "multiline": {
+              "delimiter": "none"
+          },
+          "singleline": {
+              "delimiter": "comma",
+              "requireLast": false
+          }
+      }
+    ],
+    "@typescript-eslint/prefer-interface": "off",
+    "@typescript-eslint/explicit-function-return-type": [
+      "error",
+      {
+        "allowExpressions": true
+      }
+    ],
+    "@typescript-eslint/explicit-member-accessibility": [
+      "error",
+      {
+        "accessibility": "no-public"
+      }
+    ],
+    "@typescript-eslint/no-parameter-properties": [
+      "error",
+      {
+        "allows": [
+          "readonly",
+          "protected readonly",
+          "private readonly"
+        ]
+      }
+    ],
+    "@typescript-eslint/no-namespace": ["off"],
+    "@typescript-eslint/prefer-namespace-keyword": ["off"]
+  },
+
+  "overrides": [
+    {
+      "files": ["*.test.ts", "*.test.tsx", "**/test/**/*"],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": ["off"]
+      }
+    }
+  ]
+}

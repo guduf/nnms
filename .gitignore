@@ -1,0 +1,11 @@
+dist
+tmp
+node_modules
+example/**/*.d.ts
+example/**/*.js
+example/**/*.js.map
+source/**/*.d.ts
+source/**/*.js
+source/**/*.js.map
+*.tar
+*.tgz
