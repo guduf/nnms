@@ -1,35 +1,36 @@
 import Environment from './environment'
 import Logger from './logger'
-import { ErrorWithCatch } from './errors'
 import Container from 'typedi'
 import { createLogger, format, transports } from 'winston'
-
-export class ModuleContext<T = {}> {
-  mode: 'dev' | 'prod' | 'test'
-  log: Logger
-  vars: { readonly [P in keyof T]: string }
-}
+import { ModuleMeta } from './module_ref'
+import { PREFIX } from './common'
 
 export interface ApplicationOpts {
   name: string
 }
 
-export class ApplicationRef {
+export class ApplicationContext {
   readonly env = new Environment()
   readonly logger = this._initLogger()
 
   static async bootstrap(opts: ApplicationOpts, ...mods: any[]): Promise<void> {
-    const appRef = new ApplicationRef(opts.name)
-
-    for (const mod of mods) await appRef._bootstrapModule(mod)
+    if (Container.has(ApplicationContext as any)) {
+      throw new Error('Container has another ApplicationRef setted')
+    }
+    const appRef = new ApplicationContext(opts.name)
+    Container.set({type: ApplicationContext, global: true, value: appRef})
+    await Promise.all(
+      mods.map(mod => {
+        const meta = Reflect.getMetadata(`${PREFIX}:module`, mod)
+        if (!(meta instanceof ModuleMeta)) throw new Error('Invalid module')
+        return meta.bootstrap()
+      })
+    )
   }
 
   private constructor(
     readonly name: string
-  ) {
-    Container.set({type: Environment, value: this.env, global: true})
-    Container.set({type: Logger, value: this.env, global: true})
-  }
+  ) { }
 
   private _initLogger(): Logger {
     const native =  createLogger({
@@ -40,34 +41,18 @@ export class ApplicationRef {
     })
     return new Logger(native, [this.name])
   }
-
-  private async _bootstrapModule(
-    modCtor: any
-  ): Promise<void> {
-    const meta = Reflect.getMetadata('nandms:module', modCtor)
-    if (!meta) throw new Error(
-      `The module class has not been decorated with ModuleRef`
-    )
-    const vars = this.env.extract(meta.vars, meta.name.toUpperCase())
-    const logger = this.logger.extend(meta.name)
-    logger.debug('Module is starting', {name: meta.name, vars: Object.keys(meta.vars)})
-    const container = Container.of(meta)
-    container.set({type: ModuleContext, value: {log: logger, vars}})
-    let mod: { bootstrap?: () => Promise<void> }
-    try {
-      mod = container.get(modCtor)
-    } catch (catched) {
-      const err = new ErrorWithCatch(`module construct failed`, catched)
-      logger.error(err.message, err.catched)
-      throw err
-    }
-    if (typeof mod.bootstrap === 'function') try { await mod.bootstrap() } catch (catched) {
-      const err = new ErrorWithCatch(`module bootstrap failed`, catched)
-      logger.error(err.message, err.catched)
-      throw err
-    }
-    logger.info('Module is ready')
-  }
 }
 
-export const bootstrap = ApplicationRef.bootstrap
+export function getApplicationRef(): ApplicationContext {
+  if (!Container.has(ApplicationContext as any)) throw new Error('Container has no ApplicationRef')
+  const appRef = Container.get(ApplicationContext as any) as ApplicationContext
+  if (!(appRef instanceof ApplicationContext)) throw new Error('ApplicationRef is not valid instance')
+  return appRef
+}
+
+export function bootstrap(name: string, ...mods: any): Promise<void> {
+  return ApplicationContext.bootstrap({name}, ...mods).catch(err => {
+    console.error('CRASH', err)
+    process.exit(1)
+  })
+}

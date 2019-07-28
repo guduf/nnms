@@ -39,8 +39,8 @@ export class TodoService {
 @ModuleRef({name: 'todo', vars: {}})
 export class TodoModule {
   constructor(ctx: ModuleContext, todos: TodoService) {
-    ctx.log.info('Initial todos list', {items: todos.list()})
+    ctx.logger.info('Initial todos list', {items: todos.list()})
   }
 }
 
-bootstrap({name: 'basic-example'}, TodoModule)
+bootstrap('basic-example', TodoModule)
