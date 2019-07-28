@@ -11,30 +11,6 @@ const tar = require('tar')
 
 const PACKAGE_BASENAME = 'nandms'
 
-async function compile(tmpPath, tsConfigPath) {
-  console.log(`🔨 Compile to es5`)
-  const opts = [
-    `-p ${tsConfigPath}`,
-    `--outDir ${tmpPath}/lib`,
-    `--declarationDir ${tmpPath}`,
-  ]
-  const {error, stderr} = await (
-    p(exec)(`./node_modules/.bin/tsc ${opts.join(' ')}`)
-  )
-  if (error) {
-    console.error(stderr.toString())
-    throw err
-  }
-}
-
-function package(tmpPath, pkgFullName, version) {
-  console.log(`🔨 Package`)
-  return tar.c(
-    {gzip: false, file: `dist/${pkgFullName}-${version}.tgz`},
-    [tmpPath]
-  )
-}
-
 function copy(tmpPath) {
   console.log(`🔨 Copy`)
   return p(fs.copyFile)('LICENSE.md', `${tmpPath}/LICENSE.md`)
@@ -44,7 +20,7 @@ function package(tmpPath, pkgFullName, version) {
   const tarballPath = `dist/${pkgFullName}-${version}.tgz`
   console.log(`🔨 Package to '${tarballPath}'`)
   return tar.c(
-    {file: tarballPath, cwd: tmpPath},
+    {file: tarballPath, cwd: tmpPath, gzip: true},
     ['.']
   )
 }
@@ -60,14 +36,18 @@ async function build(tmpPath) {
   const pkgFullName = `${PACKAGE_BASENAME}${pkgName === 'core' ? '' : `-${pkgName}`}`
   const tsConfigPath = path.join(process.cwd(), `packages/${pkgName}/tsconfig.json`)
 
-  await compile(tmpPath, tsConfigPath)
-
   const tsPlugin = rollupTypescript({
     cacheRoot: 'tmp/rts2_cache',
+    useTsconfigDeclarationDir: true,
     typescript: ts,
     tsconfig: tsConfigPath,
     tsconfigOverride: {
-      compilerOptions: {module: 'ES2015', target: 'ES2015', declaration: false}
+      compilerOptions: {
+        module: 'ES2015',
+        target: 'ES2015',
+        declaration: true,
+        declarationDir: tmpPath
+      }
     }
   })
   const opts = {
@@ -76,8 +56,10 @@ async function build(tmpPath) {
     plugins: [tsPlugin]
   }
   const bundle = await rollup.rollup(opts);
+  const cjsPath = `bundles/${pkgFullName}.cjs.js`
   const esPath = `bundles/${pkgFullName}.es.js`
   const outputs = [
+    {file: `${tmpPath}/${cjsPath}`, format: 'cjs'},
     {file: `${tmpPath}/${esPath}`, format: 'es'}
   ]
   for (const output of outputs) {
@@ -94,7 +76,7 @@ async function build(tmpPath) {
     licence: rootPkg.licence,
     author: rootPkg.author,
     repository: rootPkg.repository,
-    main: 'lib/index.js',
+    main: cjsPath,
     module: esPath,
     types: 'index.d.ts',
     dependencies: external

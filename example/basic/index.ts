@@ -1,4 +1,3 @@
-import 'reflect-metadata'
 import { Service } from 'typedi'
 import { ModuleRef, ModuleContext, bootstrap } from 'nandms'
 

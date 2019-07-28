@@ -1,9 +1,8 @@
 import Environment from './environment'
 import Logger from './logger'
 import { ErrorWithCatch } from './errors'
-import { ModuleMeta } from './module_ref'
 import Container from 'typedi'
-import winston from 'winston'
+import { createLogger, format, transports } from 'winston'
 
 export class ModuleContext<T = {}> {
   mode: 'dev' | 'prod' | 'test'
@@ -33,10 +32,10 @@ export class ApplicationRef {
   }
 
   private _initLogger(): Logger {
-    const native =  winston.createLogger({
+    const native =  createLogger({
       level: this.env.isProduction ? 'info' : 'debug',
       transports: [
-        new winston.transports.Console({format: winston.format.prettyPrint()})
+        new transports.Console({format: format.prettyPrint()})
       ]
     })
     return new Logger(native, [this.name])
@@ -45,8 +44,8 @@ export class ApplicationRef {
   private async _bootstrapModule(
     modCtor: any
   ): Promise<void> {
-    const meta = (modCtor as unknown as { μMeta: ModuleMeta }).μMeta
-    if (!(meta instanceof ModuleMeta)) throw new Error(
+    const meta = Reflect.getMetadata('nandms:module', modCtor)
+    if (!meta) throw new Error(
       `The module class has not been decorated with ModuleRef`
     )
     const vars = this.env.extract(meta.vars, meta.name.toUpperCase())

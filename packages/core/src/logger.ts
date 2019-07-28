@@ -1,4 +1,4 @@
-import winston from 'winston'
+import { Logger as WinstonLogger, LogEntry } from 'winston'
 
 export interface LoggerConfig {
   baseUri?: string[]
@@ -14,7 +14,7 @@ export const LOGGER_LEVELS: { [level in LoggerLevel]: { color: string} } = {
   debug: {color: 'white'}
 }
 
-export interface LoggerEvent<T = {}> extends winston.LogEntry {
+export interface LoggerEvent<T = {}> extends LogEntry {
   level: LoggerLevel
   uri: string[]
   message: string
@@ -23,7 +23,7 @@ export interface LoggerEvent<T = {}> extends winston.LogEntry {
 
 export class Logger {
   constructor(
-    protected readonly _native: winston.Logger,
+    protected readonly _native: WinstonLogger,
     protected readonly _uri: string[]
   ) { }
 
@@ -70,14 +70,6 @@ export class Logger {
   warn(messageOrError: string | Error, errorOrData?: Error | {}, data = {}): void {
     this.catch('warn', messageOrError, errorOrData, data)
   }
-}
-
-export function bootstrapLogger(cfg: LoggerConfig): Logger {
-  const native =  winston.createLogger({
-    level: cfg.isProduction  ? 'info' : 'debug',
-    format: winston.format.prettyPrint()
-  })
-  return new Logger(native, cfg.baseUri || ['root'])
 }
 
 export default Logger
