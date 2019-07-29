@@ -3,7 +3,7 @@ import { Container, ContainerInstance } from 'typedi'
 import { CommonOpts, CommonMeta, PREFIX } from './common';
 
 export function refDecorator<TVars extends Record<string, string>, TOpts extends CommonOpts<TVars> = CommonOpts<TVars>>(
-  ref: 'module' | 'plugin',
+  ref: 'module' | 'plugin' | 'provider',
   metaCtor: { new (ref: Function, opts: TOpts): CommonMeta<TVars> }
 ): (opts: TOpts) => ClassDecorator {
   return opts => {

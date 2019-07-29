@@ -1,8 +1,9 @@
 import { CommonMeta, CommonContext, PREFIX } from './common'
+import { Container } from 'typedi'
 import { refDecorator } from './di'
 import { ModuleContext } from './module_ref'
 import { Logger } from './logger'
-import { Container } from 'typedi';
+import { ErrorWithCatch } from './errors'
 
 export class PluginContext<TInstance = {}, TVars extends Record<string, string> = {}> implements CommonContext<TVars> {
   readonly id: string
@@ -32,5 +33,20 @@ export class PluginContext<TInstance = {}, TVars extends Record<string, string> 
 }
 
 export class PluginMeta<TVars extends Record<string, string> = {}> extends CommonMeta<TVars> { }
+
+export function startPlugins(moduleId: string, plugins: PluginMeta[]) {
+  for (const pluginMeta of plugins) {
+    const pluginCtx = new PluginContext(moduleId, pluginMeta)
+    const pluginContainer = Container.of(pluginCtx.id)
+    pluginContainer.set(PluginContext, pluginCtx)
+    try {
+      pluginContainer.get(pluginMeta.type)
+    } catch (catched) {
+      const err = new ErrorWithCatch(`plugin construct failed`, catched)
+      pluginCtx.logger.error(err.message, err.catched)
+      throw err
+    }
+  }
+}
 
 export const PluginRef = refDecorator('plugin', PluginMeta)

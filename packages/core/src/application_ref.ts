@@ -2,11 +2,12 @@ import Environment from './environment'
 import Logger from './logger'
 import Container from 'typedi'
 import { createLogger, format, transports } from 'winston'
-import { ModuleMeta } from './module_ref'
-import { PREFIX } from './common'
+import { startModule } from './module_ref'
+import { startProviders } from './provider'
 
 export interface ApplicationOpts {
   name: string
+  providers?: Function[]
 }
 
 export class ApplicationContext {
@@ -19,13 +20,9 @@ export class ApplicationContext {
     }
     const appRef = new ApplicationContext(opts.name)
     Container.set({type: ApplicationContext, global: true, value: appRef})
-    await Promise.all(
-      mods.map(mod => {
-        const meta = Reflect.getMetadata(`${PREFIX}:module`, mod)
-        if (!(meta instanceof ModuleMeta)) throw new Error('Invalid module')
-        return meta.bootstrap()
-      })
-    )
+    const hook = opts.providers ? startProviders(opts.providers) : async () => { }
+    await Promise.all(mods.map(mod => startModule(mod)))
+    await hook()
   }
 
   private constructor(

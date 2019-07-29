@@ -1,11 +1,12 @@
-import { getClassMeta, refDecorator } from './di'
-import { CommonMeta, CommonOpts, CommonContext, PREFIX } from './common'
-import { getApplicationRef } from './application_ref'
 import { Container } from 'typedi'
+
+import { getApplicationRef } from './application_ref'
+import { CommonMeta, CommonOpts, CommonContext, PREFIX } from './common'
+import { getClassMeta, refDecorator } from './di'
 import Environment from './environment'
-import { PluginMeta, PluginContext } from './plugin_ref'
+import { ErrorWithCatch } from './errors'
 import Logger from './logger'
-import { ErrorWithCatch } from 'src'
+import { PluginMeta, startPlugins } from './plugin_ref'
 
 export class ModuleContext<TVars extends Record<string, string> = {}> implements CommonContext<TVars> {
   readonly id: string
@@ -34,57 +35,6 @@ export class ModuleMeta<TVars extends Record<string, string> = {}> extends Commo
     this.plugins = (opts.plugins || []).map(type => getClassMeta('plugin', type))
   }
 
-  async bootstrap(): Promise<void> {
-    const ctx = new ModuleContext(this)
-    const moduleContainer = Container.of(ctx.id)
-    moduleContainer.set(ModuleContext, ctx)
-    let mod: { bootstrap?: () => Promise<void> }
-    try {
-      mod = moduleContainer.get(this.type)
-    } catch (catched) {
-      const err = new ErrorWithCatch(`module bootstrap failed`, catched)
-      ctx.logger.error(err.message, err.catched)
-      throw err
-    }
-    if (!(mod instanceof this.type)) throw new Error('Invalid module instance')
-    const pluginBootstraps = this._startPlugins(ctx)
-    if (typeof mod.bootstrap === 'function') try {
-      mod.bootstrap()
-    } catch (catched) {
-      const err = new ErrorWithCatch(`module bootstrap failed`, catched)
-      ctx.logger.error(err.message, err.catched)
-      throw err
-    }
-    for (const pluginBootstrap of pluginBootstraps) await pluginBootstrap()
-  }
-
-  private _startPlugins(ctx: ModuleContext<TVars>): (() => Promise<void>)[] {
-    const pluginBootstraps = [] as (() => Promise<void>)[]
-    for (const pluginMeta of this.plugins) {
-      const pluginCtx = new PluginContext(ctx.id, pluginMeta)
-      const pluginContainer = Container.of(pluginCtx.id)
-      pluginContainer.set(PluginContext, ctx)
-      let plugin: { bootstrap?: () => Promise<void> }
-      try {
-        plugin = pluginContainer.get(pluginMeta.type)
-      } catch (catched) {
-        const err = new ErrorWithCatch(`plugin construct failed`, catched)
-        ctx.logger.error(err.message, err.catched)
-        throw err
-      }
-      if (typeof plugin.bootstrap === 'function') pluginBootstraps.push(async (): Promise<void> => {
-        try {
-          await (plugin.bootstrap as () => Promise<void>)()
-        } catch (catched) {
-          const err = new ErrorWithCatch(`plugin bootstrap failed`, catched)
-          pluginCtx.logger.error(err.message, err.catched)
-          throw err
-        }
-      })
-    }
-    return pluginBootstraps
-  }
-
   getVars(env: Environment): TVars {
     const prefix = this.name.toUpperCase()
     const pluginsVarsTpl = this.plugins.reduce((acc, {vars}) => ({
@@ -93,6 +43,25 @@ export class ModuleMeta<TVars extends Record<string, string> = {}> extends Commo
     }), {} as { [envVar: string]: string })
     return env.extract({...pluginsVarsTpl, ...this.vars}, prefix)
   }
+}
+
+export async function startModule(type: Function): Promise<void> {
+  const meta = Reflect.getMetadata(`${PREFIX}:module`, type)
+  if (!(meta instanceof ModuleMeta)) throw new Error('Invalid module')
+  const ctx = new ModuleContext(meta)
+  const moduleContainer = Container.of(ctx.id)
+  moduleContainer.set(ModuleContext, ctx)
+  let mod: { init?: () => Promise<void> }
+  try {
+    mod = moduleContainer.get(meta.type)
+    if (typeof mod.init === 'function') await mod.init()
+  } catch (catched) {
+    const err = new ErrorWithCatch(`module init failed`, catched)
+    ctx.logger.error(err.message, err.catched)
+    throw err
+  }
+  if (!(mod instanceof meta.type)) throw new Error('Invalid module instance')
+  startPlugins(ctx.id, meta.plugins)
 }
 
 export const ModuleRef = refDecorator('module', ModuleMeta)

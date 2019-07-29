@@ -4,6 +4,10 @@
   "required": ["name"],
   "properties": {
     "name": {"type": "string"},
+    "internal": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
     "external": {
       "type": "array",
       "items": {"type": "string"}

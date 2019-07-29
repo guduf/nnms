@@ -1,0 +1,6 @@
+{
+  "$schema": "../metaschema.json",
+  "name": "http",
+  "internals": ["core"],
+  "externals": ["express", "body-parser"]
+}

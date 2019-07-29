@@ -9,7 +9,7 @@ const path = require('path')
 const { exec } = require('child_process')
 const tar = require('tar')
 
-const PACKAGE_BASENAME = 'nandms'
+const PKG_BASENAME = 'nandms'
 
 function copy(tmpPath) {
   console.log(`🔨 Copy`)
@@ -33,7 +33,7 @@ async function build(tmpPath) {
 
   console.log(`👷 Build package '${pkgName}' in '${tmpPath}'`)
 
-  const pkgFullName = `${PACKAGE_BASENAME}${pkgName === 'core' ? '' : `-${pkgName}`}`
+  const pkgFullName = `${PKG_BASENAME}${pkgName === 'core' ? '' : `-${pkgName}`}`
   const tsConfigPath = path.join(process.cwd(), `packages/${pkgName}/tsconfig.json`)
 
   const tsPlugin = rollupTypescript({
@@ -66,10 +66,14 @@ async function build(tmpPath) {
     console.log(`🔨 Bundle to ${output.format}`)
     await bundle.write(output)
   }
-  const external = meta.external.reduce((acc, dep) => ({
-    ...acc,
-    ...(dep.includes('/') ? {} : {[dep]: rootPkg.dependencies[dep]})
-  }), {})
+  const internals = (meta.internals || []).reduce((acc, dep) => ({
+    ...(acc || {}),
+    [PKG_BASENAME + (dep === 'core' ? '' : `-${dep}`)]: rootPkg.version
+  }), null)
+  const externals = (meta.externals || []).reduce((acc, dep) => ({
+    ...(acc || {}),
+    [dep]: rootPkg.dependencies[dep]
+  }), null)
   const pkgJson = {
     name: pkgFullName,
     version,
@@ -79,7 +83,8 @@ async function build(tmpPath) {
     main: cjsPath,
     module: esPath,
     types: 'index.d.ts',
-    dependencies: external
+    ...(externals ? {dependencies: externals} : {}),
+    ...(internals ? {peerDependencies: internals} : {})
   }
   console.log(`🔨 Write package.json`)
   await p(fs.writeFile)(

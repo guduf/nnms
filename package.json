@@ -4,6 +4,7 @@
   "description": "NodeJS framework for micro services",
   "scripts": {
     "build:core": "CURRENT_PACKAGE=core node scripts/build.js",
+    "build:http": "CURRENT_PACKAGE=http node scripts/build.js",
     "test": "jest --config packages/core/jest.config.js"
   },
   "keywords": [
@@ -17,7 +18,9 @@
   "author": "Guillaume Dufour <contact@guduf.com>",
   "license": "MIT",
   "devDependencies": {
+    "@types/body-parser": "^1.17.0",
     "@types/dotenv": "^6.1.1",
+    "@types/express": "^4.17.0",
     "@types/jest": "^24.0.0",
     "eslint": "^6.1.0",
     "jest": "^24.8.0",
@@ -29,8 +32,11 @@
     "typescript": "^3.5.0"
   },
   "dependencies": {
+    "body-parser": "^1.19.0",
     "dotenv": "^8.0.0",
+    "express": "^4.17.0",
     "nandms": "file:dist/nandms-0.1.0.tgz",
+    "nandms-http": "file:dist/nandms-http-0.1.0.tgz",
     "reflect-metadata": "^0.1.13",
     "typedi": "^0.8.0",
     "winston": "^3.2.1"

@@ -33,7 +33,7 @@ export class MarketPlugin {
   readonly vars: typeof EMITTER_VARS
 
   constructor(ctx: PluginContext) {
-    console.log(ctx)
+    console.log('PluginContext', ctx)
   }
 }
 
