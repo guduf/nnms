@@ -1,5 +1,5 @@
 import express from 'express'
-import { ProviderRef, ProviderContext } from 'nandms'
+import { ProviderRef, ProviderContext } from 'nnms'
 import { Service } from 'typedi';
 
 @Service({global: true})

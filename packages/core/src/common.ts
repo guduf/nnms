@@ -1,6 +1,6 @@
 import Logger from './logger'
 
-export const PREFIX = 'nandms'
+export const PREFIX = 'nnms'
 export const PREFIX_UPPER = PREFIX.toUpperCase()
 
 export interface CommonOpts<TVars extends Record<string, string> = {}> {

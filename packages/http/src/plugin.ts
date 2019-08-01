@@ -1,7 +1,7 @@
 import bodyParser from 'body-parser'
 import express, { Express, Handler, IRouterMatcher, Request, Response } from 'express'
 
-import { PluginRef, PluginContext, pluginDecorator } from 'nandms'
+import { PluginRef, PluginContext, pluginDecorator } from 'nnms'
 
 import { HttpProvider } from './provider'
 

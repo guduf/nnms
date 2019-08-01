@@ -9,7 +9,7 @@ const path = require('path')
 const { exec } = require('child_process')
 const tar = require('tar')
 
-const PKG_BASENAME = 'nandms'
+const PKG_BASENAME = 'nnms'
 
 function copy(tmpPath) {
   console.log(`🔨 Copy`)
