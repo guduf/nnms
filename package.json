@@ -1,7 +1,7 @@
 {
   "name": "nandms-repo",
   "version": "0.1.0",
-  "description": "NodeJS framework for micro services",
+  "description": "N&M's - odeJS framework for micro services",
   "scripts": {
     "build:core": "CURRENT_PACKAGE=core node scripts/build.js",
     "build:http": "CURRENT_PACKAGE=http node scripts/build.js",

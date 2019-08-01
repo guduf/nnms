@@ -1,24 +1,29 @@
 import { CommonMeta, CommonContext, PREFIX } from './common'
 import { Container } from 'typedi'
-import { refDecorator } from './di'
+import { refDecorator, getPluginMeta } from './di'
 import { ModuleContext } from './module_ref'
 import { Logger } from './logger'
-import { ErrorWithCatch } from './errors'
 
-export class PluginContext<TInstance = {}, TVars extends Record<string, string> = {}> implements CommonContext<TVars> {
+export class PluginContext<TVars extends Record<string, string> = {}, TInstance = any> implements CommonContext<TVars> {
   readonly id: string
   readonly mode: 'dev' | 'prod' | 'test'
   readonly logger: Logger
   readonly vars: { readonly [P in keyof TVars]: string }
   readonly instance: TInstance
+  readonly methods: { meta: unknown, func: Function }[]
 
-  constructor(readonly moduleId: string, meta: PluginMeta<TVars>) {
+  constructor(readonly moduleId: string, readonly meta: PluginMeta<TVars>) {
     const {ctx: {mode, vars, logger, meta: modMeta}, instance} = this._getModule(moduleId)
     this.id = `${PREFIX}:module:${modMeta.name}:plugin:${meta.name}`
     this.mode = mode
     this.logger = logger.extend(meta.name)
     this.vars = vars
     this.instance = instance
+    const methodMetas = getPluginMeta(this.meta.name, instance)
+    this.methods = Object.keys(methodMetas).reduce((acc, key) => [
+      ...acc,
+      {meta: methodMetas[key], func: (instance as any)[key].bind(instance)}
+    ], [] as { meta: unknown, func: Function }[])
   }
 
   private _getModule(moduleId: string): { ctx: ModuleContext<TVars>, instance: TInstance } {
@@ -33,20 +38,5 @@ export class PluginContext<TInstance = {}, TVars extends Record<string, string> 
 }
 
 export class PluginMeta<TVars extends Record<string, string> = {}> extends CommonMeta<TVars> { }
-
-export function startPlugins(moduleId: string, plugins: PluginMeta[]) {
-  for (const pluginMeta of plugins) {
-    const pluginCtx = new PluginContext(moduleId, pluginMeta)
-    const pluginContainer = Container.of(pluginCtx.id)
-    pluginContainer.set(PluginContext, pluginCtx)
-    try {
-      pluginContainer.get(pluginMeta.type)
-    } catch (catched) {
-      const err = new ErrorWithCatch(`plugin construct failed`, catched)
-      pluginCtx.logger.error(err.message, err.catched)
-      throw err
-    }
-  }
-}
 
 export const PluginRef = refDecorator('plugin', PluginMeta)

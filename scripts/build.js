@@ -52,7 +52,7 @@ async function build(tmpPath) {
   })
   const opts = {
     input: `packages/${pkgName}/src/index.ts`,
-    external: meta.external,
+    external: ['path', ...meta.externals],
     plugins: [tsPlugin]
   }
   const bundle = await rollup.rollup(opts);

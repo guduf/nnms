@@ -1,5 +1,7 @@
+import { Request } from 'express'
 import { Service } from 'typedi'
 import { ModuleRef, ModuleContext, bootstrap } from 'nandms'
+import { HttpRoute, HttpPlugin, HttpProvider } from 'nandms-http'
 
 export interface Todo {
   id: string
@@ -8,7 +10,7 @@ export interface Todo {
 }
 
 const TODOS: { [id: string]: Todo} = {
-  '5i3d04p0jkpc': {id: 'k2alg4i1bonb', text: 'Write the example', completed: true},
+  '5i3d04p0jkpc': {id: '5i3d04p0jkpc', text: 'Write the example', completed: true},
   'k2alg4i1bonb': {id: 'k2alg4i1bonb', text: 'Write the documentation', completed: false}
 }
 
@@ -22,25 +24,44 @@ export class TodoService {
     this._todos = todos
   }
 
-  list(): Todo[] { return Array.from(this._todos.values())}
-  get(id: string): Todo | null { return this._todos.get(id) || null }
-  add(text: string): Todo {
+  async list(): Promise<Todo[]> {
+    return Array.from(this._todos.values())
+  }
+
+  async get({params: {id}}: Request): Promise<Todo | null> {
+    return this._todos.get(id) || null
+  }
+
+  async add(text: string): Promise<Todo> {
     const todo: Todo = {id: Math.random().toString(26).slice(2), text, completed: false}
     this._todos.set(todo.id, todo)
     return todo
   }
-  complete(id: string): void {
+
+  async complete({params: {id}}: Request): Promise<void> {
     const todo = this._todos.get(id)
     if (!todo) throw new Error(`Todo with id '${id}' not found`)
     todo.completed = true
   }
 }
 
-@ModuleRef({name: 'todo', vars: {}})
+@ModuleRef({
+  name: 'todo',
+  vars: {HTTP_PORT: '8080'},
+  plugins: [HttpPlugin]
+})
 export class TodoModule {
-  constructor(ctx: ModuleContext, todos: TodoService) {
-    ctx.logger.info('Initial todos list', {items: todos.list()})
+  constructor(
+    private readonly _ctx: ModuleContext,
+    private readonly _todos: TodoService
+  ) {
+    this._ctx.logger.debug('Initial todos list', {items: this._todos.list()})
+  }
+
+  @HttpRoute()
+  list(): Promise<Todo[]> {
+    return this._todos.list()
   }
 }
 
-bootstrap('basic-example', TodoModule)
+bootstrap({name: 'basic-example', providers: [HttpProvider]}, TodoModule)

@@ -1,6 +1,8 @@
 import express from 'express'
 import { ProviderRef, ProviderContext } from 'nandms'
+import { Service } from 'typedi';
 
+@Service({global: true})
 @ProviderRef({name: 'http'})
 export class HttpProvider {
   private _servers: { [port: string]: { name: string } }
@@ -9,12 +11,12 @@ export class HttpProvider {
     readonly ctx: ProviderContext<{}>
   ) { }
 
-  startServer(
+  async startServer(
     name: string,
-    port: number,
+    port: string,
     server: express.Application
   ): Promise<void> {
-    return new Promise((resolve, reject) => {
+    await new Promise((resolve, reject) => {
       try {
         server.listen(port, () => {
           this._servers = {[port]: {name}}
@@ -24,6 +26,7 @@ export class HttpProvider {
         reject(err)
       }
     })
+    this.ctx.logger.debug('Start server', {name, port})
   }
 
   init() {

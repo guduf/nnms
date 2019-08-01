@@ -1,12 +1,11 @@
 import { Container } from 'typedi'
 
-import { getApplicationRef } from './application_ref'
+import { ApplicationContext } from './application_ref'
 import { CommonMeta, CommonOpts, CommonContext, PREFIX } from './common'
 import { getClassMeta, refDecorator } from './di'
 import Environment from './environment'
-import { ErrorWithCatch } from './errors'
 import Logger from './logger'
-import { PluginMeta, startPlugins } from './plugin_ref'
+import { PluginMeta } from './plugin_ref'
 
 export class ModuleContext<TVars extends Record<string, string> = {}> implements CommonContext<TVars> {
   readonly id: string
@@ -45,23 +44,11 @@ export class ModuleMeta<TVars extends Record<string, string> = {}> extends Commo
   }
 }
 
-export async function startModule(type: Function): Promise<void> {
-  const meta = Reflect.getMetadata(`${PREFIX}:module`, type)
-  if (!(meta instanceof ModuleMeta)) throw new Error('Invalid module')
-  const ctx = new ModuleContext(meta)
-  const moduleContainer = Container.of(ctx.id)
-  moduleContainer.set(ModuleContext, ctx)
-  let mod: { init?: () => Promise<void> }
-  try {
-    mod = moduleContainer.get(meta.type)
-    if (typeof mod.init === 'function') await mod.init()
-  } catch (catched) {
-    const err = new ErrorWithCatch(`module init failed`, catched)
-    ctx.logger.error(err.message, err.catched)
-    throw err
-  }
-  if (!(mod instanceof meta.type)) throw new Error('Invalid module instance')
-  startPlugins(ctx.id, meta.plugins)
+export function getApplicationRef(): ApplicationContext {
+  if (!Container.has(ApplicationContext as any)) throw new Error('Container has no ApplicationRef')
+  const appRef = Container.get(ApplicationContext as any) as any
+  if (!(appRef instanceof ApplicationContext)) throw new Error('ApplicationRef is not valid instance')
+  return appRef
 }
 
 export const ModuleRef = refDecorator('module', ModuleMeta)

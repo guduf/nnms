@@ -2,8 +2,10 @@ import 'reflect-metadata'
 import { Container, ContainerInstance } from 'typedi'
 import { CommonOpts, CommonMeta, PREFIX } from './common';
 
+export type RefKind = 'module' | 'plugin' | 'provider'
+
 export function refDecorator<TVars extends Record<string, string>, TOpts extends CommonOpts<TVars> = CommonOpts<TVars>>(
-  ref: 'module' | 'plugin' | 'provider',
+  ref: RefKind,
   metaCtor: { new (ref: Function, opts: TOpts): CommonMeta<TVars> }
 ): (opts: TOpts) => ClassDecorator {
   return opts => {
@@ -29,7 +31,30 @@ export function refParams(container: ContainerInstance, type: Function): any[] {
   })
 }
 
-export function getClassMeta<T>(metaSuffix: 'module' | 'plugin', target: Function): T {
+export function getClassMeta<T>(refKind: RefKind, target: Function): T {
   if (typeof target !== 'function') throw new TypeError('target is not a function')
-  return Reflect.getMetadata(`${PREFIX}:${metaSuffix}`, target)
+  return Reflect.getMetadata(`${PREFIX}:${refKind}`, target)
+}
+
+export function pluginDecorator(
+  pluginName: string,
+  meta: {} | ((prop: string) => {})
+): MethodDecorator {
+  return (target, prop) => {
+    if (typeof prop === 'symbol') return
+    meta = typeof meta === 'function' ? meta(prop) : meta
+    Reflect.defineMetadata(`${PREFIX}:${pluginName}`, meta, target, prop)
+  }
+}
+
+export function getPluginMeta<T>(
+  pluginName: string,
+  instance: {}
+): { [prop: string]: T } {
+  const proto = Object.getPrototypeOf(instance)
+  return Object.getOwnPropertyNames(proto).reduce((acc, prop) => {
+    if (prop === 'constructor') return acc
+    const meta = Reflect.getMetadata(`${PREFIX}:${pluginName}`, proto, prop)
+    return {...acc, ...(meta ? {[prop]: meta} : {})}
+  }, {} as { [prop: string]: T })
 }
