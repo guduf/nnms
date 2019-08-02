@@ -1,8 +1,9 @@
 {
   "name": "nnms-repo",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "N&M's - NodeJS framework for micro services",
   "scripts": {
+    "build:cli": "CURRENT_PACKAGE=cli node scripts/build.js",
     "build:core": "CURRENT_PACKAGE=core node scripts/build.js",
     "build:http": "CURRENT_PACKAGE=http node scripts/build.js",
     "test": "jest --config packages/core/jest.config.js"
@@ -22,6 +23,7 @@
     "@types/dotenv": "^6.1.0",
     "@types/express": "^4.17.0",
     "@types/jest": "^24.0.0",
+    "@types/js-yaml": "^3.12.0",
     "eslint": "^6.1.0",
     "jest": "^24.8.0",
     "rimraf": "^2.6.0",
@@ -33,13 +35,19 @@
   },
   "dependencies": {
     "body-parser": "^1.19.0",
+    "chalk": "^2.4.0",
     "dotenv": "^8.0.0",
     "express": "^4.17.0",
-    "nandms-http": "file:dist/nandms-http-0.1.0.tgz",
-    "nnms": "file:dist/nnms-0.1.0.tgz",
-    "nnms-http": "file:dist/nnms-http-0.1.0.tgz",
+    "js-yaml": "^3.13.0",
+    "moment": "^2.24.0",
     "reflect-metadata": "^0.1.13",
     "typedi": "^0.8.0",
-    "winston": "^3.2.0"
+    "winston": "^3.2.0",
+    "winston-transport": "^4.3.0"
+  },
+  "optionalDependencies": {
+    "nnms": "file:dist/nnms-0.2.0.tgz",
+    "nnms-cli": "file:dist/nnms-cli-0.2.0.tgz",
+    "nnms-http": "file:dist/nnms-http-0.2.0.tgz"
   }
 }

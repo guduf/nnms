@@ -1,26 +1,29 @@
 import Environment from './environment'
 import Logger from './logger'
 import { createLogger, format, transports } from 'winston'
+import Transport from 'winston-transport'
 
 export interface ApplicationOpts {
   name: string
-  providers?: Function[]
+  providers?: Function[],
+  loggerTransports?: Transport[]
 }
 
 export class ApplicationContext {
   readonly env = new Environment()
-  readonly logger = this._initLogger()
+  readonly logger: Logger
 
   constructor(
-    readonly name: string
-  ) { }
+    readonly name: string,
+    loggerTransports: Transport[] = [new transports.Console({format: format.prettyPrint()})]
+  ) {
+    this.logger = this._initLogger(loggerTransports)
+  }
 
-  private _initLogger(): Logger {
+  private _initLogger(transports: Transport[]): Logger {
     const native =  createLogger({
       level: this.env.isProduction ? 'info' : 'debug',
-      transports: [
-        new transports.Console({format: format.prettyPrint()})
-      ]
+      transports
     })
     return new Logger(native, [this.name])
   }

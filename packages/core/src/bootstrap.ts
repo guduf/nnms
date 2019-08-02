@@ -1,4 +1,5 @@
 import Container from 'typedi'
+import Transport from 'winston-transport'
 
 import { ApplicationContext } from './application_ref'
 import { getClassMeta } from './di'
@@ -64,11 +65,11 @@ export function bootstrapProviders(providers: Function[]): () => Promise<void> {
   return () => Promise.all(hooks.map(hook => hook())).then(() => { })
 }
 export async function bootstrap(
-  opts: { name: string, providers?: Function[] },
+  opts: { name: string, providers?: Function[], loggerTransports?: Transport[] },
   ...mods: Function[]
 ): Promise<void> {
   try {
-    const appRef = new ApplicationContext(opts.name)
+    const appRef = new ApplicationContext(opts.name, opts.loggerTransports)
     if (Container.has(ApplicationContext as any)) {
       throw new Error('Container has another ApplicationRef setted')
     }

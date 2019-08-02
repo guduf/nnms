@@ -6,7 +6,6 @@ const { promisify: p } = require('util')
 const rimraf = require('rimraf')
 const ts = require('typescript')
 const path = require('path')
-const { exec } = require('child_process')
 const tar = require('tar')
 
 const PKG_BASENAME = 'nnms'
@@ -52,7 +51,7 @@ async function build(tmpPath) {
   })
   const opts = {
     input: `packages/${pkgName}/src/index.ts`,
-    external: ['path', ...meta.externals],
+    external: ['path', ...(meta.externals || []), ...(meta.internals || [])],
     plugins: [tsPlugin]
   }
   const bundle = await rollup.rollup(opts);

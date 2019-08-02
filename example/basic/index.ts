@@ -1,6 +1,7 @@
 import { Request } from 'express'
 import { Service } from 'typedi'
 import { ModuleRef, ModuleContext, bootstrap } from 'nnms'
+import { ConsoleTransport } from 'nnms-cli'
 import { HttpRoute, HttpPlugin, HttpProvider } from 'nnms-http'
 
 export interface Todo {
@@ -64,4 +65,11 @@ export class TodoModule {
   }
 }
 
-bootstrap({name: 'basic-example', providers: [HttpProvider]}, TodoModule)
+bootstrap(
+  {
+    name: 'basic-example',
+    providers: [HttpProvider],
+    loggerTransports: [new ConsoleTransport(console)]
+  },
+  TodoModule
+)
