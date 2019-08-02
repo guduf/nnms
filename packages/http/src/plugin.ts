@@ -142,7 +142,7 @@ export class HttpPlugin {
       ...meta.middlewares,
       finalHandler
     )
-    this._ctx.logger.debug('Register route', {
+    this._ctx.logger.debug('register route', {
       path: meta.path,
       method: meta.method,
       reqType: meta.reqType,

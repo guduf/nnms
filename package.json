@@ -1,13 +1,10 @@
 {
   "name": "nnms-repo",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "N&M's - NodeJS framework for micro services",
   "scripts": {
     "example:basic": "tsc -p example/basic && node example/basic/index.js",
     "build": "node scripts/build.js",
-    "build:cli": "CURRENT_PACKAGE=cli node scripts/build.js",
-    "build:core": "CURRENT_PACKAGE=core node scripts/build.js",
-    "build:http": "CURRENT_PACKAGE=http node scripts/build.js",
     "test": "jest --config packages/core/jest.config.js"
   },
   "keywords": [
@@ -43,14 +40,17 @@
     "express": "^4.17.0",
     "js-yaml": "^3.13.0",
     "moment": "^2.24.0",
+    "nats": "^1.3.0",
     "reflect-metadata": "^0.1.13",
+    "rxjs": "^6.5.2",
     "typedi": "^0.8.0",
     "winston": "^3.2.0",
     "winston-transport": "^4.3.0"
   },
   "optionalDependencies": {
-    "nnms": "file:dist/nnms-0.4.0.tgz",
+    "nnms": "file:dist/nnms-0.5.0.tgz",
     "nnms-cli": "file:dist/nnms-cli-0.4.0.tgz",
-    "nnms-http": "file:dist/nnms-http-0.4.0.tgz"
+    "nnms-http": "file:dist/nnms-http-0.4.0.tgz",
+    "nnms-nats": "file:dist/nnms-nats-0.5.0.tgz"
   }
 }

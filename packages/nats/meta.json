@@ -1,0 +1,6 @@
+{
+  "$schema": "../metaschema.json",
+  "name": "nats",
+  "internals": ["core"],
+  "externals": ["nats", "rxjs"]
+}

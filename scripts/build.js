@@ -10,6 +10,12 @@ const path = require('path')
 const tar = require('tar')
 const { exec } = require('child_process')
 
+argv.option({
+  name: 'skipInstall',
+  type: 'boolean',
+  description: 'Skip the installation of the node package in the repository'
+})
+
 const PKG_BASENAME = 'nnms'
 
 function copy(tmpPath) {
@@ -30,7 +36,7 @@ function install(tarballPath) {
   return p(exec)(`npm install --save-optional ./${tarballPath}`)
 }
 
-async function build(pkgName, tmpPath) {
+async function build(pkgName, tmpPath, opts) {
   const version = rootPkg.version
   if (!pkgName) throw new Error('Missing env CURRENT_PACKAGE')
   const meta = require(`../packages/${pkgName}/meta.json`)
@@ -54,12 +60,14 @@ async function build(pkgName, tmpPath) {
       }
     }
   })
-  const opts = {
+  const externals = (meta.externals || [])
+  const internals = (meta.internals || []).map(internal => PKG_BASENAME + (internal === 'core' ? '' : `-${internal}`))
+  const rollupOpts = {
     input: `packages/${pkgName}/src/index.ts`,
-    external: ['path', ...(meta.externals || []), ...(meta.internals || [])],
+    external: ['path', ...externals, ...internals],
     plugins: [tsPlugin]
   }
-  const bundle = await rollup.rollup(opts);
+  const bundle = await rollup.rollup(rollupOpts);
   const cjsPath = `bundles/${pkgFullName}.cjs.js`
   const esPath = `bundles/${pkgFullName}.es.js`
   const outputs = [
@@ -70,11 +78,11 @@ async function build(pkgName, tmpPath) {
     console.log(`🔨 Bundle to ${output.format}`)
     await bundle.write(output)
   }
-  const internals = (meta.internals || []).reduce((acc, dep) => ({
+  const peerDependencies = internals.reduce((acc, dep) => ({
     ...(acc || {}),
-    [PKG_BASENAME + (dep === 'core' ? '' : `-${dep}`)]: rootPkg.version
+    [dep]: rootPkg.version
   }), null)
-  const externals = (meta.externals || []).reduce((acc, dep) => ({
+  const dependencies = (meta.externals || []).reduce((acc, dep) => ({
     ...(acc || {}),
     [dep]: rootPkg.dependencies[dep]
   }), null)
@@ -87,8 +95,8 @@ async function build(pkgName, tmpPath) {
     main: cjsPath,
     module: esPath,
     types: 'index.d.ts',
-    ...(externals ? {dependencies: externals} : {}),
-    ...(internals ? {peerDependencies: internals} : {})
+    ...(dependencies ? {dependencies} : {}),
+    ...(peerDependencies ? {peerDependencies} : {})
   }
   console.log(`🔨 Write package.json`)
   await p(fs.writeFile)(
@@ -98,14 +106,14 @@ async function build(pkgName, tmpPath) {
   await copy(tmpPath)
   const tarballPath = `dist/${pkgFullName}-${version}.tgz`
   await package(tmpPath, tarballPath)
-  await install(tarballPath)
+  if (!opts.skipInstall) await install(tarballPath)
 }
 
 (async () => {
-  const {targets} = argv.run()
+  const {targets, options} = argv.run()
   for (const target of targets) {
     const tmpPath = path.join(process.cwd(), `tmp/build/${Date.now()}`)
-    try { await build(target, tmpPath) } catch (err) { console.error(`❗️ Build failed: ${err}`) }
+    try { await build(target, tmpPath, options) } catch (err) { console.error(`❗️ Build failed: ${err}`) }
     console.log(`🧹 Clean '${tmpPath}'`)
     p(rimraf)(tmpPath)
   }

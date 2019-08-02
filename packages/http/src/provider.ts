@@ -26,10 +26,10 @@ export class HttpProvider {
         reject(err)
       }
     })
-    this.ctx.logger.debug('Start server', {name, port})
+    this.ctx.logger.debug('start server', {name, port})
   }
 
-  init() {
+  onInit() {
     this.ctx.logger.info('recap', this._servers)
   }
 }
