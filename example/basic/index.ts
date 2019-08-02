@@ -55,8 +55,10 @@ export class TodoModule {
   constructor(
     private readonly _ctx: ModuleContext,
     private readonly _todos: TodoService
-  ) {
-    this._ctx.logger.debug('Initial todos list', {items: this._todos.list()})
+  ) { }
+
+  async init(): Promise<void> {
+    this._ctx.logger.debug('Initial todos list', {items: await this._todos.list()})
   }
 
   @HttpRoute()

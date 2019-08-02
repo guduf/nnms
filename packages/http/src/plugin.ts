@@ -1,7 +1,7 @@
 import bodyParser from 'body-parser'
 import express, { Express, Handler, IRouterMatcher, Request, Response } from 'express'
 
-import { PluginRef, PluginContext, pluginDecorator } from 'nnms'
+import { PluginRef, PluginContext, pluginDecorator, ErrorWithCatch } from 'nnms'
 
 import { HttpProvider } from './provider'
 
@@ -53,13 +53,30 @@ export function HttpRoute(
   return pluginDecorator('http', meta)
 }
 
-@PluginRef({name: 'http'})
+export class HttpHookMeta {
+  constructor(readonly kind: 'before' | 'after') { }
+}
+
+export function BeforeHttpRoutes() {
+  const meta = new HttpHookMeta('before')
+  return pluginDecorator('http', meta)
+}
+
+export function AfterHttpRoutes() {
+  const meta = new HttpHookMeta('after')
+  return pluginDecorator('http', meta)
+}
+
+@PluginRef({name: 'http', vars: HTTP_PLUGIN_VARS})
 export class HttpPlugin {
   constructor(
     private readonly _ctx: PluginContext<typeof HTTP_PLUGIN_VARS>,
     _http: HttpProvider
   ) {
     const methods = this._ctx.methods.reduce((acc, method) => ({
+      before: (
+        method.meta instanceof HttpHookMeta && method.meta.kind === 'before' ? method.func : acc.before
+      ),
       routes: [
         ...acc.routes,
         ...(
@@ -67,8 +84,15 @@ export class HttpPlugin {
             [method as { func: (req: Request) => any, meta: HttpRouteMeta  }] :
             []
         )
-      ]
-    }), { routes: [] as { func: (req: Request) => any, meta: HttpRouteMeta }[] })
+      ],
+      after: (
+        method.meta instanceof HttpHookMeta && method.meta.kind === 'after' ? method.func : acc.after
+      )
+    }), {
+      before: null as Function | null,
+      after: null as Function | null,
+      routes: [] as { func: (req: Request) => any, meta: HttpRouteMeta }[]
+    })
     const app = express()
     const routeMatchers: { [P in HttpMethod]: IRouterMatcher<Express>} = {
       'GET': app.get.bind(app),
@@ -83,7 +107,15 @@ export class HttpPlugin {
       'raw': bodyParser.raw(),
       'none': (_, __, next) => next()
     }
+    if (methods.before) try { methods.before(app) } catch(catched) {
+      const err = new ErrorWithCatch('Failed to execute before http routes hook', catched)
+      this._ctx.logger.error(err)
+    }
     methods.routes.forEach(method => this._registerRoute(routeMatchers, bodyParsers, method))
+    if (methods.after) try { methods.after(app) } catch(catched) {
+      const err = new ErrorWithCatch('Failed to execute after http routes hook', catched)
+      this._ctx.logger.error(err)
+    }
     _http.startServer(this._ctx.moduleId, this._ctx.vars.HTTP_PORT, app)
   }
 

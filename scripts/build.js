@@ -1,3 +1,4 @@
+const argv = require('argv')
 const rollup = require('rollup')
 const rollupTypescript = require('rollup-plugin-typescript2')
 const rootPkg = require('../package.json')
@@ -7,6 +8,7 @@ const rimraf = require('rimraf')
 const ts = require('typescript')
 const path = require('path')
 const tar = require('tar')
+const { exec } = require('child_process')
 
 const PKG_BASENAME = 'nnms'
 
@@ -15,8 +17,7 @@ function copy(tmpPath) {
   return p(fs.copyFile)('LICENSE.md', `${tmpPath}/LICENSE.md`)
 }
 
-function package(tmpPath, pkgFullName, version) {
-  const tarballPath = `dist/${pkgFullName}-${version}.tgz`
+function package(tmpPath, tarballPath) {
   console.log(`🔨 Package to '${tarballPath}'`)
   return tar.c(
     {file: tarballPath, cwd: tmpPath, gzip: true},
@@ -24,8 +25,12 @@ function package(tmpPath, pkgFullName, version) {
   )
 }
 
-async function build(tmpPath) {
-  const pkgName = process.env['CURRENT_PACKAGE']
+function install(tarballPath) {
+  console.log(`🔨 Install '${tarballPath}'`)
+  return p(exec)(`npm install --save-optional ./${tarballPath}`)
+}
+
+async function build(pkgName, tmpPath) {
   const version = rootPkg.version
   if (!pkgName) throw new Error('Missing env CURRENT_PACKAGE')
   const meta = require(`../packages/${pkgName}/meta.json`)
@@ -91,12 +96,17 @@ async function build(tmpPath) {
     JSON.stringify(pkgJson, null, 2) + '\n'
   )
   await copy(tmpPath)
-  await package(tmpPath, pkgFullName, version)
+  const tarballPath = `dist/${pkgFullName}-${version}.tgz`
+  await package(tmpPath, tarballPath)
+  await install(tarballPath)
 }
 
 (async () => {
-  const tmpPath = path.join(process.cwd(), `tmp/build/${Date.now()}`)
-  try { await build(tmpPath) } catch (err) { console.error(`❗️ Build failed: ${err}`) }
-  console.log(`🧹 Clean '${tmpPath}'`)
-  p(rimraf)(tmpPath)
+  const {targets} = argv.run()
+  for (const target of targets) {
+    const tmpPath = path.join(process.cwd(), `tmp/build/${Date.now()}`)
+    try { await build(target, tmpPath) } catch (err) { console.error(`❗️ Build failed: ${err}`) }
+    console.log(`🧹 Clean '${tmpPath}'`)
+    p(rimraf)(tmpPath)
+  }
 })().catch(console.error)
