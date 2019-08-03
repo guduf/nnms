@@ -1,9 +1,9 @@
 import express from 'express'
 import { ProviderRef, ProviderContext } from 'nnms'
-import { Service } from 'typedi';
+import { Service } from 'typedi'
 
 @Service({global: true})
-@ProviderRef({name: 'http'})
+@ProviderRef('http')
 export class HttpProvider {
   private _servers: { [port: string]: { name: string } }
 

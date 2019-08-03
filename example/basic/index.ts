@@ -46,11 +46,7 @@ export class TodoService {
   }
 }
 
-@ModuleRef({
-  name: 'todo',
-  vars: {HTTP_PORT: '8080'},
-  plugins: [HttpPlugin]
-})
+@ModuleRef('todo', {HTTP_PORT: '8080'}, HttpPlugin)
 export class TodoModule {
   constructor(
     private readonly _ctx: ModuleContext,

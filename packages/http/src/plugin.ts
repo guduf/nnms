@@ -67,11 +67,7 @@ export function AfterHttpRoutes() {
   return pluginDecorator('http', meta)
 }
 
-@PluginRef({
-  name: 'http',
-  providers: [HttpProvider],
-  vars: HTTP_PLUGIN_VARS
-})
+@PluginRef('http', HTTP_PLUGIN_VARS)
 export class HttpPlugin {
   readonly init: Promise<void>
 
