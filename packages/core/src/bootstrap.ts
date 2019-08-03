@@ -83,9 +83,9 @@ export async function bootstrap(
       const modMeta = getClassMeta<ModuleMeta>('module', mod)
       return {
         mods: acc.mods.includes(modMeta) ? acc.mods : [...acc.mods, modMeta],
-        providers: modMeta.plugins
-          .reduce((pluginAcc, pluginMeta) => (
-            [...pluginAcc, ...pluginMeta.providers]
+        providers: [...modMeta.plugins, ...modMeta.providers]
+          .reduce((subAcc, subMeta) => (
+            [...subAcc, ...subMeta.providers]
           ), modMeta.providers)
           .reduce((provAcc, provMeta) => (
             provAcc.includes(provMeta) ? provAcc : [...provAcc, provMeta]

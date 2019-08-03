@@ -1,11 +1,11 @@
-import { CommonMeta, CommonContext, PREFIX, CommonOpts } from './common'
+import { PREFIX } from './common'
 import { Container } from 'typedi'
-import { refDecorator, getPluginMeta, getClassMeta } from './di'
+import { getPluginMeta } from './di'
 import { ModuleContext } from './module_ref'
 import { Logger } from './logger'
-import { ProviderMeta } from './provider'
+import { ProviderMeta, refDecorator, ProviderContext } from './provider'
 
-export class PluginContext<TVars extends Record<string, string> = {}, TInstance = any> implements CommonContext<TVars> {
+export class PluginContext<TVars extends Record<string, string> = {}, TInstance = any> implements ProviderContext<TVars> {
   readonly id: string
   readonly mode: 'dev' | 'prod' | 'test'
   readonly logger: Logger
@@ -38,18 +38,6 @@ export class PluginContext<TVars extends Record<string, string> = {}, TInstance 
   }
 }
 
-
-export interface PluginOpts<TVars extends Record<string, string> = {}>  extends CommonOpts<TVars> {
-  providers?: Function[]
-}
-
-export class PluginMeta<TVars extends Record<string, string> = {}> extends CommonMeta<TVars> {
-  readonly providers: ProviderMeta[]
-
-  constructor(type: Function, opts: PluginOpts<TVars>) {
-    super(type, opts)
-    this.providers = (opts.providers || []).map(type => getClassMeta('provider', type))
-  }
-}
+export class PluginMeta<TVars extends Record<string, string> = {}> extends ProviderMeta<TVars> { }
 
 export const PluginRef = refDecorator('plugin', PluginMeta)

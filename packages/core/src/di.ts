@@ -1,21 +1,8 @@
 import 'reflect-metadata'
 import { Container, ContainerInstance } from 'typedi'
-import { CommonOpts, CommonMeta, PREFIX } from './common';
+import { PREFIX } from './common';
 
 export type RefKind = 'module' | 'plugin' | 'provider'
-
-export function refDecorator<TVars extends Record<string, string>, TOpts extends CommonOpts<TVars> = CommonOpts<TVars>>(
-  ref: RefKind,
-  metaCtor: { new (ref: Function, opts: TOpts): CommonMeta<TVars> }
-): (opts: TOpts) => ClassDecorator {
-  return opts => {
-    return target => {
-      const meta = new metaCtor(target, opts)
-      Reflect.defineMetadata(`${PREFIX}:ref`, ref, target)
-      Reflect.defineMetadata(`${PREFIX}:${ref}`, meta, target)
-    }
-  }
-}
 
 export function refParams(container: ContainerInstance, type: Function): any[] {
   const paramTypes = Reflect.getMetadata('design:paramtypes', type) as any[]

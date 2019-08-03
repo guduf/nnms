@@ -1,14 +1,14 @@
 import { Container } from 'typedi'
 
 import { ApplicationContext } from './application_ref'
-import { CommonMeta, CommonOpts, CommonContext, PREFIX } from './common'
-import { getClassMeta, refDecorator } from './di'
+import { PREFIX } from './common'
+import { getClassMeta } from './di'
 import Environment from './environment'
 import Logger from './logger'
 import { PluginMeta } from './plugin_ref'
-import { ProviderMeta } from './provider';
+import { ProviderMeta, ProviderOpts, refDecorator, ProviderContext } from './provider';
 
-export class ModuleContext<TVars extends Record<string, string> = {}> implements CommonContext<TVars> {
+export class ModuleContext<TVars extends Record<string, string> = {}> implements ProviderContext<TVars> {
   readonly id: string
   readonly mode: 'dev' | 'prod' | 'test'
   readonly logger: Logger
@@ -23,19 +23,16 @@ export class ModuleContext<TVars extends Record<string, string> = {}> implements
   }
 }
 
-export interface ModuleOpts<TVars extends Record<string, string> = {}>  extends CommonOpts<TVars> {
+export interface ModuleOpts<TVars extends Record<string, string> = {}>  extends ProviderOpts<TVars> {
   plugins?: Function[]
-  providers?: Function[]
 }
 
-export class ModuleMeta<TVars extends Record<string, string> = {}> extends CommonMeta<TVars> {
+export class ModuleMeta<TVars extends Record<string, string> = {}> extends ProviderMeta<TVars> {
   readonly plugins: PluginMeta[]
-  readonly providers: ProviderMeta[]
 
   constructor(type: Function, opts: ModuleOpts<TVars>) {
     super(type, opts)
     this.plugins = (opts.plugins || []).map(type => getClassMeta('plugin', type))
-    this.providers = (opts.providers || []).map(type => getClassMeta('provider', type))
   }
 
   getVars(env: Environment): TVars {

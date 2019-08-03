@@ -1,9 +1,34 @@
 import { getApplicationRef } from './module_ref'
-import { CommonMeta, CommonContext, PREFIX, CommonOpts } from './common'
-import { refDecorator } from './di'
+import { PREFIX } from './common'
+import { getClassMeta } from './di'
 import { Logger } from './logger'
 
-export class ProviderContext<TVars extends Record<string, string> = {}> implements CommonContext<TVars> {
+export interface ProviderOpts<TVars extends Record<string, string> = {}> {
+  name: string
+  providers?: Function[]
+  vars?: TVars
+}
+
+const nameRegex = /^[\w-]{2,32}$/
+
+export class ProviderMeta<TVars extends Record<string, string> = {}> {
+  readonly name: string
+  readonly vars: TVars
+  readonly providers: ProviderMeta[]
+
+  constructor(
+    readonly type: Function,
+    {name, vars, providers}: ProviderOpts<TVars>
+  ) {
+    if (typeof this.type !== 'function') throw new Error('Invalid type')
+    if (!nameRegex.test(name)) throw new Error('Invalid module name')
+    this.name = name
+    this.vars = typeof vars === 'object' && vars ? vars : {} as TVars
+    this.providers = (providers || []).map(type => getClassMeta('provider', type))
+  }
+}
+
+export class ProviderContext<TVars extends Record<string, string> = {}> {
   readonly id: string
   readonly mode: 'dev' | 'prod' | 'test'
   readonly logger: Logger
@@ -18,11 +43,16 @@ export class ProviderContext<TVars extends Record<string, string> = {}> implemen
   }
 }
 
-export type ProviderOpts<TVars extends Record<string, string> = {}> = CommonOpts<TVars>
-
-export class ProviderMeta<TVars extends Record<string, string> = {}> extends CommonMeta<TVars> {
-  constructor(type: Function, opts: ProviderOpts<TVars>) {
-    super(type, opts)
+export function refDecorator<TVars extends Record<string, string>, TOpts extends ProviderOpts<TVars> = ProviderOpts<TVars>>(
+  ref: 'provider' | 'module' | 'plugin',
+  metaCtor: { new (ref: Function, opts: TOpts): ProviderMeta<TVars> }
+): (opts: TOpts) => ClassDecorator {
+  return opts => {
+    return target => {
+      const meta = new metaCtor(target, opts)
+      Reflect.defineMetadata(`${PREFIX}:ref`, ref, target)
+      Reflect.defineMetadata(`${PREFIX}:${ref}`, meta, target)
+    }
   }
 }
 
