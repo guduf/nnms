@@ -15,42 +15,44 @@ export function bootstrapPlugins(container: ContainerInstance, plugins: PluginMe
 
 export async function bootstrapModule(logger: Logger, meta: ModuleMeta): Promise<void> {
   logger.debug(`bootstrap module '${meta.name}'`)
-  const moduleContainer = Container.of(meta)
-  let mod: { init?: () => Promise<void> }
-  moduleContainer.set({type: ModuleContext, value: meta.buildContext(moduleContainer)})
+  const container = Container.of(meta)
+  container.set({type: ModuleContext, value: meta.buildContext(container)})
   try {
-    mod = moduleContainer.get(meta.type)
-    if (typeof mod.init === 'function') await mod.init()
+    const mod = container.get(meta.type) as { init?: Promise<void> }
+    if (!(mod instanceof meta.type)) throw new Error('invalid module instance')
+    if (mod.init instanceof Promise) await mod.init
+    logger.info(`module '${meta.name}' is ready`)
   } catch (catched) {
-    const err = new ErrorWithCatch(`module init failed`, catched)
+    const err = new ErrorWithCatch(`module '${meta.name}'init failed`, catched)
     logger.error(err.message, err.catched)
     throw err
   }
-  if (!(mod instanceof meta.type)) throw new Error('Invalid module instance')
-  moduleContainer.set({type: ModuleMeta, value: meta})
-  meta.plugins.map(pluginMeta => moduleContainer.get(pluginMeta.type))
-}
-
-export function bootstrapProviders(logger: Logger, providers: ProviderMeta[]): () => Promise<void> {
-  const hooks = [] as (() => void)[]
-  const metas = [] as ProviderMeta[]
-  for (const meta of providers) {
-    if (!(meta instanceof ProviderMeta)) throw new Error('Invalid provider')
-    logger.debug(`bootstrap provider '${meta.name}'`)
-    metas.push(meta)
-    let provider: { onInit?: () => void }
+  await Promise.all(meta.plugins.map(async (pluginMeta) => {
     try {
-      provider = Container.get(meta.type)
+      const plugin = container.get(pluginMeta.type) as { init?: Promise<void> }
+      if (!(plugin instanceof pluginMeta.type)) throw new Error('invalid plugin instance')
+      if (plugin.init instanceof Promise) await plugin.init
+      logger.info(`plugin '${pluginMeta.name}' of module '${meta.name}' is ready`)
     } catch (catched) {
-      const err = new ErrorWithCatch(`provider construct failed`, catched)
+      const err = new ErrorWithCatch(`plugin init failed`, catched)
       logger.error(err.message, err.catched)
       throw err
     }
-    if (typeof provider.onInit === 'function') hooks.push(() => (
-      () => (provider as { onInit: () => void }).onInit()
-    ))
+  }))
+}
+
+export async function bootstrapProvider(logger: Logger, meta: ProviderMeta): Promise<void> {
+  logger.debug(`bootstrap provider '${meta.name}'`)
+  let provider: { init?: Promise<void> }
+  try {
+    provider = Container.get(meta.type)
+    if (provider.init instanceof Promise) await provider.init
+    logger.info(`provider '${meta.name}' is ready`)
+  } catch (catched) {
+    const err = new ErrorWithCatch(`provider init failed`, catched)
+    logger.error(err.message, err.catched)
+    throw err
   }
-  return () => Promise.all(hooks.map(hook => hook())).then(() => { })
 }
 
 export async function bootstrap(
@@ -59,9 +61,9 @@ export async function bootstrap(
 ): Promise<void> {
   try {
     const appRef = new ApplicationContext(opts.name, opts.loggerTransports)
-    appRef.logger.info(`application started`)
+    appRef.logger.info(`bootstrap application`)
     if (Container.has(ApplicationContext as any)) {
-      throw new Error('Container has another ApplicationRef setted')
+      throw new Error('global container has another ApplicationRef')
     }
     Container.set({type: ApplicationContext, global: true, value: appRef})
     const metas = mods.reduce((acc, modType) => {
@@ -78,12 +80,14 @@ export async function bootstrap(
           ), acc.providers)
       }
     }, { mods: [] as ModuleMeta[], providers: [] as ProviderMeta[] })
-    const hook = bootstrapProviders(appRef.logger, metas.providers)
+    await Promise.all(metas.providers.map(prov => bootstrapProvider(appRef.logger, prov)))
     await Promise.all(metas.mods.map(mod => bootstrapModule(appRef.logger, mod)))
-    await hook()
-    appRef.logger.info('application ready', {
+    appRef.logger.info('application is ready', {
       providers: metas.providers.map(({name}) => name),
-      modules: metas.mods.map(({name}) => name)
+      modules: metas.mods.reduce((acc, {name, plugins}) => ({
+        ...acc,
+        [name]: plugins.map(plugin => plugin.name)
+      }), {})
     })
   } catch (err) {
     setImmediate(() => {

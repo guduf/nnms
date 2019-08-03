@@ -73,6 +73,8 @@ export function AfterHttpRoutes() {
   vars: HTTP_PLUGIN_VARS
 })
 export class HttpPlugin {
+  readonly init: Promise<void>
+
   constructor(
     private readonly _ctx: PluginContext<typeof HTTP_PLUGIN_VARS>,
     _http: HttpProvider
@@ -120,7 +122,7 @@ export class HttpPlugin {
       const err = new ErrorWithCatch('Failed to execute after http routes hook', catched)
       this._ctx.logger.error(err)
     }
-    _http.startServer(this._ctx.moduleMeta.name, this._ctx.vars.HTTP_PORT, app)
+    this.init = _http.startServer(this._ctx.moduleMeta.name, this._ctx.vars.HTTP_PORT, app)
   }
 
   private _registerRoute(
