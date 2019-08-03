@@ -2,7 +2,7 @@ import { Request } from 'express'
 import { Service } from 'typedi'
 import { ModuleRef, ModuleContext, bootstrap } from 'nnms'
 import { ConsoleTransport } from 'nnms-cli'
-import { HttpRoute, HttpPlugin, HttpProvider } from 'nnms-http'
+import { HttpRoute, HttpPlugin } from 'nnms-http'
 
 export interface Todo {
   id: string
@@ -70,7 +70,6 @@ export class TodoModule {
 bootstrap(
   {
     name: 'basic-example',
-    providers: [HttpProvider],
     loggerTransports: [new ConsoleTransport(console)]
   },
   TodoModule

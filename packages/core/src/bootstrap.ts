@@ -25,9 +25,7 @@ export function bootstrapPlugins(logger: Logger, moduleId: string, plugins: Plug
   }
 }
 
-export async function bootstrapModule(logger: Logger, type: Function): Promise<void> {
-  const meta = getClassMeta('module', type)
-  if (!(meta instanceof ModuleMeta)) throw new Error('Invalid module')
+export async function bootstrapModule(logger: Logger, meta: ModuleMeta): Promise<void> {
   logger.debug(`bootstrap module '${meta.name}'`)
   const ctx = new ModuleContext(meta)
   const moduleContainer = Container.of(ctx.id)
@@ -45,21 +43,22 @@ export async function bootstrapModule(logger: Logger, type: Function): Promise<v
   bootstrapPlugins(logger, ctx.id, meta.plugins)
 }
 
-export function bootstrapProviders(logger: Logger, providers: Function[]): () => Promise<void> {
+export function bootstrapProviders(logger: Logger, providers: ProviderMeta[]): () => Promise<void> {
   const hooks = [] as (() => void)[]
-  for (const type of providers) {
-    const meta = getClassMeta('provider', type)
+  const metas = [] as ProviderMeta[]
+  for (const meta of providers) {
     if (!(meta instanceof ProviderMeta)) throw new Error('Invalid provider')
     logger.debug(`bootstrap provider '${meta.name}'`)
-    const providerCtx = new ProviderContext(meta)
-    const providerContainer = Container.of(providerCtx.id)
-    providerContainer.set(ProviderContext, providerCtx)
+    metas.push(meta)
+    const ctx = new ProviderContext(meta)
+    const container = Container.of(ctx.id)
+    container.set(ProviderContext, ctx)
     let provider: { onInit?: () => void }
     try {
-      provider = providerContainer.get(meta.type)
+      provider = container.get(meta.type)
     } catch (catched) {
       const err = new ErrorWithCatch(`provider construct failed`, catched)
-      providerCtx.logger.error(err.message, err.catched)
+      ctx.logger.error(err.message, err.catched)
       throw err
     }
     if (typeof provider.onInit === 'function') hooks.push(() => (
@@ -68,20 +67,38 @@ export function bootstrapProviders(logger: Logger, providers: Function[]): () =>
   }
   return () => Promise.all(hooks.map(hook => hook())).then(() => { })
 }
+
 export async function bootstrap(
-  opts: { name: string, providers?: Function[], loggerTransports?: Transport[] },
+  opts: { name: string, loggerTransports?: Transport[] },
   ...mods: Function[]
 ): Promise<void> {
   try {
     const appRef = new ApplicationContext(opts.name, opts.loggerTransports)
-    appRef.logger.debug(`bootstrap application '${appRef.name}'`)
+    appRef.logger.info(`application started`)
     if (Container.has(ApplicationContext as any)) {
       throw new Error('Container has another ApplicationRef setted')
     }
     Container.set({type: ApplicationContext, global: true, value: appRef})
-    const hook = opts.providers ? bootstrapProviders(appRef.logger, opts.providers) : async () => { }
-    await Promise.all(mods.map(mod => bootstrapModule(appRef.logger, mod)))
+    const metas = mods.reduce((acc, mod) => {
+      const modMeta = getClassMeta<ModuleMeta>('module', mod)
+      return {
+        mods: acc.mods.includes(modMeta) ? acc.mods : [...acc.mods, modMeta],
+        providers: modMeta.plugins
+          .reduce((pluginAcc, pluginMeta) => (
+            [...pluginAcc, ...pluginMeta.providers]
+          ), modMeta.providers)
+          .reduce((provAcc, provMeta) => (
+            provAcc.includes(provMeta) ? provAcc : [...provAcc, provMeta]
+          ), acc.providers)
+      }
+    }, { mods: [] as ModuleMeta[], providers: [] as ProviderMeta[] })
+    const hook = bootstrapProviders(appRef.logger, metas.providers)
+    await Promise.all(metas.mods.map(mod => bootstrapModule(appRef.logger, mod)))
     await hook()
+    appRef.logger.info('application ready', {
+      providers: metas.providers.map(({name}) => name),
+      modules: metas.mods.map(({name}) => name)
+    })
   } catch (err) {
     setImmediate(() => {
       console.error(err)

@@ -6,6 +6,7 @@ import { getClassMeta, refDecorator } from './di'
 import Environment from './environment'
 import Logger from './logger'
 import { PluginMeta } from './plugin_ref'
+import { ProviderMeta } from './provider';
 
 export class ModuleContext<TVars extends Record<string, string> = {}> implements CommonContext<TVars> {
   readonly id: string
@@ -24,14 +25,17 @@ export class ModuleContext<TVars extends Record<string, string> = {}> implements
 
 export interface ModuleOpts<TVars extends Record<string, string> = {}>  extends CommonOpts<TVars> {
   plugins?: Function[]
+  providers?: Function[]
 }
 
 export class ModuleMeta<TVars extends Record<string, string> = {}> extends CommonMeta<TVars> {
   readonly plugins: PluginMeta[]
+  readonly providers: ProviderMeta[]
 
   constructor(type: Function, opts: ModuleOpts<TVars>) {
     super(type, opts)
     this.plugins = (opts.plugins || []).map(type => getClassMeta('plugin', type))
+    this.providers = (opts.providers || []).map(type => getClassMeta('provider', type))
   }
 
   getVars(env: Environment): TVars {

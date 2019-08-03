@@ -5,7 +5,6 @@ import Transport from 'winston-transport'
 
 export interface ApplicationOpts {
   name: string
-  providers?: Function[],
   loggerTransports?: Transport[]
 }
 
