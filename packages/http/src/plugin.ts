@@ -77,7 +77,7 @@ export class HttpPlugin {
     private readonly _ctx: PluginContext<typeof HTTP_PLUGIN_VARS>,
     _http: HttpProvider
   ) {
-    const methods = this._ctx.methods.reduce((acc, method) => ({
+    const methods = this._ctx.moduleMethods.reduce((acc, method) => ({
       before: (
         method.meta instanceof HttpHookMeta && method.meta.kind === 'before' ? method.func : acc.before
       ),
@@ -120,7 +120,7 @@ export class HttpPlugin {
       const err = new ErrorWithCatch('Failed to execute after http routes hook', catched)
       this._ctx.logger.error(err)
     }
-    _http.startServer(this._ctx.moduleId, this._ctx.vars.HTTP_PORT, app)
+    _http.startServer(this._ctx.moduleMeta.name, this._ctx.vars.HTTP_PORT, app)
   }
 
   private _registerRoute(

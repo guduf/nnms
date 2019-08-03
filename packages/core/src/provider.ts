@@ -1,7 +1,6 @@
-import { getApplicationRef } from './module_ref'
-import { PREFIX } from './common'
-import { getClassMeta } from './di'
+import { PREFIX, getApplicationRef } from './common'
 import { Logger } from './logger'
+import Container, { ContainerInstance } from 'typedi';
 
 export interface ProviderOpts<TVars extends Record<string, string> = {}> {
   name: string
@@ -18,42 +17,44 @@ export class ProviderMeta<TVars extends Record<string, string> = {}> {
 
   constructor(
     readonly type: Function,
-    {name, vars, providers}: ProviderOpts<TVars>
+    {name, providers, vars}: ProviderOpts<TVars>
   ) {
     if (typeof this.type !== 'function') throw new Error('Invalid type')
     if (!nameRegex.test(name)) throw new Error('Invalid module name')
     this.name = name
     this.vars = typeof vars === 'object' && vars ? vars : {} as TVars
-    this.providers = (providers || []).map(type => getClassMeta('provider', type))
+    this.providers = (providers || []).map(depType => {
+      const paramMeta = Reflect.getMetadata(`${PREFIX}:provider`, depType)
+      if (!(paramMeta instanceof ProviderMeta)) throw new Error('Invalid dep')
+      return paramMeta
+    })
   }
-}
 
-export class ProviderContext<TVars extends Record<string, string> = {}> {
-  readonly id: string
-  readonly mode: 'dev' | 'prod' | 'test'
-  readonly logger: Logger
-  readonly vars: { readonly [P in keyof TVars]: string }
+  inject(_: ContainerInstance): any {
+    return Container.get(this.type)
+  }
 
-  constructor(meta: ProviderMeta<TVars>) {
+  injectContext(_: ContainerInstance): ProviderContext {
     const {env, logger} = getApplicationRef()
-    this.id = `${PREFIX}:module:${meta.name}`
-    this.mode = env.isProduction ? 'prod' : 'dev'
-    this.logger = logger.extend(meta.name)
-    this.vars = env.extract(meta.vars, meta.name.toUpperCase())
-  }
-}
-
-export function refDecorator<TVars extends Record<string, string>, TOpts extends ProviderOpts<TVars> = ProviderOpts<TVars>>(
-  ref: 'provider' | 'module' | 'plugin',
-  metaCtor: { new (ref: Function, opts: TOpts): ProviderMeta<TVars> }
-): (opts: TOpts) => ClassDecorator {
-  return opts => {
-    return target => {
-      const meta = new metaCtor(target, opts)
-      Reflect.defineMetadata(`${PREFIX}:ref`, ref, target)
-      Reflect.defineMetadata(`${PREFIX}:${ref}`, meta, target)
+    return {
+      id: `${PREFIX}:provider:${this.name}`,
+      meta: this,
+      mode: env.isProduction ? 'prod' : 'dev',
+      logger: logger.extend(this.name),
+      vars: env.extract(this.vars, this.name.toUpperCase())
     }
   }
 }
 
-export const ProviderRef = refDecorator('provider', ProviderMeta)
+export abstract class ProviderContext<TVars extends Record<string, string> = {}> {
+  readonly id: string
+  readonly meta: ProviderMeta<TVars>
+  readonly mode: 'dev' | 'prod' | 'test'
+  readonly logger: Logger
+  readonly vars: { readonly [P in keyof TVars]: string }
+
+  protected constructor() {
+    throw new Error('context cannot be injected without handler')
+  }
+}
+

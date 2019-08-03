@@ -1,46 +1,34 @@
-import Container from 'typedi'
+import Container, { ContainerInstance } from 'typedi'
 import Transport from 'winston-transport'
 
 import { ApplicationContext } from './application_ref'
-import { getClassMeta } from './di'
 import { ErrorWithCatch } from './errors'
 import { ModuleMeta, ModuleContext } from './module_ref'
-import { PluginMeta, PluginContext } from './plugin_ref'
-import { ProviderMeta, ProviderContext } from './provider'
+import { PluginMeta } from './plugin_ref'
+import { ProviderMeta } from './provider'
 import Logger from './logger';
+import { PREFIX } from './common';
 
-export function bootstrapPlugins(logger: Logger, moduleId: string, plugins: PluginMeta[]) {
-  for (const meta of plugins) {
-    logger.debug(`bootstrap plugin '${meta.name}' for module '${moduleId.split(':')[2]}'`)
-    const ctx = new PluginContext(moduleId, meta)
-    const container = Container.of(ctx.id)
-    container.set(PluginContext, ctx)
-    try {
-      container.get(meta.type)
-    } catch (catched) {
-      const err = new ErrorWithCatch(`plugin construct failed`, catched)
-      ctx.logger.error(err.message, err.catched)
-      throw err
-    }
-  }
+export function bootstrapPlugins(container: ContainerInstance, plugins: PluginMeta[]) {
+  plugins.map(pluginMeta => container.get(pluginMeta.type))
 }
 
 export async function bootstrapModule(logger: Logger, meta: ModuleMeta): Promise<void> {
   logger.debug(`bootstrap module '${meta.name}'`)
-  const ctx = new ModuleContext(meta)
-  const moduleContainer = Container.of(ctx.id)
-  moduleContainer.set(ModuleContext, ctx)
+  const moduleContainer = Container.of(meta)
   let mod: { init?: () => Promise<void> }
+  moduleContainer.set({type: ModuleContext, value: meta.buildContext(moduleContainer)})
   try {
     mod = moduleContainer.get(meta.type)
     if (typeof mod.init === 'function') await mod.init()
   } catch (catched) {
     const err = new ErrorWithCatch(`module init failed`, catched)
-    ctx.logger.error(err.message, err.catched)
+    logger.error(err.message, err.catched)
     throw err
   }
   if (!(mod instanceof meta.type)) throw new Error('Invalid module instance')
-  bootstrapPlugins(logger, ctx.id, meta.plugins)
+  moduleContainer.set({type: ModuleMeta, value: meta})
+  meta.plugins.map(pluginMeta => moduleContainer.get(pluginMeta.type))
 }
 
 export function bootstrapProviders(logger: Logger, providers: ProviderMeta[]): () => Promise<void> {
@@ -50,15 +38,12 @@ export function bootstrapProviders(logger: Logger, providers: ProviderMeta[]): (
     if (!(meta instanceof ProviderMeta)) throw new Error('Invalid provider')
     logger.debug(`bootstrap provider '${meta.name}'`)
     metas.push(meta)
-    const ctx = new ProviderContext(meta)
-    const container = Container.of(ctx.id)
-    container.set(ProviderContext, ctx)
     let provider: { onInit?: () => void }
     try {
-      provider = container.get(meta.type)
+      provider = Container.get(meta.type)
     } catch (catched) {
       const err = new ErrorWithCatch(`provider construct failed`, catched)
-      ctx.logger.error(err.message, err.catched)
+      logger.error(err.message, err.catched)
       throw err
     }
     if (typeof provider.onInit === 'function') hooks.push(() => (
@@ -79,8 +64,9 @@ export async function bootstrap(
       throw new Error('Container has another ApplicationRef setted')
     }
     Container.set({type: ApplicationContext, global: true, value: appRef})
-    const metas = mods.reduce((acc, mod) => {
-      const modMeta = getClassMeta<ModuleMeta>('module', mod)
+    const metas = mods.reduce((acc, modType) => {
+      const modMeta = Reflect.getMetadata(`${PREFIX}:module`, modType)
+      if (!(modMeta instanceof ModuleMeta)) throw new Error('invalid module')
       return {
         mods: acc.mods.includes(modMeta) ? acc.mods : [...acc.mods, modMeta],
         providers: [...modMeta.plugins, ...modMeta.providers]

@@ -1,43 +1,41 @@
-import { PREFIX } from './common'
-import { Container } from 'typedi'
-import { getPluginMeta } from './di'
-import { ModuleContext } from './module_ref'
-import { Logger } from './logger'
-import { ProviderMeta, refDecorator, ProviderContext } from './provider'
+import { PREFIX, getPluginMeta } from './common'
+import { ContainerInstance } from 'typedi'
+import { ModuleMeta, ModuleContext } from './module_ref'
+import { ProviderMeta, ProviderContext } from './provider'
 
-export class PluginContext<TVars extends Record<string, string> = {}, TInstance = any> implements ProviderContext<TVars> {
-  readonly id: string
-  readonly mode: 'dev' | 'prod' | 'test'
-  readonly logger: Logger
-  readonly vars: { readonly [P in keyof TVars]: string }
-  readonly instance: TInstance
-  readonly methods: { meta: unknown, func: Function }[]
+export abstract class PluginContext<TVars extends Record<string, string> = {}, T = {}> extends ProviderContext<TVars> {
+  readonly meta: PluginMeta<TVars>
+  readonly moduleMeta: ModuleMeta
+  readonly moduleInstance: T
+  readonly moduleMethods: { meta: unknown, func: Function }[]
+}
 
-  constructor(readonly moduleId: string, readonly meta: PluginMeta<TVars>) {
-    const {ctx: {mode, vars, logger, meta: modMeta}, instance} = this._getModule(moduleId)
-    this.id = `${PREFIX}:module:${modMeta.name}:plugin:${meta.name}`
-    this.mode = mode
-    this.logger = logger.extend(meta.name)
-    this.vars = vars
-    this.instance = instance
-    const methodMetas = getPluginMeta(this.meta.name, instance)
-    this.methods = Object.keys(methodMetas).reduce((acc, key) => [
-      ...acc,
-      {meta: methodMetas[key], func: (instance as any)[key].bind(instance)}
-    ], [] as { meta: unknown, func: Function }[])
+export class PluginMeta<TVars extends Record<string, string> = {}> extends ProviderMeta<TVars> {
+  inject(): any {
+    throw new Error(`plugin '${this.name}' cannot be injected`)
   }
 
-  private _getModule(moduleId: string): { ctx: ModuleContext<TVars>, instance: TInstance } {
-    const modContainer = Container.of(moduleId)
-    if (!modContainer.has(ModuleContext as any)) throw new Error('Missing Module Context')
-    const ctx = modContainer.get(ModuleContext) as ModuleContext<TVars>
-    if (!(ctx instanceof ModuleContext)) throw new Error('Invalid Module Context')
-    const instance = modContainer.get(ctx.meta.type) as TInstance
-    if (!(instance instanceof ctx.meta.type)) throw new Error('Invalid instance')
-    return {ctx, instance}
+  injectContext<T>(container: ContainerInstance): PluginContext<TVars, T> {
+    if (!(container.id instanceof ModuleMeta)) throw new Error('container is not module scoped')
+    if (!container.has(ModuleContext as any)) throw new Error('container has no module context')
+    const modCtx = container.get(ModuleContext as any) as ModuleContext<TVars>
+    if (!container.has(modCtx.meta.type)) throw new Error('container has no module instance')
+    const moduleInstance = container.get(modCtx.meta.type) as T
+    const methodMetas = getPluginMeta(this.name, moduleInstance as any)
+    const moduleMethods = Object.keys(methodMetas).reduce((acc, key) => [
+      ...acc,
+      {meta: methodMetas[key], func: (moduleInstance as any)[key].bind(moduleInstance)}
+    ], [] as { meta: unknown, func: Function }[])
+    return {
+      id: `${PREFIX}:module:${this.name}`,
+      meta: this,
+      mode: modCtx.mode,
+      logger: modCtx.logger.extend(this.name),
+      vars: modCtx.vars,
+      moduleMeta: modCtx.meta,
+      moduleMethods,
+      moduleInstance
+    }
   }
 }
 
-export class PluginMeta<TVars extends Record<string, string> = {}> extends ProviderMeta<TVars> { }
-
-export const PluginRef = refDecorator('plugin', PluginMeta)

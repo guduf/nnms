@@ -1,6 +1,9 @@
 import 'reflect-metadata'
 import { Container, ContainerInstance } from 'typedi'
-import { PREFIX } from './common';
+import { PREFIX } from './common'
+import { ProviderMeta, ProviderOpts, ProviderContext } from './provider'
+import { PluginMeta } from './plugin_ref'
+import { ModuleMeta } from './module_ref'
 
 export type RefKind = 'module' | 'plugin' | 'provider'
 
@@ -18,9 +21,9 @@ export function refParams(container: ContainerInstance, type: Function): any[] {
   })
 }
 
-export function getClassMeta<T>(refKind: RefKind, target: Function): T {
+export function getClassMeta<T>(refKind: RefKind, target: Function): T | null {
   if (typeof target !== 'function') throw new TypeError('target is not a function')
-  return Reflect.getMetadata(`${PREFIX}:${refKind}`, target)
+  return Reflect.getMetadata(`${PREFIX}:${refKind}`, target) || null
 }
 
 export function pluginDecorator(
@@ -34,14 +37,41 @@ export function pluginDecorator(
   }
 }
 
-export function getPluginMeta<T>(
-  pluginName: string,
-  instance: {}
-): { [prop: string]: T } {
-  const proto = Object.getPrototypeOf(instance)
-  return Object.getOwnPropertyNames(proto).reduce((acc, prop) => {
-    if (prop === 'constructor') return acc
-    const meta = Reflect.getMetadata(`${PREFIX}:${pluginName}`, proto, prop)
-    return {...acc, ...(meta ? {[prop]: meta} : {})}
-  }, {} as { [prop: string]: T })
+
+export function refDecorator<TVars extends Record<string, string>, TOpts extends ProviderOpts<TVars> = ProviderOpts<TVars>>(
+  ref: 'provider' | 'module' | 'plugin',
+  metaType: { new (ref: Function, opts: TOpts): ProviderMeta<TVars> }
+): (opts: TOpts) => ClassDecorator {
+  return opts => {
+    return type => {
+      const meta = new metaType(type, opts)
+      Reflect.defineMetadata(`${PREFIX}:ref`, ref, type)
+      Reflect.defineMetadata(`${PREFIX}:${ref}`, meta, type)
+      const paramTypes = Reflect.getMetadata('design:paramtypes', type) as any[] || []
+      paramTypes
+        .map((paramType, index) =>  {
+          if (
+            typeof paramType !== 'function' ||
+            Container.handlers.find(handler => handler.object === type && handler.index === index)
+          ) return null
+          if (
+            paramType === ProviderContext ||
+            Object.getPrototypeOf( paramType) === ProviderContext
+          ) return (container: ContainerInstance) => meta.injectContext(container)
+          const paramMeta = Reflect.getMetadata(`${PREFIX}:provider`, paramType)
+          if (paramMeta instanceof ProviderMeta) return (
+            (container: ContainerInstance) => paramMeta.inject(container)
+          )
+          return null
+        })
+        .forEach((value, index) => {
+          if (!value) return
+          Container.registerHandler({object: type, index, value})
+        })
+    }
+  }
 }
+
+export const ProviderRef = refDecorator('provider', ProviderMeta)
+export const PluginRef = refDecorator('plugin', PluginMeta)
+export const ModuleRef = refDecorator('module', ModuleMeta)
