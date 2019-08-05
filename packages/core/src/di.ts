@@ -2,8 +2,7 @@ import 'reflect-metadata'
 import { Container, ContainerInstance } from 'typedi'
 import { PREFIX } from './common'
 import { ProviderMeta, ProviderOpts, ProviderContext } from './provider'
-import { PluginMeta } from './plugin_ref'
-import { ModuleMeta } from './module_ref'
+import { ModuleMeta, PluginMeta } from './module_ref'
 
 export type RefKind = 'module' | 'plugin' | 'provider'
 

@@ -3,8 +3,7 @@ import Transport from 'winston-transport'
 
 import { ApplicationContext } from './application_ref'
 import { ErrorWithCatch } from './errors'
-import { ModuleMeta, ModuleContext } from './module_ref'
-import { PluginMeta } from './plugin_ref'
+import { ModuleMeta, ModuleContext, PluginMeta } from './module_ref'
 import { ProviderMeta } from './provider'
 import Logger from './logger';
 import { PREFIX } from './common';

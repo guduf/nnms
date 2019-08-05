@@ -1,8 +1,43 @@
-import { PREFIX, getApplicationRef } from './common'
+import { PREFIX, getApplicationRef, getPluginMeta } from './common'
 import Environment from './environment'
-import { PluginMeta } from './plugin_ref'
 import { ProviderMeta, ProviderOpts, ProviderContext } from './provider'
 import Container, { ContainerInstance } from 'typedi'
+
+export abstract class PluginContext<TVars extends Record<string, string> = {}, T = {}> extends ProviderContext<TVars> {
+  readonly meta: PluginMeta<TVars>
+  readonly moduleMeta: ModuleMeta
+  readonly moduleInstance: T
+  readonly moduleMethods: { prop: string, meta: unknown, func: (...args: any[]) => Promise<unknown> }[]
+}
+
+export class PluginMeta<TVars extends Record<string, string> = {}> extends ProviderMeta<TVars> {
+  inject(): any {
+    throw new Error(`plugin '${this.name}' cannot be injected`)
+  }
+
+  injectContext<T>(container: ContainerInstance): PluginContext<TVars, T> {
+    if (!(container.id instanceof ModuleMeta)) throw new Error('container is not module scoped')
+    if (!container.has(ModuleContext as any)) throw new Error('container has no module context')
+    const modCtx = container.get(ModuleContext as any) as ModuleContext<TVars>
+    if (!container.has(modCtx.meta.type)) throw new Error('container has no module instance')
+    const moduleInstance = container.get(modCtx.meta.type) as T
+    const methodMetas = getPluginMeta(this.name, moduleInstance as any)
+    const moduleMethods = Object.keys(methodMetas).reduce((acc, prop) => [
+      ...acc,
+      {prop, meta: methodMetas[prop], func: (moduleInstance as any)[prop].bind(moduleInstance)}
+    ], [] as { prop: string, meta: unknown, func: (...args: any[]) => Promise<unknown> }[])
+    return {
+      id: `${PREFIX}:module:${this.name}`,
+      meta: this,
+      mode: modCtx.mode,
+      logger: modCtx.logger.extend(this.name),
+      vars: modCtx.vars,
+      moduleMeta: modCtx.meta,
+      moduleMethods,
+      moduleInstance
+    }
+  }
+}
 
 export interface ModuleOpts<TVars extends Record<string, string> = {}>  extends ProviderOpts<TVars> {
   plugins?: Function[]
@@ -62,4 +97,3 @@ export class ModuleMeta<TVars extends Record<string, string> = {}> extends Provi
     return env.extract({...pluginsVarsTpl, ...this.vars}, prefix)
   }
 }
-

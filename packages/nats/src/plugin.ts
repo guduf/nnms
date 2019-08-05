@@ -21,15 +21,15 @@ export function NatsSubscriber(
   return pluginDecorator('nats', meta)
 }
 
-@PluginRef({name: 'nats'})
+@PluginRef('nats')
 export class NatsPlugin {
   constructor(
     ctx: PluginContext,
     nats: NatsProvider
   ) {
-    for (const {meta, func} of ctx.methods) {
+    for (const {meta, func} of ctx.moduleMethods) {
       if (!(meta instanceof NatsSubscriberMeta)) throw new Error('Invalid meta')
-      nats.watch(`${ctx.moduleId.split(':')[2]}.${meta.subjectSuffix}`).subscribe(e => func(e))
+      nats.watch(`${ctx.moduleMeta.name}.${meta.subjectSuffix}`).subscribe(e => func(e))
     }
   }
 }
