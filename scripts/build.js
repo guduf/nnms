@@ -109,12 +109,23 @@ async function build(pkgName, tmpPath, opts) {
   if (!opts.skipInstall) await install(tarballPath)
 }
 
+function clean(tmpPath) {
+  console.log(`🧹 Clean '${tmpPath}'`)
+  return p(rimraf)(tmpPath)
+}
+
 (async () => {
   const {targets, options} = argv.run()
   for (const target of targets) {
     const tmpPath = path.join(process.cwd(), `tmp/build/${Date.now()}`)
-    try { await build(target, tmpPath, options) } catch (err) { console.error(`❗️ Build failed: ${err}`) }
-    console.log(`🧹 Clean '${tmpPath}'`)
-    p(rimraf)(tmpPath)
+    try {
+      await build(target, tmpPath, options)
+    } catch (err) {
+      console.error(`❗️ Build failed: ${err}`)
+      clean(tmpPath)
+      setImmediate(() => process.exit(1))
+      break
+    }
+    clean(tmpPath)
   }
 })().catch(console.error)

@@ -1,5 +1,6 @@
 export * from './application_ref'
 export * from './bootstrap'
+export * from './common'
 export * from './di'
 export * from './environment'
 export * from './errors'

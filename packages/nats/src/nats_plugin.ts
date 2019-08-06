@@ -1,6 +1,6 @@
-import { PluginRef, PluginContext, pluginDecorator } from 'nnms'
+import { PluginRef, PluginContext, pluginMethodDecorator } from 'nnms'
 
-import { NatsProvider } from './provider'
+import { NatsProvider } from './nats_provider'
 
 export interface NatsSubscriberOpts {
   subjectSuffix: string
@@ -18,7 +18,7 @@ export function NatsSubscriber(
   subjectSuffix: string
 ) {
   const meta = new NatsSubscriberMeta({subjectSuffix})
-  return pluginDecorator('nats', meta)
+  return pluginMethodDecorator('nats', meta)
 }
 
 @PluginRef('nats')

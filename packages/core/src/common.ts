@@ -13,14 +13,14 @@ export function getApplicationRef(): ApplicationContext {
   return appRef
 }
 
-export function getPluginMeta<T>(
+export function getMethodPluginMetas<T>(
   pluginName: string,
   instance: {}
 ): { [prop: string]: T } {
   const proto = Object.getPrototypeOf(instance)
   return Object.getOwnPropertyNames(proto).reduce((acc, prop) => {
     if (prop === 'constructor') return acc
-    const meta = Reflect.getMetadata(`${PREFIX}:${pluginName}`, proto, prop)
+    const meta = Reflect.getMetadata(`${PREFIX}:plugin:${pluginName}`, proto, prop)
     return {...acc, ...(meta ? {[prop]: meta} : {})}
   }, {} as { [prop: string]: T })
 }

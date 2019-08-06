@@ -2,7 +2,6 @@ import { Client, connect, NatsError, REQ_TIMEOUT } from 'nats'
 import { ProviderRef, ProviderContext, ErrorWithCatch } from 'nnms'
 import { Service } from 'typedi'
 import { Observable } from 'rxjs'
-import { ModuleProxyMessage } from './eventbus';
 
 const NATS_VARS = {
   URL: 'nats://localhost:4222'
@@ -53,10 +52,16 @@ export class NatsProvider {
     })
   }
 
-  async subscribeRequest(subject: string, handler: (args: unknown[]) => any): Promise<number> {
-    return this._client.subscribe(subject, async (e: ModuleProxyMessage, replyTo: string) => {
-      const res = await handler(e.args)
-      this._client.publish(replyTo, res);
+  async subscribeRequest<T>(subject: string, handler: (e: T) => any): Promise<number> {
+    return this._client.subscribe(subject, async (e: T, replyTo: string) => {
+      let result: any
+      try {
+        result = await handler(e)
+      } catch (catched) {
+        result = new NatsError(`handler for subject '${subject}' failed`, 'HANDLER_FAILURE')
+        this._ctx.logger.error(result.message, catched)
+      }
+      this._client.publish(replyTo, result);
     })
   }
 }

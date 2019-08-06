@@ -1,7 +1,7 @@
 import { ModuleRef, bootstrap } from 'nnms'
 import { ConsoleTransport } from 'nnms-cli'
 import { HttpRoute, HttpPlugin } from 'nnms-http'
-import { EventbusHandler, EventbusPlugin, Eventbus } from 'nnms-nats'
+import { EventbusHandler, EventbusPlugin, EventbusProxy } from 'nnms-nats'
 import { randomBytes } from 'crypto'
 import { Request } from 'express'
 
@@ -20,11 +20,11 @@ export class SecretModule {
   @EventbusHandler()
   decryptSecret(id: string): string {
     if (!this._secrets[id]) throw new Error('secret not found')
-    const decrypted = this._rot13(this._secrets[id])
+    const decrypted = this._decrypt(this._secrets[id])
     return decrypted
   }
 
-  private _rot13(encoded: string) {
+  private _decrypt(encoded: string) {
     return (encoded).split('').map(char => {
       if (!char.match(/[A-Za-z]/)) return char
       const c = Math.floor(char.charCodeAt(0) / 97)
@@ -40,19 +40,20 @@ export interface APIItem {
   secretId: string
 }
 
-@ModuleRef('api', {HTTP_PORT: '8082'}, HttpPlugin)
+@ModuleRef('api', {HTTP_PORT: '8082'}, HttpPlugin, EventbusPlugin)
 export class APIModule {
   items: { [id: string]: { name: string, secretId: string }}
 
   constructor(
-    private _eb: Eventbus
+    @EventbusProxy()
+    private _secretMod: SecretModule
   ) { }
 
   @HttpRoute({method: 'POST', path: '/items'})
   async createItem(req: Request): Promise<APIItem> {
     const item = req.body as Pick<APIItem, 'name' | 'secretId'>
     const id = randomBytes(16).toString('hex')
-    const decrypted = await this._eb.proxy(SecretModule, 'decryptSecret')(item.secretId)
+    const decrypted = await this._secretMod.decryptSecret(item.secretId)
     console.log(decrypted)
     return {id, ...item}
   }

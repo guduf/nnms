@@ -6,14 +6,25 @@ import { ModuleMeta, PluginMeta } from './module_ref'
 
 export type RefKind = 'module' | 'plugin' | 'provider'
 
-export function pluginDecorator(
+export function pluginMethodDecorator(
   pluginName: string,
-  meta: {} | ((prop: string) => {})
+  meta: {} | ((target: any, prop: string) => {})
 ): MethodDecorator {
   return (target, prop) => {
     if (typeof prop === 'symbol') return
-    meta = typeof meta === 'function' ? meta(prop) : meta
-    Reflect.defineMetadata(`${PREFIX}:${pluginName}`, meta, target, prop)
+    meta = typeof meta === 'function' ? meta(target, prop) : meta
+    Reflect.defineMetadata(`${PREFIX}:plugin:${pluginName}`, meta, target, prop)
+  }
+}
+
+export function pluginParamDecorator(
+  pluginName: string,
+  meta: {} | ((target: any, prop: string, index: number) => {})
+): ParameterDecorator {
+  return (target, prop, i) => {
+    if (typeof prop === 'symbol') return
+    meta = typeof meta === 'function' ? meta(target, prop, i) : meta
+    Reflect.defineMetadata(`${PREFIX}:plugin:${pluginName}`, meta, target, `constructor[${i}]`)
   }
 }
 
@@ -56,6 +67,7 @@ export function refDecorator<TVars extends Record<string, string>, TOpts extends
 export const ProviderRef = (name: string, vars = {}) => (
   refDecorator('provider', ProviderMeta)({name, vars})
 )
+
 export const PluginRef = (name: string, vars = {}) => (
   refDecorator('plugin', PluginMeta)({name, vars})
 )

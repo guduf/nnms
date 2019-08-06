@@ -1,7 +1,7 @@
 import bodyParser from 'body-parser'
 import express, { Express, Handler, IRouterMatcher, Request, Response } from 'express'
 
-import { PluginRef, PluginContext, pluginDecorator, ErrorWithCatch } from 'nnms'
+import { PluginRef, PluginContext, pluginMethodDecorator, ErrorWithCatch } from 'nnms'
 
 import { HttpProvider } from './provider'
 
@@ -50,7 +50,7 @@ export function HttpRoute(
 ) {
   const opts = typeof arg === 'object' ? typeof arg === 'string' ? {path: arg} : arg : {}
   const meta = new HttpRouteMeta(opts, middlewares)
-  return pluginDecorator('http', meta)
+  return pluginMethodDecorator('http', meta)
 }
 
 export class HttpHookMeta {
@@ -59,12 +59,12 @@ export class HttpHookMeta {
 
 export function BeforeHttpRoutes() {
   const meta = new HttpHookMeta('before')
-  return pluginDecorator('http', meta)
+  return pluginMethodDecorator('http', meta)
 }
 
 export function AfterHttpRoutes() {
   const meta = new HttpHookMeta('after')
-  return pluginDecorator('http', meta)
+  return pluginMethodDecorator('http', meta)
 }
 
 @PluginRef('http', HTTP_PLUGIN_VARS)

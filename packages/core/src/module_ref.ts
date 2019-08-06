@@ -1,13 +1,15 @@
-import { PREFIX, getApplicationRef, getPluginMeta } from './common'
+import Container, { ContainerInstance } from 'typedi'
+
+import { PREFIX, getApplicationRef, getMethodPluginMetas } from './common'
 import Environment from './environment'
 import { ProviderMeta, ProviderOpts, ProviderContext } from './provider'
-import Container, { ContainerInstance } from 'typedi'
 
 export abstract class PluginContext<TVars extends Record<string, string> = {}, T = {}> extends ProviderContext<TVars> {
   readonly meta: PluginMeta<TVars>
   readonly moduleMeta: ModuleMeta
   readonly moduleInstance: T
   readonly moduleMethods: { prop: string, meta: unknown, func: (...args: any[]) => Promise<unknown> }[]
+  readonly moduleParams: { meta: unknown, type: any, index: number }[]
 }
 
 export class PluginMeta<TVars extends Record<string, string> = {}> extends ProviderMeta<TVars> {
@@ -21,7 +23,13 @@ export class PluginMeta<TVars extends Record<string, string> = {}> extends Provi
     const modCtx = container.get(ModuleContext as any) as ModuleContext<TVars>
     if (!container.has(modCtx.meta.type)) throw new Error('container has no module instance')
     const moduleInstance = container.get(modCtx.meta.type) as T
-    const methodMetas = getPluginMeta(this.name, moduleInstance as any)
+    const paramTypes = Reflect.getMetadata('design:paramtypes', modCtx.meta.type) as any[] || []
+    const moduleParams = paramTypes.map((paramType, index) => ({
+      meta: Reflect.getMetadata(`${PREFIX}:plugin:${this.name}`, modCtx.meta.type, `constructor[${index}]`) || null,
+      type: paramType,
+      index
+    }))
+    const methodMetas = getMethodPluginMetas(this.name, moduleInstance as any)
     const moduleMethods = Object.keys(methodMetas).reduce((acc, prop) => [
       ...acc,
       {prop, meta: methodMetas[prop], func: (moduleInstance as any)[prop].bind(moduleInstance)}
@@ -34,7 +42,8 @@ export class PluginMeta<TVars extends Record<string, string> = {}> extends Provi
       vars: modCtx.vars,
       moduleMeta: modCtx.meta,
       moduleMethods,
-      moduleInstance
+      moduleInstance,
+      moduleParams
     }
   }
 }
