@@ -6,11 +6,19 @@
     "name": {"type": "string"},
     "internal": {
       "type": "array",
+      "default": [],
       "items": {"type": "string"}
     },
     "external": {
       "type": "array",
+      "default": [],
       "items": {"type": "string"}
-    }
+    },
+    "bin": {
+      "type": "array",
+      "default": [],
+      "items": {"type": "string"}
+    },
+    "additionalProperties": false
   }
 }

@@ -2,5 +2,6 @@
   "$schema": "../metaschema.json",
   "name": "cli",
   "internals": ["core"],
-  "externals": ["chalk", "moment", "js-yaml", "winston-transport"]
+  "externals": ["chalk", "moment", "js-yaml", "winston-transport", "yargs"],
+  "bin": ["nnms"]
 }

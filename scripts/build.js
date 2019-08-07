@@ -11,6 +11,13 @@ const tar = require('tar')
 const { exec } = require('child_process')
 
 argv.option({
+  name: 'skipClean',
+  type: 'boolean',
+  description: 'Skip the deletion of the tempory build directory'
+})
+
+
+argv.option({
   name: 'skipInstall',
   type: 'boolean',
   description: 'Skip the installation of the node package in the repository'
@@ -46,33 +53,35 @@ async function build(pkgName, tmpPath, opts) {
   const pkgFullName = `${PKG_BASENAME}${pkgName === 'core' ? '' : `-${pkgName}`}`
   const tsConfigPath = path.join(process.cwd(), `packages/${pkgName}/tsconfig.json`)
 
-  const tsPlugin = rollupTypescript({
-    cacheRoot: 'tmp/rts2_cache',
-    useTsconfigDeclarationDir: true,
-    typescript: ts,
-    tsconfig: tsConfigPath,
-    tsconfigOverride: {
-      compilerOptions: {
-        module: 'ES2015',
-        target: 'ES2015',
-        declaration: true,
-        declarationDir: tmpPath
+  function buildTypescriptPlugin(declarationDir) {
+    return rollupTypescript({
+      cacheRoot: 'tmp/rts2_cache',
+      useTsconfigDeclarationDir: true,
+      typescript: ts,
+      tsconfig: tsConfigPath,
+      tsconfigOverride: {
+        compilerOptions: {
+          module: 'esnext',
+          target: 'ES2015',
+          declaration: true,
+          declarationDir
+        }
       }
-    }
-  })
+    })
+  }
+
   const externals = (meta.externals || [])
   const internals = (meta.internals || []).map(internal => PKG_BASENAME + (internal === 'core' ? '' : `-${internal}`))
   const rollupOpts = {
     input: `packages/${pkgName}/src/index.ts`,
     external: ['path', ...externals, ...internals],
-    plugins: [tsPlugin]
+    plugins: [buildTypescriptPlugin(tmpPath)]
   }
-  const bundle = await rollup.rollup(rollupOpts);
-  const cjsPath = `bundles/${pkgFullName}.cjs.js`
-  const esPath = `bundles/${pkgFullName}.es.js`
+  const bundle = await rollup.rollup(rollupOpts)
+  const pathPrefix = `${tmpPath}/bundles/${pkgFullName}`
   const outputs = [
-    {file: `${tmpPath}/${cjsPath}`, format: 'cjs'},
-    {file: `${tmpPath}/${esPath}`, format: 'es'}
+    {file: `${pathPrefix}.cjs.js`, format: 'cjs'},
+    {file: `${pathPrefix}.es.js`, format: 'es'}
   ]
   for (const output of outputs) {
     console.log(`🔨 Bundle to ${output.format}`)
@@ -82,27 +91,37 @@ async function build(pkgName, tmpPath, opts) {
     ...(acc || {}),
     [dep]: rootPkg.version
   }), null)
-  const dependencies = (meta.externals || []).reduce((acc, dep) => ({
+  const dependencies = externals.reduce((acc, dep) => ({
     ...(acc || {}),
     [dep]: rootPkg.dependencies[dep]
   }), null)
+  const bin = (
+    meta.bin ?
+      meta.bin.reduce((acc, path) => ({...acc, [path]: `./bin/${path}.sh`}), {}) :
+      null
+  )
   const pkgJson = {
     name: pkgFullName,
     version,
     licence: rootPkg.licence,
     author: rootPkg.author,
     repository: rootPkg.repository,
-    main: cjsPath,
-    module: esPath,
+    main: `./bundles/${pkgFullName}.cjs.js`,
+    module: `./bundles/${pkgFullName}.es.js`,
     types: 'index.d.ts',
+    ...(bin ? {bin} : {}),
     ...(dependencies ? {dependencies} : {}),
     ...(peerDependencies ? {peerDependencies} : {})
   }
-  console.log(`🔨 Write package.json`)
-  await p(fs.writeFile)(
-    `${tmpPath}/package.json`,
-    JSON.stringify(pkgJson, null, 2) + '\n'
-  )
+  if (bin) {
+    p(fs.mkdir)(`${tmpPath}/bin`)
+    for (const key in bin) await p(fs.copyFile)(
+      path.join(process.cwd(), `packages/${pkgName}/bin/${key}.sh`),
+      `${tmpPath}/bin/${key}.sh`
+    )
+    console.log(`🔨 Copy bin`)
+  }
+  await p(fs.writeFile)(`${tmpPath}/package.json`, JSON.stringify(pkgJson, null, 2) + '\n')
   await copy(tmpPath)
   const tarballPath = `dist/${pkgFullName}-${version}.tgz`
   await package(tmpPath, tarballPath)
@@ -122,10 +141,10 @@ function clean(tmpPath) {
       await build(target, tmpPath, options)
     } catch (err) {
       console.error(`❗️ Build failed: ${err}`)
-      clean(tmpPath)
+      if (!options.skipClean) clean(tmpPath)
       setImmediate(() => process.exit(1))
       break
     }
-    clean(tmpPath)
+    if (!options.skipClean) clean(tmpPath)
   }
 })().catch(console.error)

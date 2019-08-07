@@ -1,9 +1,9 @@
 dist
 tmp
 node_modules
-example/**/*.d.ts
-example/**/*.js
-example/**/*.js.map
+examples/**/*.d.ts
+examples/**/*.js
+examples/**/*.js.map
 packages/**/*.d.ts
 packages/**/*.js
 packages/**/*.js.map
