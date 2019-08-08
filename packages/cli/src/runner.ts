@@ -1,6 +1,10 @@
 import { ModuleMeta, PREFIX, bootstrap } from 'nnms'
-import ConsoleTransport from './consoleTransport'
 import { join } from 'path'
+
+import SubjectTransport from './subject_transport'
+import { render } from 'ink'
+import { Layout } from './ui/Layout'
+import { createElement } from 'react'
 
 export async function runModules(file: string, opts = {} as { appName?: string, moduleNames?: string[] }) {
   let index = {} as { [key: string]: Function }
@@ -26,5 +30,15 @@ export async function runModules(file: string, opts = {} as { appName?: string, 
       }) :
       Object.keys(mods).map(modName => mods[modName])
   )
-  bootstrap({name: appName, loggerTransports: [new ConsoleTransport(console)]}, ...bootstrapedMods)
+  const transport = new SubjectTransport()
+  render(createElement(Layout, {transport}))
+  setTimeout(() => {
+    bootstrap(
+      {
+        name: appName,
+        loggerTransports: [transport]
+      },
+      ...bootstrapedMods
+    )
+  }, 0)
 }

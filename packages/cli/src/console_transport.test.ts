@@ -1,8 +1,9 @@
 import chalk from 'chalk'
-
 import moment from 'moment'
-import ConsoleTransport from './consoleTransport'
-import { LoggerEvent, LOGGER_LEVELS } from './logger'
+
+import { LoggerEvent, LOGGER_LEVELS } from 'nnms'
+
+import ConsoleTransport from './console_transport'
 
 test('new ConsoleTransport() should work with minimal arguments', () => {
   expect(() => new ConsoleTransport({log : () => {}})).not.toThrowError()

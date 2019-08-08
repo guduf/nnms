@@ -74,7 +74,7 @@ async function build(pkgName, tmpPath, opts) {
   const internals = (meta.internals || []).map(internal => PKG_BASENAME + (internal === 'core' ? '' : `-${internal}`))
   const rollupOpts = {
     input: `packages/${pkgName}/src/index.ts`,
-    external: ['path', ...externals, ...internals],
+    external: ['fs', 'path', ...externals, ...internals],
     plugins: [buildTypescriptPlugin(tmpPath)]
   }
   const bundle = await rollup.rollup(rollupOpts)
