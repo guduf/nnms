@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { Text, Box } from 'ink'
+import { Box } from 'ink'
 
 import { LoggerEvent } from 'nnms'
 
@@ -19,9 +19,7 @@ export function LogList(props: LogProps) {
     })
   }, [props.events, props.format])
   return (
-    <Box flexGrow={1}>
-      {texts.map((text, i) => (<Text key={i}>{text}</Text>))}
-    </Box>
+    <Box flexGrow={1}>{texts.join('\n')}</Box>
   )
 }
 

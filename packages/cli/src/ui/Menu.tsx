@@ -2,9 +2,9 @@ import React from 'react'
 
 import chalk from 'chalk'
 import SelectInput from 'ink-select-input'
-import { Box, Color } from 'ink'
+import { Box, Color, Text } from 'ink'
 
-import StyledText from './StyledText'
+import { wrapText } from './util'
 
 export interface MenuProps {
   title: string
@@ -24,7 +24,7 @@ export function Menu(props: MenuProps): React.ReactElement {
   }
   return (
     <Box flexDirection="column" width={24} paddingRight={4}>
-      <Color bgBlue><StyledText width={20} paddingX={2}>{props.title}</StyledText></Color>
+      <Text><Color bgBlue>{wrapText(props.title, 20)}</Color></Text>
       <Box width={0} height={1}></Box>
       <SelectInput items={items} onSelect={item => handleSelect(item as { value: string })}/>
     </Box>

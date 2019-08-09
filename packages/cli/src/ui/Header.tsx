@@ -1,17 +1,15 @@
 import * as React from 'react'
 
-import { Box, Color } from 'ink'
+import { Box, Color, Text } from 'ink'
 
-import StyledText from './StyledText'
-import chalk from 'chalk';
+import { useBoxWidth, wrapText } from './util'
 
 export function Header() {
+  const [ref, width] = useBoxWidth()
   return (
-    <Box width="100%" marginBottom={1}>
+    <Box ref={ref} width="100%" marginBottom={1}>
       <Color bgWhite black>
-      <StyledText width="full" paddingX={2} float="left">
-        {`${chalk.blue('N&M\'s Dashboard')}       ${chalk.bold('my-app')}`}
-      </StyledText>
+        <Text>{wrapText(wrapText('N&M\'s CLI', 24, 'left', 0) + 'title' , width || 0)}</Text>
       </Color>
     </Box>
   )
