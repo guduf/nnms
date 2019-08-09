@@ -29,7 +29,7 @@ A Module represents a entry point into a isolated scope of services. It is possi
 
 ### Plugin
 
-A Plugin represents a extension of a module. By declaring a plugin on a module, a lot of commom functionalities will become available using decorators on methods or parameter of the module class. For example, a plugin can bind a method to a http route or a broker subject.
+A Plugin represents a extension of a module. By declaring a plugin on a module, a lot of common functionalities will become available using decorators on methods or parameter of the module class. For example, a plugin can bind a method to a http route or a broker subject.
 
 ## Getting started
 
@@ -40,9 +40,9 @@ To start a N&M's project, you need to declare at least one module, then bootstra
   import { ModuleRef } from 'nnms'
   import { HttpPlugin } from 'nnms-http'
 
-  const WEB_VARS = {LOCALE: '', HTTP_PORT: 8080}
+  const WEB_VARS = {LOCALE: '', HTTP_PORT: '8080'}
 
-  @ModuleRef('web', HttpPlugin)
+  @ModuleRef('web', WEB_VARS, HttpPlugin)
   class WebModule {
     constructor(
       private readonly _ctx: ModuleContext
@@ -62,6 +62,9 @@ The first step is to declare a class decorated with `ModuleRef`.
 
 
 It is required to set a unique name (`'web'`) for the module as the first argument.
+
+
+The second argument describes the variables used by the module.
 
 
 The following arguments represents the plugins (`HttpPlugin`) bounded to the module.

@@ -19,7 +19,7 @@ export class LoggerFormat {
     const color = chalk.keyword(LOGGER_LEVELS[e.level].color)
     const dataLines = this._getDataLines(color, e.data)
     const headerLine = [
-      color(dataLines.length ? '▼': '▶'),
+      color(dataLines.length ? '▼': '►'),
       this._getTimePrefix(moment()),
       this._getLevelPrefix(e.level),
       this._getUriPrefix(e.uri),

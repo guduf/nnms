@@ -19,7 +19,7 @@ export function LogList(props: LogProps) {
     })
   }, [props.events, props.format])
   return (
-    <Box>
+    <Box flexGrow={1}>
       {texts.map((text, i) => (<Text key={i}>{text}</Text>))}
     </Box>
   )

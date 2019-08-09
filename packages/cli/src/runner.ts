@@ -31,7 +31,7 @@ export async function runModules(file: string, opts = {} as { appName?: string, 
       Object.keys(mods).map(modName => mods[modName])
   )
   const transport = new SubjectTransport()
-  render(createElement(Layout, {transport}))
+  render(createElement(Layout, {transport, mods: ['todo', 'web']}))
   setTimeout(() => {
     bootstrap(
       {

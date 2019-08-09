@@ -4,8 +4,9 @@
     "baseUrl": "./",
     "jsx": "react"
   },
-  "files": [
-    "src/index.ts"
+  "include": [
+    "src/index.ts",
+    "typings/*"
   ],
   "exclude": [
     "src/test",
