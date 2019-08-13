@@ -1,7 +1,9 @@
 import React from 'react'
-import SelectInput from 'ink-select-input'
-import { filelog } from '../util'
+
 import chalk from 'chalk'
+import SelectInput from 'ink-select-input'
+
+import { filelog } from './util'
 
 export function Browser(props: { mods: string[] }): React.ReactElement {
   const items = React.useMemo(() => [

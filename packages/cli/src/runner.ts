@@ -3,7 +3,7 @@ import { join } from 'path'
 
 import SubjectTransport from './subject_transport'
 import { render } from 'ink'
-import { Layout } from './ui/Layout'
+import NNMSUI from './ui'
 import { createElement } from 'react'
 
 export async function runModules(file: string, opts = {} as { appName?: string, moduleNames?: string[] }) {
@@ -31,7 +31,7 @@ export async function runModules(file: string, opts = {} as { appName?: string, 
       Object.keys(mods).map(modName => mods[modName])
   )
   const transport = new SubjectTransport()
-  render(createElement(Layout, {transport, mods: ['todo', 'web']}))
+  render(createElement(NNMSUI, {transport}))
   setTimeout(() => {
     bootstrap(
       {

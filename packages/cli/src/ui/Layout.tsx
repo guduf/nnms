@@ -2,27 +2,12 @@ import * as React from 'react'
 
 import { Box } from 'ink'
 
-import { LoggerEvent } from 'nnms'
-
-import SubjectTransport from '../subject_transport'
 import Header from './Header'
 import Menu, { MenuProps } from './Menu'
 import ModulePage from './ModulePage'
 import { TerminalProvider } from './terminal'
 
-export interface LayoutProps {
-  mods: string[],
-  transport: SubjectTransport
-}
-
-export function Layout(
-  {transport}: LayoutProps
-): React.ReactElement {
-  const [events, setEvents] = React.useState([] as LoggerEvent[])
-  React.useEffect(() => {
-    const subscr = transport.events.subscribe(e => setEvents([...events, e]))
-    return () => subscr.unsubscribe()
-  }, [transport, events])
+export function Layout(): React.ReactElement {
   const [state, setState] = React.useState({
     menu:  null as 'Modules' | 'Providers' | null,
     active: null as string | null
@@ -54,7 +39,7 @@ export function Layout(
   }, [state.menu])
   const page = React.useMemo(() => {
     if (state.menu === 'Modules' && state.active) return (
-      <ModulePage mod={{name: 'todos'}} events={events} />
+      <ModulePage mod={'todo'} />
     )
     return (
       <Box flexGrow={1}  justifyContent="center" alignItems="center">
