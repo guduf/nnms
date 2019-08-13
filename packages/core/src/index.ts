@@ -1,4 +1,4 @@
-export * from './application_ref'
+export * from './application'
 export * from './bootstrap'
 export * from './common'
 export * from './di'

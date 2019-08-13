@@ -20,7 +20,7 @@ export function LogList(props: LogProps) {
   React.useEffect(() => {
     const subscr = ctx.events.pipe(
       filter(e => {
-        filelog({e, filters: props.filter, uri: e.uri})
+        filelog({e, filters: props.filter})
         return !props.filter || e.uri.includes(props.filter)
       }),
       scan((acc, e) => [...acc, e], [] as LoggerEvent[])

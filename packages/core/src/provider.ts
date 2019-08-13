@@ -1,6 +1,6 @@
-import { PREFIX, getApplicationRef } from './common'
+import { PREFIX, getApplicationContext } from './common'
 import { Logger } from './logger'
-import Container, { ContainerInstance } from 'typedi';
+import Container, { ContainerInstance } from 'typedi'
 
 export interface ProviderOpts<TVars extends Record<string, string> = {}> {
   name: string
@@ -34,8 +34,8 @@ export class ProviderMeta<TVars extends Record<string, string> = {}> {
     return Container.get(this.type)
   }
 
-  injectContext(_: ContainerInstance): ProviderContext {
-    const {env, logger} = getApplicationRef()
+  buildContext(): ProviderContext {
+    const {env, logger} = getApplicationContext()
     return {
       id: `${PREFIX}:provider:${this.name}`,
       meta: this,

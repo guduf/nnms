@@ -5,7 +5,7 @@ import { NNMSContextProvider } from './context'
 import Layout from './layout'
 
 export interface NNMSUIProps {
-  transport: SubjectTransport
+  transport: SubjectTransport,
 }
 
 export function NNMSUI({transport}: NNMSUIProps): React.ReactElement {

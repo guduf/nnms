@@ -1,6 +1,6 @@
 import 'reflect-metadata'
 import { Container, ContainerInstance } from 'typedi'
-import { PREFIX } from './common'
+import { PREFIX, getApplicationContext } from './common'
 import { ProviderMeta, ProviderOpts, ProviderContext } from './provider'
 import { ModuleMeta, PluginMeta } from './module_ref'
 
@@ -46,7 +46,13 @@ export function refDecorator<TVars extends Record<string, string>, TOpts extends
           if (
             paramType === ProviderContext ||
             Object.getPrototypeOf(paramType) === ProviderContext
-          ) return (container: ContainerInstance) => meta.injectContext(container)
+          ) return (container: ContainerInstance) => {
+            const appCtx = getApplicationContext()
+            if (ref === 'provider') return appCtx.background.providers[meta.name].context
+            if (ref === 'module') return appCtx.background.mods[meta.name].context
+            if (!(container.id instanceof ModuleMeta)) throw new Error('invalid container')
+            return appCtx.background.mods[container.id.name].plugins[meta.name].context
+          }
           const paramMeta = Reflect.getMetadata(`${PREFIX}:provider`, paramType)
           if (paramMeta instanceof ProviderMeta) {
             if (!providers.includes(paramType)) providers = [...providers, paramType]

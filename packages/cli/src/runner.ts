@@ -31,14 +31,14 @@ export async function runModules(file: string, opts = {} as { appName?: string, 
       Object.keys(mods).map(modName => mods[modName])
   )
   const transport = new SubjectTransport()
-  render(createElement(NNMSUI, {transport}))
-  setTimeout(() => {
-    bootstrap(
+  setTimeout(async () => {
+    await bootstrap(
       {
         name: appName,
         loggerTransports: [transport]
       },
       ...bootstrapedMods
     )
+    render(createElement(NNMSUI, {transport}))
   }, 0)
 }

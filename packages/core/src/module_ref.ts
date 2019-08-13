@@ -1,6 +1,6 @@
-import Container, { ContainerInstance } from 'typedi'
+import Container from 'typedi'
 
-import { PREFIX, getApplicationRef, getMethodPluginMetas } from './common'
+import { PREFIX, getApplicationContext, getMethodPluginMetas } from './common'
 import Environment from './environment'
 import { ProviderMeta, ProviderOpts, ProviderContext } from './provider'
 
@@ -17,15 +17,17 @@ export class PluginMeta<TVars extends Record<string, string> = {}> extends Provi
     throw new Error(`plugin '${this.name}' cannot be injected`)
   }
 
-  injectContext<T>(container: ContainerInstance): PluginContext<TVars, T> {
-    if (!(container.id instanceof ModuleMeta)) throw new Error('container is not module scoped')
-    if (!container.has(ModuleContext as any)) throw new Error('container has no module context')
-    const modCtx = container.get(ModuleContext as any) as ModuleContext<TVars>
-    if (!container.has(modCtx.meta.type)) throw new Error('container has no module instance')
-    const moduleInstance = container.get(modCtx.meta.type) as T
-    const paramTypes = Reflect.getMetadata('design:paramtypes', modCtx.meta.type) as any[] || []
+  buildContext(): ProviderContext {
+    throw new Error('buildContext can\'t used in PluginMeta')
+  }
+
+  buildPluginContext<T>(modMeta: ModuleMeta): PluginContext<TVars, T> {
+    const appCtx = getApplicationContext()
+    const modCtx = appCtx.background.mods[modMeta.name].context as ModuleContext<TVars>
+    const moduleInstance = Container.of(modMeta).get(modMeta.type) as T
+    const paramTypes = Reflect.getMetadata('design:paramtypes', modMeta.type) as any[] || []
     const moduleParams = paramTypes.map((paramType, index) => ({
-      meta: Reflect.getMetadata(`${PREFIX}:plugin:${this.name}`, modCtx.meta.type, `constructor[${index}]`) || null,
+      meta: Reflect.getMetadata(`${PREFIX}:plugin:${this.name}`, modMeta.type, `constructor[${index}]`) || null,
       type: paramType,
       index
     }))
@@ -77,17 +79,8 @@ export class ModuleMeta<TVars extends Record<string, string> = {}> extends Provi
     throw new Error(`module cannot be injected`)
   }
 
-  injectContext(container: ContainerInstance): ModuleContext<TVars> {
-    if (
-      container.id !== this ||
-      !container.has(ModuleContext as any)
-    ) throw new Error('invalid module container')
-    return container.get(ModuleContext as any) as ModuleContext<TVars>
-  }
-
-  buildContext(container: ContainerInstance): ModuleContext<TVars> {
-    if (container !== Container.of(this)) throw new Error('invalid module container')
-    const {env, logger} = getApplicationRef()
+  buildContext(): ModuleContext<TVars> {
+    const {env, logger} = getApplicationContext()
     return {
       id: `${PREFIX}:module:${this.name}`,
       meta: this,

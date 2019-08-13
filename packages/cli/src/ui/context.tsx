@@ -1,11 +1,10 @@
 import React from 'react'
 
-import { Observable, of, EMPTY } from 'rxjs'
+import { Observable, EMPTY } from 'rxjs'
 
-import { LoggerEvent } from 'nnms'
+import { LoggerEvent, ApplicationBackground, getApplicationContext } from 'nnms'
 
 import SubjectTransport from '../subject_transport'
-import { shareReplay } from 'rxjs/operators';
 
 export interface NNMSModuleContext {
   init: boolean
@@ -13,8 +12,7 @@ export interface NNMSModuleContext {
 }
 
 export interface NNMSContext {
-  mods: Observable<{ [name: string]: NNMSModuleContext }>
-  providers: Observable<{ [name: string]: boolean }>
+  background: ApplicationBackground
   events: Observable<LoggerEvent>
 }
 
@@ -27,13 +25,10 @@ export interface NNMSContextProviderProps {
 
 export function NNMSContextProvider({children, transport}: NNMSContextProviderProps) {
   const context = React.useMemo(() => {
-    const events = transport.events.pipe(shareReplay())
+    const events = transport.events
+    const ctx = getApplicationContext()
     events.subscribe()
-    return {
-      mods: of({todo: {init: true, plugins: {}}}),
-      providers: of({}),
-      events: events
-    } as NNMSContext
+    return {background: ctx.background, events}
   }, [])
   return <NNMSContext.Provider value={context} children={children} />
 }
