@@ -1,5 +1,5 @@
 export * from './application'
-export * from './bootstrap'
+export * from './background'
 export * from './common'
 export * from './di'
 export * from './environment'

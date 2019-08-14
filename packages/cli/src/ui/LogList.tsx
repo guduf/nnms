@@ -5,9 +5,8 @@ import { Box } from 'ink'
 import { LoggerEvent } from 'nnms'
 
 import LoggerFormat from '../logger_format'
-import { useNNMSContext } from './context'
-import { filter, scan } from 'rxjs/operators';
-import { filelog } from './util';
+import { useNNMS } from './context'
+import { filter, scan } from 'rxjs/operators'
 
 export interface LogProps {
   filter?: string
@@ -15,18 +14,15 @@ export interface LogProps {
 }
 
 export function LogList(props: LogProps) {
-  const ctx = useNNMSContext()
+  const {events} = useNNMS()
   const [logs, setLogs] = React.useState([] as LoggerEvent[])
   React.useEffect(() => {
-    const subscr = ctx.events.pipe(
-      filter(e => {
-        filelog({e, filters: props.filter})
-        return !props.filter || e.uri.includes(props.filter)
-      }),
+    const subscr = events.pipe(
+      filter(e => !props.filter || e.uri.includes(props.filter)),
       scan((acc, e) => [...acc, e], [] as LoggerEvent[])
     ).subscribe(logs => setLogs(logs))
     return () => subscr.unsubscribe()
-  }, [ctx.events, props.filter])
+  }, [events, props.filter])
   const texts = React.useMemo(() => {
     const format = props.format ? props.format : new LoggerFormat()
     return logs.map(e => {

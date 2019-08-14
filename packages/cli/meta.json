@@ -2,6 +2,16 @@
   "$schema": "../metaschema.json",
   "name": "cli",
   "internals": ["core"],
-  "externals": ["chalk", "moment", "js-yaml", "ink", "winston-transport", "yargs", "react", "rxjs"],
+  "externals": [
+    "chalk",
+    "moment",
+    "js-yaml",
+    "ink",
+    "ink-select-input",
+    "winston-transport",
+    "yargs",
+    "react",
+    "rxjs"
+  ],
   "bin": ["nnms"]
 }

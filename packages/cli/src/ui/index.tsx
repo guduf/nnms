@@ -1,18 +1,18 @@
 import React from 'react'
 
-import SubjectTransport from '../subject_transport'
-import { NNMSContextProvider } from './context'
-import Layout from './layout'
+import { NNMSProvider } from './context'
+import Layout from './Layout'
+import { createMemoryHistory, History } from 'history'
+import { Router } from 'react-router'
 
-export interface NNMSUIProps {
-  transport: SubjectTransport,
-}
-
-export function NNMSUI({transport}: NNMSUIProps): React.ReactElement {
+export function NNMSUI(): React.ReactElement {
+  const history = React.useMemo(() => createMemoryHistory() as History, [])
   return (
-    <NNMSContextProvider transport={transport}>
-      <Layout />
-    </NNMSContextProvider>
+    <NNMSProvider>
+      <Router history={history}>
+        <Layout />
+      </Router>
+    </NNMSProvider>
   )
 }
 

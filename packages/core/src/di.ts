@@ -48,10 +48,10 @@ export function refDecorator<TVars extends Record<string, string>, TOpts extends
             Object.getPrototypeOf(paramType) === ProviderContext
           ) return (container: ContainerInstance) => {
             const appCtx = getApplicationContext()
-            if (ref === 'provider') return appCtx.background.providers[meta.name].context
-            if (ref === 'module') return appCtx.background.mods[meta.name].context
+            if (ref === 'provider') return appCtx.state.providers[meta.name].context
+            if (ref === 'module') return appCtx.state.mods[meta.name].context
             if (!(container.id instanceof ModuleMeta)) throw new Error('invalid container')
-            return appCtx.background.mods[container.id.name].plugins[meta.name].context
+            return appCtx.state.mods[container.id.name].plugins[meta.name].context
           }
           const paramMeta = Reflect.getMetadata(`${PREFIX}:provider`, paramType)
           if (paramMeta instanceof ProviderMeta) {

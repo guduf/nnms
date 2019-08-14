@@ -3,7 +3,6 @@ import { shareReplay } from 'rxjs/operators'
 import Transport from 'winston-transport'
 
 import { LoggerEvent } from 'nnms'
-import { filelog } from './ui/util';
 
 export class SubjectTransport extends Transport {
   readonly events: Observable<LoggerEvent>
@@ -15,7 +14,6 @@ export class SubjectTransport extends Transport {
   ) {
     super(transportOpts)
     this.events = this._eventSubject.pipe(shareReplay())
-    this.events.subscribe(e => filelog({'sub':e}))
   }
 
   log(e: LoggerEvent, callback: () => void): void {

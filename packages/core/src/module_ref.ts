@@ -18,12 +18,12 @@ export class PluginMeta<TVars extends Record<string, string> = {}> extends Provi
   }
 
   buildContext(): ProviderContext {
-    throw new Error('buildContext can\'t used in PluginMeta')
+    throw new Error('buildContext can\'t be used in PluginMeta')
   }
 
   buildPluginContext<T>(modMeta: ModuleMeta): PluginContext<TVars, T> {
     const appCtx = getApplicationContext()
-    const modCtx = appCtx.background.mods[modMeta.name].context as ModuleContext<TVars>
+    const modCtx = appCtx.state.mods[modMeta.name].context as ModuleContext<TVars>
     const moduleInstance = Container.of(modMeta).get(modMeta.type) as T
     const paramTypes = Reflect.getMetadata('design:paramtypes', modMeta.type) as any[] || []
     const moduleParams = paramTypes.map((paramType, index) => ({

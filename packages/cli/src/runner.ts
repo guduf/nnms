@@ -1,4 +1,4 @@
-import { ModuleMeta, PREFIX, bootstrap } from 'nnms'
+import { bootstrap, ModuleMeta, PREFIX } from 'nnms'
 import { join } from 'path'
 
 import SubjectTransport from './subject_transport'
@@ -31,14 +31,6 @@ export async function runModules(file: string, opts = {} as { appName?: string, 
       Object.keys(mods).map(modName => mods[modName])
   )
   const transport = new SubjectTransport()
-  setTimeout(async () => {
-    await bootstrap(
-      {
-        name: appName,
-        loggerTransports: [transport]
-      },
-      ...bootstrapedMods
-    )
-    render(createElement(NNMSUI, {transport}))
-  }, 0)
+  bootstrap({name: appName, loggerTransports: [transport]}, ...bootstrapedMods)
+  render(createElement(NNMSUI, {transport}))
 }
