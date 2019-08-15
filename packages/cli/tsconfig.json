@@ -2,7 +2,8 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "baseUrl": "./",
-    "jsx": "react"
+    "jsx": "react",
+    "outDir": "../../tmp/packages/cli"
   },
   "include": [
     "src/index.ts",

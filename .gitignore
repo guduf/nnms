@@ -4,9 +4,9 @@ node_modules
 examples/**/*.d.ts
 examples/**/*.js
 examples/**/*.js.map
-packages/**/*.d.ts
-packages/**/*.js
-packages/**/*.js.map
+packages/*/src/**/*.d.ts
+packages/*/src/**/*.js
+packages/*/src/**/*.js.map
 *.tar
 *.tgz
 .vscode

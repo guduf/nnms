@@ -2,42 +2,56 @@ import React from 'react'
 import { useNNMS } from './context'
 import Menu, { MenuProps } from './Menu'
 import { Box } from 'ink'
-import { RouteComponentProps, Redirect } from 'react-router'
+import { RouteComponentProps, Redirect, Switch, Route } from 'react-router'
 import { filelog } from './util'
+import ModulePage from './ModulePage'
+import ProviderPage from './ProviderPage'
 
-export function Dashboard(props: RouteComponentProps<{ menu: string }>): React.ReactElement {
+export function Dashboard(props: RouteComponentProps<{ menu?: 'mod' | 'prov' }>): React.ReactElement {
   const {providers, mods} = useNNMS()
   const [redir, setRedir] = React.useState('')
-  const activatedPath = props.location.pathname.split('/')[2]
-  filelog([props.location.pathname, props.match, {activatedPath}])
+  const [menu, setMenu] = React.useState(() => {
+    filelog({path: props.location.pathname, menu: props.match.params.menu || null})
+    return props.match.params.menu || null
+  })
+  filelog(props.location.pathname)
   const menuProps = React.useMemo((): MenuProps => {
-    switch(activatedPath) {
+    switch(menu) {
       case 'prov':
         return {
           title: 'Providers',
           entries: Object.keys(providers),
           onSelect: mod => setRedir(`/mod/${mod}`),
-          onBack: () => setRedir('/')
+          onBack: () => setMenu(null)
         }
       case 'mod':
         return {
           title: 'Modules',
           entries: Object.keys(mods),
           onSelect: prov => setRedir(`/prov/${prov}`),
-          onBack: () => setRedir('/')
+          onBack: () => setMenu(null)
         }
       default:
         return {
           title: 'Menu',
           entries: ['Modules', 'Providers'],
-          onSelect: menu => setRedir(menu === 'Modules' ? '/mod' : '/prov')
+          onSelect: menu => setMenu(menu === 'Modules' ? 'mod' : 'prov')
         }
     }
-  }, [activatedPath])
-  if (redir) return <Redirect to={redir} />
+  }, [menu])
+  if (redir) {
+    const redirect = <Redirect to={`/dashboard${redir}`}/>
+    filelog({redirectTo: `/dashboard${redir}`})
+    setRedir('')
+    return redirect
+  }
   return (
     <Box flexDirection="column" width="100%" flexGrow={1}>
       <Menu {...menuProps} />
+      <Switch>
+        <Route path={'/dashboard/mod/:modName'} component={ModulePage}/>
+        <Route path={'/dashboard/prov/:provName'} component={ProviderPage}/>
+      </Switch>
     </Box>
   )
 }
