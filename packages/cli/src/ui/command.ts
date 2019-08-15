@@ -1,12 +1,15 @@
 import { createContext, useContext, useEffect } from 'react'
-import { mergeMap, pairwise, startWith } from 'rxjs/operators'
+import { mergeMap, pairwise, startWith, distinctUntilChanged } from 'rxjs/operators'
 import { Subject, of, fromEvent, Observable, EMPTY } from 'rxjs'
-
+import { filelog } from './util';
 
 export enum COMMAND_CODE {
-  TAB = 9,
-  BACK = 127
+  BACK = 127,
+  ENTER = 13,
+  TAB = 9
 }
+
+const {BACK, ENTER, TAB} = COMMAND_CODE
 
 export type CommandInputArrows =  'top' | 'left' | 'bottom' | 'right'
 
@@ -38,13 +41,28 @@ export interface CommandInputState {
 
 export function handleQueryChange(
   entries: string[],
+  focusHandler: CommandInputHandler['onFocus'],
   {query, focus}: CommandInputState,
   char: string
 ): CommandInputState {
   const nextQuery = query + char
   if (focus.startsWith(nextQuery)) return {focus, query: nextQuery}
   const nextFocus = entries.find(entry => entry.startsWith(nextQuery)) || ''
+  if (typeof focusHandler === 'function') focusHandler(nextFocus)
   return nextFocus ? {focus: nextFocus, query: nextQuery} : {focus, query}
+}
+
+export function handleQuerySubmit(
+  submitHandler: CommandInputHandler['onSubmit'],
+  state: CommandInputState
+): CommandInputState {
+  filelog({state, t: state.focus === state.query &&
+    typeof submitHandler === 'function'})
+  if (
+    state.focus === state.query &&
+    typeof submitHandler === 'function'
+  ) submitHandler(state.focus)
+  return state
 }
 
 export function handleCommandPress(
@@ -53,10 +71,13 @@ export function handleCommandPress(
   char: string
 ): CommandInputState {
   const code = char.charCodeAt(0) as COMMAND_CODE
+  filelog({code})
+  const {focus, query} = state
   switch (code) {
-    case COMMAND_CODE.BACK: return {focus: state.focus, query: state.query.slice(0, - 1)}
-    case COMMAND_CODE.TAB: return {focus: state.focus, query: state.focus}
-    default: return handleQueryChange(handler.entries, state, char)
+    case BACK: return {focus, query: query.slice(0, - 1)}
+    case ENTER: return handleQuerySubmit(handler.onSubmit, state)
+    case TAB: return {focus, query: focus}
+    default: return handleQueryChange(handler.entries, handler.onSubmit, state, char)
   }
 }
 
@@ -92,7 +113,10 @@ export function createCommandState(
       }
       if (!prev) setRawMode(true)
       return attachHandler(stdin, next)
-    })
+    }),
+    distinctUntilChanged((prev, next) => (
+      prev === next || (JSON.stringify(prev) === JSON.stringify(next))
+    ))
   )
   return {stateChange, nextHandler: nextHandler => handlerChange.next(nextHandler)}
 }

@@ -1,6 +1,7 @@
 import * as React from 'react'
 
-import { Box, Color, StdinContext, Text } from 'ink'
+import BorderBox from './BorderBox'
+import { Box, Color, Text, StdinContext } from 'ink'
 import { filelog } from './util'
 import { createCommandState, CommandInputState, NextCommandHandler } from './command'
 
@@ -20,11 +21,16 @@ export function CommandInput({children}: { children: React.ReactNode }) {
   filelog({query, focus})
   return (
     <NextCommandHandler.Provider value={nextHandler}>
-      <Box flexDirection="column" flexGrow={1}>
+      <Box flexDirection="column" flexGrow={1} justifyContent="flex-start">
         {children}
-        <Box flexGrow={1} height={1} padding={1}>
-          <Text>{query}</Text>
-          <Color grey>{focus.slice(query.length)}</Color>
+        <Box flexDirection="row" width="100%" height={3}>
+          <BorderBox color="yellow"  justifyContent="space-between">
+            <Box>
+              <Text>{query}</Text>
+              <Color grey>{focus.slice(query.length)}</Color>
+            </Box>
+            <Text>Type or use arrows</Text>
+          </BorderBox>
         </Box>
       </Box>
     </NextCommandHandler.Provider>
