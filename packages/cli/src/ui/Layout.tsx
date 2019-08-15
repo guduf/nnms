@@ -3,10 +3,8 @@ import * as React from 'react'
 import { Box } from 'ink'
 
 import CommandInput from './CommandInput'
+import Browser from './Browser'
 import Header from './Header'
-import ModuleDashboard from './ModuleDashboard'
-// import Dashboard from './Dashboard'
-// import BootstrapPage from './BootstrapPage'
 // import { Switch, Route, Redirect } from 'react-router'
 
 export function Layout(): React.ReactElement {
@@ -16,7 +14,7 @@ export function Layout(): React.ReactElement {
         <Header />
         <CommandInput>
           <Box flexGrow={1}>
-            <ModuleDashboard />
+            <Browser kind="providers" />
             {/* <Switch>
               <Route path="/bootstrap" component={BootstrapPage} />
               <Route path="/dashboard" component={Dashboard} />

@@ -11,6 +11,7 @@
     "winston-transport",
     "yargs",
     "react",
+    "react-router",
     "rxjs"
   ],
   "bin": ["nnms"]
