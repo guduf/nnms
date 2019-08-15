@@ -32,7 +32,7 @@ export function Browser(
     const onFocus = (name: string) => setFocus(name)
     const onSubmit = (name: string) => filelog({name})
     return {entries, onFocus, onSubmit}
-  }, [items])
+  }, [items.join("/")])
   return (
     <Box flexGrow={1} flexDirection="column" justifyContent="center" alignItems="center">
       <Box flexDirection="column">
