@@ -6,7 +6,7 @@ import { createCommandState, CommandInputState, NextCommandHandler } from './com
 import { filelog } from './util';
 
 export function useCommandState(): {state: CommandInputState, nextHandler: NextCommandHandler } {
-  const [state, setState] = React.useState({query: '', focus: ''} as CommandInputState)
+  const [state, setState] = React.useState<CommandInputState>({query: '', focus: '', flash: null})
   const {stdin, setRawMode} = React.useContext(StdinContext)
   const {stateChange, nextHandler} = React.useMemo(() => createCommandState(setRawMode, stdin), [])
   React.useEffect(() => {
@@ -18,7 +18,7 @@ export function useCommandState(): {state: CommandInputState, nextHandler: NextC
 
 export function CommandInput({children}: { children: React.ReactNode }) {
   const {state: {query, focus, flash}, nextHandler} = useCommandState()
-  const color = flash ? flash.kind === 'success' ? 'green' : 'red' : 'yellow'
+  const color = flash ? flash === 'success' ? 'green' : 'red' : 'yellow'
   filelog(["🖨",{query, focus, flash}])
   return (
     <NextCommandHandler.Provider value={nextHandler}>

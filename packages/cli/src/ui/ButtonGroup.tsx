@@ -4,14 +4,19 @@ import Button from './Button';
 
 export interface ButtonGroupProps {
   items: string[]
+  focus: string
 }
 
-export function ButtonGroup({items}: ButtonGroupProps): React.ReactElement {
-
+export function ButtonGroup({items, focus}: ButtonGroupProps): React.ReactElement {
   return (
     <Box flexDirection="row">
       {items.map(item => (
-        <Color key={item} bgBlackBright><Button>{item}</Button></Color>
+        <Color
+          key={item}
+          keyword={focus === item ? 'black' : 'white'}
+          bgKeyword={focus === item ? 'yellow' : 'gray'}>
+          <Button>{item}</Button>
+        </Color>
       ))}
     </Box>
   )

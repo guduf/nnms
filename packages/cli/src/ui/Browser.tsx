@@ -23,15 +23,13 @@ export function Browser(
 ): React.ReactElement {
   const state = useNNMS()
   const items = React.useMemo(() => (
-    ['abricot', 'tomate', 'celeri', 'banane', 'kiwi']
+    ['abricot', 'tomate', 'celeri', 'banane', 'banane rouge1', 'banane rouge2', 'kiwi']
     // kind === 'plugins' ? state.mods[modName as string].plugins : state[kind]
   ), [kind, modName, state.mods, state.providers])
-  const [focus, setFocus] = React.useState('')
-  useCommandInput(() => {
+  const {focus} = useCommandInput(() => {
     const entries = items
-    const onFocus = (name: string) => setFocus(name)
-    const onSubmit = (name: string) => filelog({name})
-    return {entries, onFocus, onSubmit}
+    const onSubmit = (name: string) => filelog({submit: name})
+    return {entries, onSubmit}
   }, [items.join("/")])
   return (
     <Box flexGrow={1} flexDirection="column" justifyContent="center" alignItems="center">
@@ -42,7 +40,8 @@ export function Browser(
           <Box>to select a {kind} then press ENTER to browse it.</Box>
           <Box>{focus}</Box>
         </Box>
-        <ButtonGroup items={items} />
+        <ButtonGroup
+           items={items} focus={focus}/>
       </Box>
     </Box>
   )
