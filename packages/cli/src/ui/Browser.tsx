@@ -23,10 +23,10 @@ export function Browser(
 ): React.ReactElement {
   const state = useNNMS()
   const items = React.useMemo(() => (
-    ['abricot', 'tomate', 'celeri', 'banane', 'banane rouge1', 'banane rouge2', 'kiwi']
+    ['abricot', 'ananas', 'tomate', 'celeri', 'banane', 'banane rouge1', 'banane rouge2', 'kiwi']
     // kind === 'plugins' ? state.mods[modName as string].plugins : state[kind]
   ), [kind, modName, state.mods, state.providers])
-  const {focus} = useCommandInput(() => {
+  const {query, focus} = useCommandInput(() => {
     const entries = items
     const onSubmit = (name: string) => filelog({submit: name})
     return {entries, onSubmit}
@@ -34,14 +34,12 @@ export function Browser(
   return (
     <Box flexGrow={1} flexDirection="column" justifyContent="center" alignItems="center">
       <Box flexDirection="column">
-        <Box paddingX={1} marginBottom={1}>{c.blue(`>${kind}`)}</Box>
+        <Box paddingX={1} marginBottom={1}>{c.blue(`>${kind.toUpperCase()}`)}</Box>
         <Box flexDirection="column" paddingX={1} marginBottom={1} width={60}>
           <Box>Type the name of a {kind} or use arrows</Box>
           <Box>to select a {kind} then press ENTER to browse it.</Box>
-          <Box>{focus}</Box>
         </Box>
-        <ButtonGroup
-           items={items} focus={focus}/>
+        <ButtonGroup items={items} query={query} focus={focus}/>
       </Box>
     </Box>
   )

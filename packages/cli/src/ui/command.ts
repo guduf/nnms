@@ -10,6 +10,12 @@ export enum COMMAND_KEYS {
   TAB = 0x09
 }
 
+export enum PREFIX_KEYS {
+  SEARCH = 0x3f,
+  RELPATH = 0x2e,
+  PATH = 0x2f
+}
+
 export function parseCommandKey(char: string): number {
   return parseInt(Buffer.from(char).toString('hex'), 16)
 }
@@ -20,7 +26,6 @@ export type CommandInputArrows =  'top' | 'left' | 'bottom' | 'right'
 
 export interface CommandInputHandler<T extends string[] = string[]> {
   entries: T
-  arrows?: { [P in CommandInputArrows]?: () => void }
   onSubmit?: (entry: T[number]) => void
 }
 
