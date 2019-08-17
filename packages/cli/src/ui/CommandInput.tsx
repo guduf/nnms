@@ -3,16 +3,34 @@ import * as React from 'react'
 import BorderBox from './BorderBox'
 import { Box, Color, Text, StdinContext } from 'ink'
 import { createCommandState, CommandInputState, NextCommandHandler, CommandActionLabel, COMMAND_ACTION_LABELS } from './command'
-import { filelog } from './util';
+import { combineLatest } from 'rxjs';
+import { map, distinctUntilChanged } from 'rxjs/operators';
 
-export function useCommandState(): {state: CommandInputState, nextHandler: NextCommandHandler } {
-  const [state, setState] = React.useState<CommandInputState>({query: '', focus: '', flash: null})
+export function useCommandState(): {state: CommandInputState & { color: string, prefix: string }, nextHandler: NextCommandHandler } {
+  const [state, setState] = React.useState<CommandInputState & { color: string, prefix: string }>({
+    color: 'white',
+    prefix: '',
+    query: '',
+    focus: '',
+    flash: null
+  })
   const {stdin, setRawMode} = React.useContext(StdinContext)
-  const {stateChange, nextHandler} = React.useMemo(() => createCommandState(setRawMode, stdin), [])
+  const {stateChange, handlerChange, nextHandler} = React.useMemo(() => createCommandState(setRawMode, stdin), [])
   React.useEffect(() => {
-    const subscr = stateChange.subscribe(setState)
+    const styleObs =  handlerChange.pipe(
+      map(handler => ({
+        color: handler && handler.color || 'white',
+        prefix: handler && handler.prefix || ''
+      })),
+      distinctUntilChanged((x, y) => `${x.color},${x.prefix}` === `${y.color},${y.prefix}`)
+    )
+    const subscr = combineLatest(stateChange, styleObs)
+      .pipe(
+        map(([state, {color, prefix}]) => ({...state, color, prefix})),
+      )
+      .subscribe(setState)
     return () => subscr.unsubscribe()
-  }, [stateChange])
+  }, [])
   return {state, nextHandler}
 }
 
@@ -25,13 +43,12 @@ const getColor = (flash: CommandInputState['flash'], label: CommandActionLabel):
   }
 }
 export function CommandInput({children}: { children: React.ReactNode }) {
-  const {state: {query, focus, flash}, nextHandler} = useCommandState()
+  const {state: {query, focus, flash, color, prefix}, nextHandler} = useCommandState()
   const colors = React.useMemo(() => {
     const colors = {
       query: getColor(flash, 'query'),
       commands: COMMAND_ACTION_LABELS.map(label => getColor(flash, label))
     }
-    filelog({flash, colors})
     return colors
   }, [flash])
   return (
@@ -41,7 +58,7 @@ export function CommandInput({children}: { children: React.ReactNode }) {
         <Box flexDirection="row" width="100%" height={3} paddingX={1}>
           <BorderBox color={colors.query} justifyContent="space-between">
             <Box>
-              <Text>{query}</Text>
+              <Color keyword={color}>{prefix}{query}</Color>
               <Color grey>{focus.slice(query.length)}</Color>
             </Box>
             <Text>Type or use arrows</Text>

@@ -3,7 +3,6 @@ import { useNNMS } from './context'
 import Menu, { MenuProps } from './Menu'
 import { Box } from 'ink'
 import { RouteComponentProps, Redirect, Switch, Route } from 'react-router'
-import { filelog } from './util'
 import ModulePage from './ModulePage'
 import ProviderPage from './ProviderPage'
 
@@ -11,10 +10,8 @@ export function Dashboard(props: RouteComponentProps<{ menu?: 'mod' | 'prov' }>)
   const {providers, mods} = useNNMS()
   const [redir, setRedir] = React.useState('')
   const [menu, setMenu] = React.useState(() => {
-    filelog({path: props.location.pathname, menu: props.match.params.menu || null})
     return props.match.params.menu || null
   })
-  filelog(props.location.pathname)
   const menuProps = React.useMemo((): MenuProps => {
     switch(menu) {
       case 'prov':
@@ -41,7 +38,6 @@ export function Dashboard(props: RouteComponentProps<{ menu?: 'mod' | 'prov' }>)
   }, [menu])
   if (redir) {
     const redirect = <Redirect to={`/dashboard${redir}`}/>
-    filelog({redirectTo: `/dashboard${redir}`})
     setRedir('')
     return redirect
   }

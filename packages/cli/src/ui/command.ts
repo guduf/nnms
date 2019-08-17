@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { mergeMap, pairwise, startWith, distinctUntilChanged, takeUntil, share, skip } from 'rxjs/operators'
-import { BehaviorSubject, of, fromEvent, Observable, EMPTY, timer } from 'rxjs'
+import { mergeMap, startWith, distinctUntilChanged, takeUntil, share, skip, map, distinctUntilKeyChanged } from 'rxjs/operators'
+import { BehaviorSubject, of, fromEvent, Observable, EMPTY, timer, combineLatest } from 'rxjs'
 
 export enum COMMAND_KEYS {
   ARROW_LEFT = 0x1b5b44,
@@ -24,9 +24,12 @@ const {BACK, ENTER, TAB, ARROW_LEFT, ARROW_RIGHT} = COMMAND_KEYS
 
 export type CommandInputArrows =  'top' | 'left' | 'bottom' | 'right'
 
-export interface CommandInputHandler<T extends string[] = string[]> {
+export interface CommandInputHandler<T extends string[] | RegExp = string[] | RegExp> {
   entries: T
-  onSubmit?: (entry: T[number]) => void
+  prefix?: string
+  color?: string
+  onPress?: (char: string, prevState: CommandInputState) => boolean
+  onSubmit?: (entry: T extends string[] ? T[number] : string) => boolean
 }
 
 export interface NextCommandHandler {
@@ -36,15 +39,25 @@ export interface NextCommandHandler {
 export const NextCommandHandler = createContext(undefined as never as NextCommandHandler)
 
 export function useCommandInput(
-  effect: () => CommandInputHandler,
+  effect: () => CommandInputHandler | null,
+  opts: { distinctUntilChanged?: (keyof CommandInputState)[] } = {},
   deps: any[]
-): { focus: string, query: string } {
-  const [state, setState] = useState({focus: '', query: ''})
+): CommandInputState {
+  const [state, setState] = useState<CommandInputState>({flash: null, focus: '', query: ''})
   const attachHandler = useContext(NextCommandHandler)
   useEffect(() => {
     const handler = effect()
-    const subscr = attachHandler(handler).subscribe(({focus, query}) => setState({focus, query}))
-    setState({focus: handler.entries[0], query: ''})
+    if (!handler) {
+      attachHandler(null)
+      return
+    }
+    const subscr = attachHandler(handler)
+      .pipe(distinctUntilChanged((x, y) => {
+        for (const key of opts.distinctUntilChanged || []) if (x[key] !== y[key]) return false
+        return true
+      }))
+      .subscribe(state => setState(state))
+    setState({flash: null, focus: '', query: ''})
     return () => {
       subscr.unsubscribe()
       attachHandler(null)
@@ -73,17 +86,21 @@ export interface CommandInputState {
 }
 
 export function handleQueryChange(
-  entries: string[],
+  entries: string[] | RegExp,
   {query, focus}: CommandInputState,
   char: string
 ): CommandInputState {
   const nextQuery = query + char
-  if (focus.startsWith(nextQuery)) return {focus, query: nextQuery, flash: null}
+  if (entries instanceof RegExp) {
+    const nextFlash = entries.test(nextQuery) ? null : {zone: 'query', kind: 'error'} as const
+    return {flash: nextFlash, focus, query: nextQuery}
+  }
+  if (focus.startsWith(nextQuery)) return { flash: null, focus, query: nextQuery}
   const nextFocus = entries.find(entry => entry.startsWith(nextQuery)) || ''
   return (
     nextFocus ?
-     {focus: nextFocus, query: nextQuery, flash: {zone: 'query', kind: 'tap'}} :
-     {focus, query, flash: {zone: 'query', kind: 'error'}}
+     {flash: {zone: 'query', kind: 'tap'}, focus: nextFocus, query: nextQuery} :
+     {flash: {zone: 'query', kind: 'error'}, focus, query}
   )
 }
 
@@ -93,16 +110,17 @@ export function handleQuerySubmit(
 ): CommandInputState {
   if (state.focus && typeof submitHandler === 'function') {
     submitHandler(state.focus)
-    return {focus: state.focus, query: state.focus, flash: {kind: 'success', zone: 'ENTER'}}
+    return {flash: {kind: 'success', zone: 'ENTER'}, focus: state.focus, query: state.focus}
   }
   if (!state.focus) return {...state, flash: {kind: 'error', zone: 'ENTER'}}
   return state
 }
 
 export function handleQueryAutocomplete(
-  entries: string[],
+  entries: string[] | RegExp,
   state: CommandInputState
 ): CommandInputState {
+  if (entries instanceof RegExp) return state
   const {query} = state
   let [suffix, focus] = ['', state.focus]
   for (const entry of entries) {
@@ -128,10 +146,11 @@ export function handleQueryAutocomplete(
 
 
 export function handleQuerySwipe(
-  entries: string[],
+  entries: string[] | RegExp,
   state: CommandInputState,
   backward = false
 ): CommandInputState {
+  if (entries instanceof RegExp) return state
   const i = entries.indexOf(state.focus)
   const nextEntries =  (
     backward ?
@@ -144,10 +163,14 @@ export function handleQuerySwipe(
 }
 
 export function handleQueryDelete(
-  entries: string[],
-  {query}: CommandInputState
+  entries: string[] | RegExp,
+  state: CommandInputState
 ): CommandInputState {
-  const nextQuery = query.slice(0, - 1)
+  const nextQuery = state.query.slice(0, - 1)
+  if (entries instanceof RegExp) {
+    if (!entries.test(nextQuery)) return {...state, flash: {kind: 'tap', zone: 'query'}}
+    return {query: nextQuery, focus: '', flash: null}
+  }
   const nextFocus = entries.find(entry => entry.startsWith(nextQuery)) || ''
   return {query: nextQuery, focus: nextFocus, flash: null}
 }
@@ -157,6 +180,9 @@ export function handleCommandPress(
   state: CommandInputState,
   char: string,
 ): CommandInputState {
+  if (!state.query && typeof handler.onPress === 'function') {
+    if (handler.onPress(char, state)) return state
+  }
   const code = parseCommandKey(char)
   switch (code) {
     case ARROW_LEFT:
@@ -169,17 +195,31 @@ export function handleCommandPress(
   }
 }
 
-export function attachHandler(
-  stdin: NodeJS.ReadStream,
-  handler: CommandInputHandler,
-  onFocus?: (entry: string) => void
+const EMPTY_HANDLER: CommandInputHandler = {
+  entries: []
+}
+
+export function isStateEqual(x: CommandInputState, y: CommandInputState): boolean {
+  if (x === y) return true
+  if (x.focus !== y.focus || x.query !== y.query) return false
+  if (x.flash === y.flash) return true
+  if (!x.flash || !y.flash) return false
+  return (x.flash.kind === y.flash.kind && x.flash.zone === y.flash.zone)
+}
+
+export function watchState(
+  input: Observable<string>,
+  handler: Observable<CommandInputHandler | null>
 ): Observable<CommandInputState> {
-  let state: CommandInputState = {focus: handler.entries[0], query: '', flash: null}
-  return fromEvent<string>(stdin, 'data').pipe(
-    mergeMap(char => {
+  let state: CommandInputState = {focus: '', query: '', flash: null}
+  return combineLatest(
+    input.pipe(map(char => ({char}))),
+    handler.pipe(map(h => h || EMPTY_HANDLER))
+  ).pipe(
+    distinctUntilKeyChanged(0),
+    mergeMap(([{char}, handler]) => {
       const next = handleCommandPress(handler, {...state}, char)
       if (next === state) return EMPTY
-      if (next.focus !== state.focus && typeof onFocus === 'function') onFocus(next.focus)
       const prev = {...state}
       state = next
       if (next.flash && next.flash !== prev.flash) {
@@ -188,39 +228,32 @@ export function attachHandler(
           startWith(next)
         )
       }
-      if (JSON.stringify(next) === JSON.stringify(prev)) return EMPTY
+      if (isStateEqual(prev, next)) return EMPTY
       return of(next)
     }),
-    startWith(state)
+    startWith(state),
+    share()
   )
 }
 
 export function createCommandState(
   setRawMode: NodeJS.ReadStream["setRawMode"],
   stdin: NodeJS.ReadStream
-): { stateChange: Observable<CommandInputState>, nextHandler: NextCommandHandler } {
+): {
+  stateChange: Observable<CommandInputState>,
+  handlerChange: Observable<CommandInputHandler | null>,
+  nextHandler: NextCommandHandler
+} {
   if (typeof setRawMode !== 'function') throw new Error('setRawMode is not a function')
+  setRawMode(true)
+  const inputChange = fromEvent<string>(stdin, 'data').pipe(share())
+  inputChange.subscribe()// const inputSubscr =
   const handlerChange = new BehaviorSubject<CommandInputHandler | null>(null)
-  const stateChange = handlerChange.pipe(
-    startWith(null),
-    pairwise(),
-    mergeMap(([prev, next]) => {
-      if (!next) {
-        if (prev) setRawMode(false)
-        return of({query: '', focus: '', flash: null})
-      }
-      if (!prev) setRawMode(true)
-      return attachHandler(stdin, next)
-    }),
-    distinctUntilChanged((prev, next) => (
-      prev === next || (JSON.stringify(prev) === JSON.stringify(next))
-    )),
-    share()
-  )
+  const stateChange = watchState(inputChange, handlerChange)
   const nextHandler = (handler: CommandInputHandler | null): Observable<CommandInputState> => {
     handlerChange.next(handler)
     if (!handler) return EMPTY
     return stateChange.pipe(takeUntil(handlerChange.pipe(skip(1))))
   }
-  return {stateChange, nextHandler}
+  return {stateChange, handlerChange: handlerChange.asObservable(), nextHandler}
 }

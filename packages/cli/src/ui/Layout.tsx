@@ -3,9 +3,17 @@ import * as React from 'react'
 import { Box } from 'ink'
 
 import CommandInput from './CommandInput'
-import Browser from './Browser'
 import Header from './Header'
-// import { Switch, Route, Redirect } from 'react-router'
+import { Switch, Route, RouteProps, RouteComponentProps, Redirect } from 'react-router';
+import PageLayout from './PageLayout'
+
+const ROUTES: (RouteProps & { path: string })[] = [
+  {path: '/MODULES', component: (route: RouteComponentProps) => <PageLayout {...{route}} /> },
+  {path: '/MODULES/:id', component: (route: RouteComponentProps) => <PageLayout {...{route}} /> },
+  {path: '/PROVIDERS', component: (route: RouteComponentProps) => <PageLayout {...{route}} /> },
+  {path: '/PROVIDERS/:id', component: (route: RouteComponentProps) => <PageLayout {...{route}} /> },
+  {path: '', component: () => <Redirect to="MODULES" />}
+]
 
 export function Layout(): React.ReactElement {
   const height = React.useMemo(() => (process.stdout.rows || 31) - 1, [])
@@ -14,13 +22,9 @@ export function Layout(): React.ReactElement {
         <Header />
         <CommandInput>
           <Box flexGrow={1}>
-            <Browser kind="providers" />
-            {/* <Switch>
-              <Route path="/bootstrap" component={BootstrapPage} />
-              <Route path="/dashboard" component={Dashboard} />
-              <Route path="/dashboard/:menu" component={Dashboard} />
-              <Route path="/" component={() => <Redirect to="/bootstrap" />} />
-            </Switch> */}
+            <Switch>
+              {ROUTES.map(route => <Route key={route.path} {...route} />)}
+            </Switch>
           </Box>
         </CommandInput>
       </Box>

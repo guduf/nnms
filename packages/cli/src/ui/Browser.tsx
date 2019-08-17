@@ -30,7 +30,7 @@ export function Browser(
     const entries = items
     const onSubmit = (name: string) => filelog({submit: name})
     return {entries, onSubmit}
-  }, [items.join("/")])
+  }, {}, [items.join("/")])
   return (
     <Box flexGrow={1} flexDirection="column" justifyContent="center" alignItems="center">
       <Box flexDirection="column">
