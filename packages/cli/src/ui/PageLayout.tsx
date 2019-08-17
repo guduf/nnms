@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { RouteComponentProps } from 'react-router'
+import { RouteComponentProps, Redirect } from 'react-router'
 import { CommandInputState, useCommandInput } from './command'
 import { Box } from 'ink'
 
@@ -17,11 +17,11 @@ const COMMAND_MODES = {
 export type CommandMode = keyof typeof COMMAND_MODES
 
 export function PageLayout(
-  props: PageLayoutConfig & { route: RouteComponentProps<{ id?: string }> }
+  props: PageLayoutConfig & { pathEntries: string[], route: RouteComponentProps<{ id?: string }> }
 ): React.ReactElement {
-  const [{commandMode, entries}, setState] = React.useState({
+  const [{commandMode, redir}, setState] = React.useState({
     commandMode: 'text' as CommandMode,
-    entries: [] as string[] | RegExp
+    redir: ''
   })
   const opts = React.useMemo(() => {
     const commandInput = {
@@ -33,12 +33,17 @@ export function PageLayout(
     const onPress = (char: string, {query}: CommandInputState): boolean => {
       if (!['.', '/', '?'].includes(char) || query.length) return false
       const mode: CommandMode = char === '.' ? 'relpath' : char === '/' ? 'path' : 'search'
-      setState({entries, commandMode: mode})
+      setState({commandMode: mode, redir: ''})
       return true
     }
     const {color, prefix} = COMMAND_MODES[commandMode]
-    return {entries, onPress, color, prefix}
+    const onSubmit = (focus: string): boolean => {
+      setState({commandMode, redir: `/${focus}`})
+      return true
+    }
+    return {entries: props.pathEntries, onPress, color, prefix, onSubmit}
   }, opts.commandInput, [commandMode])
+  if (redir) return <Redirect to={redir} />
   return (
     <Box flexDirection="column">
     <Box>{JSON.stringify(commandMode)}</Box>

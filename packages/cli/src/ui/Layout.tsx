@@ -7,11 +7,13 @@ import Header from './Header'
 import { Switch, Route, RouteProps, RouteComponentProps, Redirect } from 'react-router';
 import PageLayout from './PageLayout'
 
+const PATH_ENTRIES = ['MODULES', 'PROVIDERS']
+
 const ROUTES: (RouteProps & { path: string })[] = [
-  {path: '/MODULES', component: (route: RouteComponentProps) => <PageLayout {...{route}} /> },
-  {path: '/MODULES/:id', component: (route: RouteComponentProps) => <PageLayout {...{route}} /> },
-  {path: '/PROVIDERS', component: (route: RouteComponentProps) => <PageLayout {...{route}} /> },
-  {path: '/PROVIDERS/:id', component: (route: RouteComponentProps) => <PageLayout {...{route}} /> },
+  {path: '/MODULES', component: (route: RouteComponentProps) => <PageLayout {...{route, pathEntries: PATH_ENTRIES}} /> },
+  {path: '/MODULES/:id', component: (route: RouteComponentProps) => <PageLayout {...{route, pathEntries: PATH_ENTRIES}} /> },
+  {path: '/PROVIDERS', component: (route: RouteComponentProps) => <PageLayout {...{route, pathEntries: PATH_ENTRIES}} /> },
+  {path: '/PROVIDERS/:id', component: (route: RouteComponentProps) => <PageLayout {...{route, pathEntries: PATH_ENTRIES}} /> },
   {path: '', component: () => <Redirect to="MODULES" />}
 ]
 

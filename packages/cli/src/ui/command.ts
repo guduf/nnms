@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { mergeMap, startWith, distinctUntilChanged, takeUntil, share, skip, map, distinctUntilKeyChanged } from 'rxjs/operators'
-import { BehaviorSubject, of, fromEvent, Observable, EMPTY, timer, combineLatest } from 'rxjs'
+import { mergeMap, startWith, distinctUntilChanged, takeUntil, share, skip, map } from 'rxjs/operators'
+import { BehaviorSubject, of, fromEvent, Observable, EMPTY, timer, Subscription } from 'rxjs'
 
 export enum COMMAND_KEYS {
   ARROW_LEFT = 0x1b5b44,
@@ -194,11 +194,6 @@ export function handleCommandPress(
     default: return handleQueryChange(handler.entries, state, char)
   }
 }
-
-const EMPTY_HANDLER: CommandInputHandler = {
-  entries: []
-}
-
 export function isStateEqual(x: CommandInputState, y: CommandInputState): boolean {
   if (x === y) return true
   if (x.focus !== y.focus || x.query !== y.query) return false
@@ -207,18 +202,29 @@ export function isStateEqual(x: CommandInputState, y: CommandInputState): boolea
   return (x.flash.kind === y.flash.kind && x.flash.zone === y.flash.zone)
 }
 
+const EMPTY_STATE: CommandInputState = {focus: '', query: '', flash: null}
+
 export function watchState(
   input: Observable<string>,
-  handler: Observable<CommandInputHandler | null>
+  handlerChange: Observable<CommandInputHandler | null>
 ): Observable<CommandInputState> {
-  let state: CommandInputState = {focus: '', query: '', flash: null}
-  return combineLatest(
-    input.pipe(map(char => ({char}))),
-    handler.pipe(map(h => h || EMPTY_HANDLER))
-  ).pipe(
-    distinctUntilKeyChanged(0),
-    mergeMap(([{char}, handler]) => {
-      const next = handleCommandPress(handler, {...state}, char)
+  let state = EMPTY_STATE
+  return handlerChange.pipe(
+    distinctUntilChanged(),
+    mergeMap(handler => (
+      handler ?
+        input.pipe(
+          takeUntil(handlerChange.pipe(skip(1))),
+          map(char => handleCommandPress(handler, {...state}, char)),
+          startWith(
+            Array.isArray(handler.entries) && handler.entries.length ?
+              {focus: handler.entries[0], query: '', flash: null} :
+              EMPTY_STATE
+          )
+        ) :
+        of(EMPTY_STATE)
+    )),
+    mergeMap(next => {
       if (next === state) return EMPTY
       const prev = {...state}
       state = next
@@ -231,8 +237,8 @@ export function watchState(
       if (isStateEqual(prev, next)) return EMPTY
       return of(next)
     }),
-    startWith(state),
-    share()
+    share(),
+    startWith(state)
   )
 }
 
@@ -246,10 +252,12 @@ export function createCommandState(
 } {
   if (typeof setRawMode !== 'function') throw new Error('setRawMode is not a function')
   setRawMode(true)
-  const inputChange = fromEvent<string>(stdin, 'data').pipe(share())
-  inputChange.subscribe()// const inputSubscr =
+  const subscr = new Subscription()
+  const inputChange = fromEvent<string>(stdin, 'data')
+  subscr.add(inputChange.subscribe())
   const handlerChange = new BehaviorSubject<CommandInputHandler | null>(null)
   const stateChange = watchState(inputChange, handlerChange)
+  subscr.add(stateChange.subscribe())
   const nextHandler = (handler: CommandInputHandler | null): Observable<CommandInputState> => {
     handlerChange.next(handler)
     if (!handler) return EMPTY

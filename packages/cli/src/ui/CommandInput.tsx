@@ -22,12 +22,12 @@ export function useCommandState(): {state: CommandInputState & { color: string,
         color: handler && handler.color || 'white',
         prefix: handler && handler.prefix || ''
       })),
-      distinctUntilChanged((x, y) => `${x.color},${x.prefix}` === `${y.color},${y.prefix}`)
+      distinctUntilChanged((x, y) => (
+        `${x.color},${x.prefix}` === `${y.color},${y.prefix}`
+      ))
     )
     const subscr = combineLatest(stateChange, styleObs)
-      .pipe(
-        map(([state, {color, prefix}]) => ({...state, color, prefix})),
-      )
+      .pipe(map(([state, style]) => ({...state, ...style})))
       .subscribe(setState)
     return () => subscr.unsubscribe()
   }, [])
