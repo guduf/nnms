@@ -7,18 +7,25 @@ import { LoggerEvent } from 'nnms'
 import LoggerFormat from '../logger_format'
 import { useNNMS } from './context'
 import { filter, scan } from 'rxjs/operators'
+import { filelog } from './util';
 
 export interface LogProps {
   filter?: string
   format?: LoggerFormat
+  staticFilter?: (e: LoggerEvent) => boolean
 }
 
 export function LogList(props: LogProps) {
   const {events} = useNNMS()
   const [logs, setLogs] = React.useState([] as LoggerEvent[])
   React.useEffect(() => {
+    filelog('subscr')
     const subscr = events.pipe(
-      filter(e => !props.filter || e.uri.includes(props.filter)),
+      filter(e => {
+        filelog(e)
+        if (typeof props.staticFilter === 'function' && !props.staticFilter(e)) return false
+        return !props.filter || e.uri.includes(props.filter)
+      }),
       scan((acc, e) => [...acc, e], [] as LoggerEvent[])
     ).subscribe(logs => setLogs(logs))
     return () => subscr.unsubscribe()

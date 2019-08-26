@@ -109,14 +109,14 @@ export class HttpPlugin {
       'raw': bodyParser.raw(),
       'none': (_, __, next) => next()
     }
-    if (methods.before) try { methods.before(app) } catch(catched) {
+    if (methods.before) try { methods.before(app) } catch (catched) {
       const err = new ErrorWithCatch('Failed to execute before http routes hook', catched)
-      this._ctx.logger.error(err)
+      this._ctx.logger.error('BEFORE_HOOK_FAILED', err)
     }
     methods.routes.forEach(method => this._registerRoute(routeMatchers, bodyParsers, method))
     if (methods.after) try { methods.after(app) } catch(catched) {
       const err = new ErrorWithCatch('Failed to execute after http routes hook', catched)
-      this._ctx.logger.error(err)
+      this._ctx.logger.error('AFTER_HOOK_FAILED', err)
     }
     this.init = _http.startServer(this._ctx.moduleMeta.name, this._ctx.vars.HTTP_PORT, app)
   }
@@ -144,7 +144,8 @@ export class HttpPlugin {
       ...meta.middlewares,
       finalHandler
     )
-    this._ctx.logger.debug('register route', {
+    this._ctx.logger.debug({
+      message: 'register route',
       path: meta.path,
       method: meta.method,
       reqType: meta.reqType,

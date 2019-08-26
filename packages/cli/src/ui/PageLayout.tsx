@@ -2,6 +2,8 @@ import * as React from 'react'
 import { RouteComponentProps, Redirect } from 'react-router'
 import { CommandInputState, useCommandInput, COMMAND_KEYS, parseCommandKey, ERROR_FLASH } from './command'
 import { PAGE_CONFIGS, PageConfig, PageComponentProps } from './paging'
+import { Box } from 'ink'
+import c from 'chalk'
 
 const COMMAND_MODES = {
   'text': {prefix: '', color: 'white'},
@@ -93,7 +95,10 @@ export function PageLayout(
     id: params.id
   }
   return (
-    <pageCfg.component {...pageComponentProps}/>
+    <Box flexDirection="column" flexGrow={1} justifyContent="space-between">
+      <pageCfg.component {...pageComponentProps}/>
+      <Box paddingLeft={2}>{c.cyan(location.pathname)}</Box>
+    </Box>
   )
 }
 

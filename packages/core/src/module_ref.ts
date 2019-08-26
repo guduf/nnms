@@ -40,7 +40,7 @@ export class PluginMeta<TVars extends Record<string, string> = {}> extends Provi
       id: `${PREFIX}:module:${this.name}`,
       meta: this,
       mode: modCtx.mode,
-      logger: modCtx.logger.extend(this.name),
+      logger: modCtx.logger.extend({resource: 'plug', plug: this.name}),
       vars: modCtx.vars,
       moduleMeta: modCtx.meta,
       moduleMethods,
@@ -85,7 +85,7 @@ export class ModuleMeta<TVars extends Record<string, string> = {}> extends Provi
       id: `${PREFIX}:module:${this.name}`,
       meta: this,
       mode: env.isProduction ? 'prod' : 'dev',
-      logger: logger.extend(this.name),
+      logger: logger.extend({resource: 'mod', mod: this.name}),
       vars: env.extract(this.vars, this.name.toUpperCase())
     }
 }

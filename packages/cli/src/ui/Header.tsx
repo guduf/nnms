@@ -1,16 +1,18 @@
 import * as React from 'react'
 
-import { Box, Color, Text } from 'ink'
+import chalk from 'chalk'
+import { Box } from 'ink'
 
 import { useBoxWidth, wrapText } from './util'
 
 export function Header() {
   const [ref, width] = useBoxWidth()
+  const text = wrapText('N&M\'s CLI', width || 0, 'left', 2)
   return (
-    <Box ref={ref} width="100%" marginBottom={1}>
-      <Color bgWhite black>
-        <Text>{wrapText(wrapText('N&M\'s CLI', 24, 'left', 0) + 'title' , width || 0)}</Text>
-      </Color>
+    <Box ref={ref} width="100%" flexDirection="column" marginBottom={1}>
+      <Box>{chalk.bgWhite(wrapText(' ', width || 0))}</Box>
+      <Box>{chalk.bgWhite(chalk.black(text))}</Box>
+      <Box>{chalk.bgWhite(wrapText(' ', width || 0))}</Box>
     </Box>
   )
 }

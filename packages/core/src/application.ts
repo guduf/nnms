@@ -46,7 +46,7 @@ export class ApplicationContext {
       level: this.env.isProduction ? 'info' : 'debug',
       transports: this.loggerTransports
     })
-    return new Logger(native, [this.name])
+    return new Logger(native, {resource: 'app', app: this.name})
   }
 
   private async _bootstrapModule(meta: ModuleMeta): Promise<void> {
@@ -58,10 +58,10 @@ export class ApplicationContext {
       if (!(mod instanceof meta.type)) throw new Error('invalid module instance')
       if (mod.init instanceof Promise) await mod.init
       this._background.initModule(meta)
-      this.logger.info(`module '${meta.name}' is ready`)
+      this.logger.info('MODULE_READY', {mod: meta.name})
     } catch (catched) {
       const err = new ErrorWithCatch(`module '${meta.name}'init failed`, catched)
-      this.logger.error(err.message, err.catched)
+      this.logger.error('MODULE_BOOTSTRAP_FAILED', err.message, err.catched)
       throw err
     }
     await Promise.all(meta.plugins.map(async (pluginMeta) => {
@@ -71,10 +71,10 @@ export class ApplicationContext {
         if (!(plugin instanceof pluginMeta.type)) throw new Error('invalid plugin instance')
         if (plugin.init instanceof Promise) await plugin.init
         this._background.initPlugin(meta, pluginMeta)
-        this.logger.info(`plugin '${pluginMeta.name}' of module '${meta.name}' is ready`)
+        this.logger.info('PLUGIN_READY', {mod: meta.name, plug: pluginMeta.name})
       } catch (catched) {
         const err = new ErrorWithCatch(`plugin init failed`, catched)
-        this.logger.error(err.message, err.catched)
+        this.logger.error('PLUGIN_BOOTSTRAP_FAILED', err.message, err.catched)
         throw err
       }
     }))
@@ -88,10 +88,10 @@ export class ApplicationContext {
       provider = Container.get(meta.type)
       if (provider.init instanceof Promise) await provider.init
       this._background.initProvider(meta)
-      this.logger.info(`provider '${meta.name}' is ready`)
+      this.logger.info('PROVIDER_READY', {prov: meta.name})
     } catch (catched) {
       const err = new ErrorWithCatch(`provider init failed`, catched)
-      this.logger.error(err.message, err.catched)
+      this.logger.error('PROVIDER_BOOTSTRAP_FAILED', err.message, err.catched)
       throw err
     }
   }
@@ -100,7 +100,7 @@ export class ApplicationContext {
     ...mods: Function[]
   ): Promise<void> {
     this._background.setStatus('BOOTSTRAP')
-    this.logger.info(`bootstrap application`)
+    this.logger.info('APPLICATION_BOOTSTRAP')
     if (Container.has(ApplicationContext as any)) {
       throw new Error('global container has another ApplicationContext')
     }
@@ -122,7 +122,7 @@ export class ApplicationContext {
     await Promise.all(metas.providers.map(prov => this._bootstrapProvider(prov)))
     await Promise.all(metas.mods.map(mod => this._bootstrapModule(mod)))
     this._background.setStatus('STARTED')
-    this.logger.info('application is ready', {
+    this.logger.info('APPLICATION_READY', {
       providers: metas.providers.map(({name}) => name),
       modules: metas.mods.reduce((acc, {name, plugins}) => ({
         ...acc,

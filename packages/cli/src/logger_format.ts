@@ -2,10 +2,11 @@ import chalk, { Chalk } from 'chalk'
 import moment from 'moment'
 import { safeDump } from 'js-yaml'
 
-import { LoggerEvent, LoggerLevel, LOGGER_LEVELS } from 'nnms'
+import { LoggerEvent, LoggerLevel, LOGGER_LEVELS, LoggerEventData } from 'nnms'
 
 export interface LoggerFormatConfig {
   printDay?: boolean
+  tags?: 'full' | 'resource'
 }
 
 export class LoggerFormat {
@@ -22,8 +23,9 @@ export class LoggerFormat {
       color(dataLines.length ? '▼': '►'),
       this._getTimePrefix(moment()),
       this._getLevelPrefix(e.level),
-      this._getUriPrefix(e.uri),
-      e.message || chalk.underline('MISSING_MESSAGE')
+      this._getTagsPrefix(e.tags),
+      ...(e.level === 'debug' ? [] : [this._getCode(e.code)]),
+      ...(e.message === e.code ? [] : [e.message])
     ].join(' ')
     if (!e.data) return headerLine + '\n'
     return [headerLine, ...dataLines, ''].join('\n')
@@ -35,8 +37,22 @@ export class LoggerFormat {
     )
   }
 
-  private _getUriPrefix(uri: string[]): string {
-    return chalk.magenta(uri.join('/'))
+  private _getTagsPrefix(
+    tags: { [tag: string]: string },
+    format = 'resource' as  'full' | 'resource'
+  ): string {
+    const text = (
+      format === 'resource' ?
+        `${tags.resource}:${tags[tags.resource]}` :
+        Object.keys(tags).reduce((acc, tag) => (
+          [...acc, `${tag}:${tags[tag]}`]
+        ), [] as string[]).join(' ')
+    )
+    return chalk.magenta(text)
+  }
+
+  private _getCode(code: string): string {
+    return chalk.bold(code)
   }
 
   private _getLevelPrefix(level: LoggerLevel): string {
@@ -51,8 +67,11 @@ export class LoggerFormat {
     return color(` ${chalk.black(prefix)} `)
   }
 
-  private _getDataLines(color: Chalk, data?: {}): string[] {
-    if (!data || !Object.keys(data).length) return []
+  private _getDataLines(color: Chalk, eventData?: LoggerEventData): string[] {
+    if (!eventData) return []
+    const data = {...eventData}
+    delete data.message
+    if (!Object.keys(data).length) return []
     return this._deserializeYaml(data).split(/\n/g).map((line, i, lines) => (
       i === lines.length - 1 ? color('▲') : `${color('|')} ${line}`
     ))

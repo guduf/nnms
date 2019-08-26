@@ -14,6 +14,7 @@ export class SubjectTransport extends Transport {
   ) {
     super(transportOpts)
     this.events = this._eventSubject.pipe(shareReplay())
+    this.events.subscribe()
   }
 
   log(e: LoggerEvent, callback: () => void): void {
