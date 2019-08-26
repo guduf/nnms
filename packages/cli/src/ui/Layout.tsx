@@ -4,18 +4,28 @@ import { Box } from 'ink'
 
 import CommandInput from './CommandInput'
 import Header from './Header'
-import { Switch, Route, RouteProps, RouteComponentProps, Redirect } from 'react-router';
+import { Switch, Route, RouteProps, Redirect } from 'react-router'
 import PageLayout from './PageLayout'
+import { PageConfig, PAGE_CONFIGS } from './paging'
 
-const PATH_ENTRIES = ['MODULES', 'PROVIDERS']
+export function parsePageConfig(
+  prefix: string,
+  cfg: PageConfig
+): (RouteProps & { path: string })[] {
+  const route: RouteProps & { path: string } = {
+    path: `${prefix}/${cfg.path}`,
+    component: PageLayout
+  }
+  return (cfg.children || []).reduce((acc, child) => [
+    ...acc,
+    ...parsePageConfig(`${prefix}/${cfg.path}`, child)
+  ], [route]).reverse()
+}
 
-const ROUTES: (RouteProps & { path: string })[] = [
-  {path: '/MODULES', component: (route: RouteComponentProps) => <PageLayout {...{route, pathEntries: PATH_ENTRIES}} /> },
-  {path: '/MODULES/:id', component: (route: RouteComponentProps) => <PageLayout {...{route, pathEntries: PATH_ENTRIES}} /> },
-  {path: '/PROVIDERS', component: (route: RouteComponentProps) => <PageLayout {...{route, pathEntries: PATH_ENTRIES}} /> },
-  {path: '/PROVIDERS/:id', component: (route: RouteComponentProps) => <PageLayout {...{route, pathEntries: PATH_ENTRIES}} /> },
-  {path: '', component: () => <Redirect to="MODULES" />}
-]
+const ROUTES: (RouteProps & { path: string })[] = PAGE_CONFIGS.reduce((acc, cfg) => [
+  ...acc,
+  ...parsePageConfig('', cfg)
+], [] as RouteProps & { path: string }[])
 
 export function Layout(): React.ReactElement {
   const height = React.useMemo(() => (process.stdout.rows || 31) - 1, [])
@@ -26,6 +36,7 @@ export function Layout(): React.ReactElement {
           <Box flexGrow={1}>
             <Switch>
               {ROUTES.map(route => <Route key={route.path} {...route} />)}
+              <Route path='' component={() => <Redirect to={'/MODULES'} />} />
             </Switch>
           </Box>
         </CommandInput>

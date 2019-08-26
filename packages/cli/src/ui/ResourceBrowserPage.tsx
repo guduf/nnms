@@ -4,33 +4,27 @@ import c from 'chalk'
 import { Box } from 'ink'
 
 import ButtonGroup from './ButtonGroup'
-import { useCommandInput } from './command'
 import { useNNMS } from './context'
-import { filelog } from './util';
+import { PageComponentProps } from './paging'
+import { Redirect } from 'react-router'
 
-export interface BrowserProps {
-  kind: 'mods' | 'providers'
-  modName?: never
-}
-
-export interface PluginBrowserProps {
-  kind: 'plugins'
-  modName: string
-}
-
-export function Browser(
-  {kind, modName}: BrowserProps | PluginBrowserProps
+export function ResourceBrowserPage(
+  {location, commandState: {query, focus}, attachTextHandler}: PageComponentProps
 ): React.ReactElement {
+  const kind = location.pathname.split('/')[1] as 'MODULES' | 'PROVIDERS'
   const state = useNNMS()
   const items = React.useMemo(() => (
-    ['abricot', 'ananas', 'tomate', 'celeri', 'banane', 'banane rouge1', 'banane rouge2', 'kiwi']
-    // kind === 'plugins' ? state.mods[modName as string].plugins : state[kind]
-  ), [kind, modName, state.mods, state.providers])
-  const {query, focus} = useCommandInput(() => {
-    const entries = items
-    const onSubmit = (name: string) => filelog({submit: name})
-    return {entries, onSubmit}
-  }, {}, [items.join("/")])
+    Object.keys(kind === 'MODULES' ? state.mods : state.providers)
+  ), [kind, state.mods, state.providers])
+  const [redir, setRedir] = React.useState('')
+  React.useEffect(() => {
+    const handler = (entry: string) => {
+      setRedir(entry)
+      return true
+    }
+    attachTextHandler(handler, items)
+  }, [items.join('/')])
+  if (redir) return <Redirect to={`/${kind}/${redir}`} />
   return (
     <Box flexGrow={1} flexDirection="column" justifyContent="center" alignItems="center">
       <Box flexDirection="column">
@@ -45,4 +39,4 @@ export function Browser(
   )
 }
 
-export default Browser
+export default ResourceBrowserPage

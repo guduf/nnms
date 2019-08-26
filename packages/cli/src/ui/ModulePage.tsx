@@ -1,19 +1,25 @@
 import React from 'react'
 
-import { Box, Color, Text } from 'ink'
+import { Box } from 'ink'
 
-import LogList from './LogList'
-import { useBoxWidth, wrapText } from './util'
+import { useNNMS } from './context'
+import { PageComponentProps } from './paging'
+import LogList from './LogList';
 
-export function ModulePage({mod}: { mod: string }): React.ReactElement {
-  const [boxRef, boxWidth] = useBoxWidth()
+export interface PluginBrowserProps {
+  modName: string
+}
+
+export function ModulePage(
+  {id}: PageComponentProps
+): React.ReactElement {
+  const state = useNNMS()
+  if (!id) throw new Error('Missing module id')
+  const item = state.mods[id]
   return (
-    <Box flexDirection="column" ref={boxRef} flexGrow={1}>
-      <Text>
-        <Color bgBlackBright>{wrapText(mod, boxWidth || 0)}</Color>
-        {'\n'}
-      </Text>
-      <LogList filter={mod}/>
+    <Box flexGrow={1} flexDirection="column" justifyContent="center" alignItems="center">
+      <Box>MODULE: {item.context.id}</Box>
+      <LogList />
     </Box>
   )
 }

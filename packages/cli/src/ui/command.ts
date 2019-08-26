@@ -20,6 +20,9 @@ export function parseCommandKey(char: string): number {
   return parseInt(Buffer.from(char).toString('hex'), 16)
 }
 
+export const ERROR_FLASH = new Error('this error represents a error flash in command input')
+export const TAP_ERROR = new Error('this error represents a warn flash in command input')
+
 const {BACK, ENTER, TAB, ARROW_LEFT, ARROW_RIGHT} = COMMAND_KEYS
 
 export type CommandInputArrows =  'top' | 'left' | 'bottom' | 'right'
@@ -181,7 +184,13 @@ export function handleCommandPress(
   char: string,
 ): CommandInputState {
   if (!state.query && typeof handler.onPress === 'function') {
-    if (handler.onPress(char, state)) return state
+    try {
+      if (handler.onPress(char, state)) return state
+    } catch (err) {
+      if ([ERROR_FLASH, TAP_ERROR].includes(err)) {
+        return {...state, flash: {zone: 'query', kind: err === ERROR_FLASH ? 'error' : 'tap'}}
+      }
+    }
   }
   const code = parseCommandKey(char)
   switch (code) {
