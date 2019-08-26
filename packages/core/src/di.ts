@@ -1,8 +1,9 @@
 import 'reflect-metadata'
 import { Container, ContainerInstance } from 'typedi'
-import { PREFIX, getApplicationContext } from './common'
-import { ProviderMeta, ProviderOpts, ProviderContext } from './provider'
-import { ModuleMeta, PluginMeta } from './module_ref'
+import { PREFIX, ResourceMeta, ResourceOpts, getContainerContext, ResourceContext } from './common'
+import { ProviderMeta } from './provider'
+import { ModuleMeta, } from './module_ref'
+import { PluginMeta } from './plugin'
 
 export type RefKind = 'module' | 'plugin' | 'provider'
 
@@ -28,38 +29,34 @@ export function pluginParamDecorator(
   }
 }
 
-export function refDecorator<TVars extends Record<string, string>, TOpts extends ProviderOpts<TVars> = ProviderOpts<TVars>>(
+export function refDecorator<TVars extends Record<string, string>, TOpts extends ResourceOpts<TVars> = ResourceOpts<TVars>>(
   ref: RefKind,
-  metaType: { new (ref: Function, opts: TOpts): ProviderMeta<TVars> }
+  metaType: { new (ref: Function, opts: TOpts): ResourceMeta<TVars> }
 ): (opts: TOpts) => ClassDecorator {
   return opts => {
     let providers = opts.providers || []
     return type => {
       Reflect.defineMetadata(`${PREFIX}:ref`, ref, type)
       const paramTypes = Reflect.getMetadata('design:paramtypes', type) as any[] || []
-      paramTypes
-        .map((paramType, index) =>  {
-          if (
-            typeof paramType !== 'function' ||
-            Container.handlers.find(handler => handler.object === type && handler.index === index)
-          ) return null
-          if (
-            paramType === ProviderContext ||
-            Object.getPrototypeOf(paramType) === ProviderContext
-          ) return (container: ContainerInstance) => {
-            const appCtx = getApplicationContext()
-            if (ref === 'provider') return appCtx.state.providers[meta.name].context
-            if (ref === 'module') return appCtx.state.mods[meta.name].context
-            if (!(container.id instanceof ModuleMeta)) throw new Error('invalid container')
-            return appCtx.state.mods[container.id.name].plugins[meta.name].context
-          }
-          const paramMeta = Reflect.getMetadata(`${PREFIX}:provider`, paramType)
-          if (paramMeta instanceof ProviderMeta) {
-            if (!providers.includes(paramType)) providers = [...providers, paramType]
-            return (container: ContainerInstance) => paramMeta.inject(container)
-          }
-          return null
-        })
+      paramTypes.map((paramType, index) =>  {
+        if (
+          typeof paramType !== 'function' ||
+          Container.handlers.find(handler => handler.object === type && handler.index === index)
+        ) return null
+        if (Object.getPrototypeOf(paramType) === ResourceContext) {
+          return (container: ContainerInstance) => (
+            meta instanceof ModuleMeta ?
+              getContainerContext(container) :
+              meta.buildContext(container)
+          )
+        }
+        const paramMeta = Reflect.getMetadata(`${PREFIX}:provider`, paramType)
+        if (paramMeta instanceof ProviderMeta) {
+          if (!providers.includes(paramType)) providers = [...providers, paramType]
+          return () => Container.get(paramMeta.type)
+        }
+        return null
+      })
         .forEach((value, index) => {
           if (!value) return
           Container.registerHandler({object: type, index, value})

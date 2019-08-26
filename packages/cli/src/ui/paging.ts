@@ -1,5 +1,5 @@
 
-import ResourceBrowserPage from './ResourceBrowserPage'
+import ApplicationBrowserPage from './ApplicationBrowserPage'
 import DebugPage from './DebugPage'
 import { Location } from 'history'
 import { CommandInputState } from './command'
@@ -23,7 +23,7 @@ export interface PageConfig {
 export const PAGE_CONFIGS: PageConfig[] = [
   {
     path: 'MODULES',
-    component: ResourceBrowserPage,
+    component: ApplicationBrowserPage,
     children: [
       {
         path: ':id',
@@ -37,7 +37,7 @@ export const PAGE_CONFIGS: PageConfig[] = [
   },
   {
     path: 'PROVIDERS',
-    component: ResourceBrowserPage,
+    component: ApplicationBrowserPage,
     children: [
       {
         path: ':id',
@@ -46,6 +46,16 @@ export const PAGE_CONFIGS: PageConfig[] = [
           {path: 'PLUGINS', component: DebugPage},
           {path: 'LOG', component: DebugPage}
         ]
+      }
+    ]
+  },
+  {
+    path: 'PLUGINS',
+    component: ApplicationBrowserPage,
+    children: [
+      {
+        path: ':id',
+        component: DebugPage
       }
     ]
   }

@@ -1,5 +1,6 @@
 import { appendFileSync } from 'fs'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
+import { Observable } from 'rxjs';
 
 export function useBoxWidth(): [(box: any) => void, number | undefined] {
   const [width, setWidth] = useState(undefined)
@@ -34,4 +35,14 @@ export function wrapText(
     default:
       return text
   }
+}
+
+export function useObservable<T>(init: () => Observable<T>, deps: any[]): T | undefined {
+  const [value, setValue] = useState(undefined as T | undefined)
+  useEffect(() => {
+    setValue(undefined)
+    const subscr = init().subscribe(value => setValue(value))
+    return () => subscr.unsubscribe()
+  }, deps)
+  return value
 }

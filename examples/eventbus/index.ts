@@ -1,5 +1,4 @@
 import { ModuleRef, bootstrap } from 'nnms'
-import { ConsoleTransport } from 'nnms-cli'
 import { HttpRoute, HttpPlugin } from 'nnms-http'
 import { EventbusHandler, EventbusPlugin, EventbusProxy } from 'nnms-nats'
 import { randomBytes } from 'crypto'
@@ -54,16 +53,13 @@ export class APIModule {
     const item = req.body as Pick<APIItem, 'name' | 'secretId'>
     const id = randomBytes(16).toString('hex')
     const decrypted = await this._secretMod.decryptSecret(item.secretId)
-    console.log(decrypted)
+    decrypted
     return {id, ...item}
   }
 }
 
 bootstrap(
-  {
-    name: 'eventbus-example',
-    loggerTransports: [new ConsoleTransport(console)]
-  },
+  'eventbus-example',
   SecretModule,
   APIModule
 )

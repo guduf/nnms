@@ -8,6 +8,7 @@
     "js-yaml",
     "ink",
     "ink-select-input",
+    "ink-table",
     "winston-transport",
     "yargs",
     "react",

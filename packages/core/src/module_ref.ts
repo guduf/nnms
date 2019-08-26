@@ -1,88 +1,77 @@
+import { PREFIX, getContainerContext, ResourceMeta, ResourceOpts, ResourceContext, RESOURCE_CONTEXT_TOKEN } from './common'
+import Environment from './environment'
+import { PluginMeta } from './plugin'
+import { ErrorWithCatch } from './errors'
 import Container from 'typedi'
 
-import { PREFIX, getApplicationContext, getMethodPluginMetas } from './common'
-import Environment from './environment'
-import { ProviderMeta, ProviderOpts, ProviderContext } from './provider'
-
-export abstract class PluginContext<TVars extends Record<string, string> = {}, T = {}> extends ProviderContext<TVars> {
-  readonly meta: PluginMeta<TVars>
-  readonly moduleMeta: ModuleMeta
-  readonly moduleInstance: T
-  readonly moduleMethods: { prop: string, meta: unknown, func: (...args: any[]) => Promise<unknown> }[]
-  readonly moduleParams: { meta: unknown, type: any, index: number }[]
+export interface ModuleMetric {
+  name: string,
+  status: 'bootstrap' | 'ready',
+  plugins: string[]
 }
 
-export class PluginMeta<TVars extends Record<string, string> = {}> extends ProviderMeta<TVars> {
-  inject(): any {
-    throw new Error(`plugin '${this.name}' cannot be injected`)
-  }
-
-  buildContext(): ProviderContext {
-    throw new Error('buildContext can\'t be used in PluginMeta')
-  }
-
-  buildPluginContext<T>(modMeta: ModuleMeta): PluginContext<TVars, T> {
-    const appCtx = getApplicationContext()
-    const modCtx = appCtx.state.mods[modMeta.name].context as ModuleContext<TVars>
-    const moduleInstance = Container.of(modMeta).get(modMeta.type) as T
-    const paramTypes = Reflect.getMetadata('design:paramtypes', modMeta.type) as any[] || []
-    const moduleParams = paramTypes.map((paramType, index) => ({
-      meta: Reflect.getMetadata(`${PREFIX}:plugin:${this.name}`, modMeta.type, `constructor[${index}]`) || null,
-      type: paramType,
-      index
-    }))
-    const methodMetas = getMethodPluginMetas(this.name, moduleInstance as any)
-    const moduleMethods = Object.keys(methodMetas).reduce((acc, prop) => [
-      ...acc,
-      {prop, meta: methodMetas[prop], func: (moduleInstance as any)[prop].bind(moduleInstance)}
-    ], [] as { prop: string, meta: unknown, func: (...args: any[]) => Promise<unknown> }[])
-    return {
-      id: `${PREFIX}:module:${this.name}`,
-      meta: this,
-      mode: modCtx.mode,
-      logger: modCtx.logger.extend({resource: 'plug', plug: this.name}),
-      vars: modCtx.vars,
-      moduleMeta: modCtx.meta,
-      moduleMethods,
-      moduleInstance,
-      moduleParams
-    }
-  }
-}
-
-export interface ModuleOpts<TVars extends Record<string, string> = {}>  extends ProviderOpts<TVars> {
+export interface ModuleOpts<TVars extends Record<string, string> = {}>  extends ResourceOpts<TVars> {
   plugins?: Function[]
 }
 
-export abstract class ModuleContext<TVars extends Record<string, string> = {}> extends ProviderContext<TVars> {
+export abstract class ModuleContext<TVars extends Record<string, string> = {}> extends ResourceContext<TVars> {
+  readonly kind: 'module'
   readonly meta: ModuleMeta<TVars>
 }
 
-export class ModuleMeta<TVars extends Record<string, string> = {}> extends ProviderMeta<TVars> {
+export class ModuleMeta<TVars extends Record<string, string> = {}> extends ResourceMeta<TVars> {
   readonly plugins: PluginMeta[]
 
   constructor(type: Function, opts: ModuleOpts<TVars>) {
-    const {metas, vars} = (opts.plugins || []).reduce((acc, pluginType) => {
+    const {plugins, vars} = (opts.plugins || []).reduce((acc, pluginType) => {
       const pluginMeta = Reflect.getMetadata(`${PREFIX}:plugin`, pluginType) as PluginMeta<TVars>
       if (!(pluginMeta instanceof PluginMeta)) throw new Error('invalid plugin')
       const nextVars = Object.keys(pluginMeta.vars).reduce((acc, key) => ({
         ...acc,
         [key]: acc[key as keyof TVars] || pluginMeta.vars[key]
       }), acc.vars as TVars)
-      return {metas: [...acc.metas, pluginMeta], vars: nextVars}
-    }, {metas: [] as PluginMeta[], vars: opts.vars || {} as TVars})
+      return {plugins: [...acc.plugins, pluginMeta], vars: nextVars}
+    }, {plugins: [] as PluginMeta[], vars: opts.vars || {} as TVars})
     super(type, {...opts, vars})
-    this.plugins = metas
+    this.plugins = plugins
   }
 
-  inject(): any {
-    throw new Error(`module cannot be injected`)
+  async bootstrap(): Promise<void> {
+    const {logger} = getContainerContext()
+    logger.metric(`bootstrap module '${this.name}'`, {
+      modules: {
+        $add: [{
+          name: this.name,
+          status: 'bootstrap',
+          plugins: this.plugins.map(pluginMeta => pluginMeta.name)
+        } as ModuleMetric]
+      }
+    })
+    const container = Container.of(this)
+    container.set(RESOURCE_CONTEXT_TOKEN, this.buildContext())
+    try {
+      const mod = container.get(this.type) as { init?: Promise<void> }
+      if (!(mod instanceof this.type)) throw new Error('invalid module instance')
+      if (mod.init instanceof Promise) await mod.init
+      logger.info('MODULE_READY', {mod: this.name}, {
+        modules: {
+          metricKey: 'name',
+          $patch: [{name: this.name, status: 'ready'} as Partial<ModuleMetric>]
+        }
+      })
+    } catch (catched) {
+      const err = new ErrorWithCatch(`module '${this.name}' init failed`, catched)
+      logger.error('MODULE_BOOTSTRAP_FAILED', err.message, err.catched)
+      throw err
+    }
+    await Promise.all(this.plugins.map(pluginMeta => pluginMeta.bootstrap(this)))
   }
 
   buildContext(): ModuleContext<TVars> {
-    const {env, logger} = getApplicationContext()
+    const {env, logger} = getContainerContext()
     return {
-      id: `${PREFIX}:module:${this.name}`,
+      kind: 'module',
+      name: this.name,
       meta: this,
       mode: env.isProduction ? 'prod' : 'dev',
       logger: logger.extend({resource: 'mod', mod: this.name}),

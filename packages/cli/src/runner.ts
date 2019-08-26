@@ -1,7 +1,6 @@
 import { bootstrap, ModuleMeta, PREFIX } from 'nnms'
 import { join } from 'path'
 
-import SubjectTransport from './subject_transport'
 import { render } from 'ink'
 import NNMSUI from './ui'
 import { createElement } from 'react'
@@ -30,7 +29,6 @@ export async function runModules(file: string, opts = {} as { appName?: string, 
       }) :
       Object.keys(mods).map(modName => mods[modName])
   )
-  const transport = new SubjectTransport()
-  bootstrap({name: appName, loggerTransports: [transport]}, ...bootstrapedMods)
-  render(createElement(NNMSUI, {transport}))
+  bootstrap(appName, ...bootstrapedMods)
+  render(createElement(NNMSUI))
 }

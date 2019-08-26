@@ -1,4 +1,7 @@
-import { Logger as WinstonLogger, LogEntry } from 'winston'
+import { LogEntry } from 'winston'
+import { Observable, Subject, Subscription, OperatorFunction } from 'rxjs'
+import { scan, shareReplay, startWith } from 'rxjs/operators'
+import shortid from 'shortid'
 
 export interface LoggerConfig {
   baseUri?: string[]
@@ -33,7 +36,7 @@ export const LOGGER_LEVELS: { [level in LoggerLevel]: { color: string} } = {
   debug: {color: 'white'}
 }
 
-export interface Tags {
+export interface LoggerTags {
   resource: 'app' | 'mod' | 'prov' | 'plug'
   [tag: string]: string
 }
@@ -43,24 +46,58 @@ export interface LoggerEventData {
   [key: string]: any
 }
 
-export interface LoggerEventMetrics {
-  'table-add'?: { table: string, data: any }[]
-  'table-remove'?: { table: string, tableKey?: string, key: string }[]
-  'table-patch'?: { table: string, tableKey?: string, data: any }[]
+export interface LoggerEventMetricMutation<T extends { [key: string]: any } = { [key: string]: any }> {
+  metricKey?: string
+  $add?: T[]
+  $remove?: string[]
+  $patch?: T[]
+}
+
+export interface LoggerEventMetricMutations {
+  [metricName: string]: LoggerEventMetricMutation
 }
 
 export interface LoggerEvent<T extends LoggerEventData = LoggerEventData> extends LogEntry {
+  id: string
   level: LoggerLevel
   code: string
-  tags: Tags
+  tags: LoggerTags
   data?: T
-  metrics?: LoggerEventMetrics
+  metrics?: LoggerEventMetricMutations
+}
+
+export class LoggerSubject {
+  readonly events: Observable<LoggerEvent>
+  private readonly _events = new Subject<LoggerEvent>()
+  private readonly _subscr = new Subscription()
+
+  constructor() {
+    this.events = this._events.pipe(shareReplay())
+    this._subscr.add(this.events.subscribe())
+  }
+
+  unsubscribe(): void {
+    this._events.complete()
+    this._subscr.unsubscribe()
+  }
+
+  next(e: LoggerEvent): void {
+    this._events.next(e)
+  }
 }
 
 export class Logger {
-  constructor(
-    protected readonly _native: WinstonLogger,
-    protected readonly _tags: Tags
+  get events(): Observable<LoggerEvent> {
+    return this._subject.events
+  }
+
+  static create(tags: LoggerTags): Logger {
+    return new Logger(new LoggerSubject(), tags)
+  }
+
+  private constructor(
+    private readonly _subject: LoggerSubject,
+    readonly tags: LoggerTags
   ) { }
 
   catch(
@@ -94,22 +131,23 @@ export class Logger {
     })
   }
 
-  extend(tags: Tags): Logger {
-    if (tags.resource === this._tags.resource) throw new Error(
+  extend(tags: LoggerTags): Logger {
+    if (tags.resource === this.tags.resource) throw new Error(
       `Logger cannot extend the same resource '${tags.resource}'`
     )
     const newTags = Object.keys(tags).reduce((acc, tag) => {
       if (tag !== 'resource' && acc[tag]) throw new Error(`Logger tag '${tag}' cannot be extended`)
       return {...acc, [tag]: tags[tag]}
-    }, this._tags)
-    return new Logger(this._native, newTags)
+    }, this.tags)
+    return new Logger(this._subject, newTags)
   }
 
   log(e: Pick<LoggerEvent, 'level' | 'code' | 'data' | 'metrics'>): void {
-    this._native.log({
+    this._subject.next({
       ...e,
+      id: shortid(),
       message: (e.data || {message : ''}).message || e.code,
-      tags: this._tags
+      tags: this.tags
     })
   }
 
@@ -130,18 +168,58 @@ export class Logger {
     this.catch('error', code, messageOrError, errorOrData, data)
   }
 
-  info(code: string, data?: LoggerEventData, metrics?: LoggerEventMetrics): void {
+  info(code: string, data?: LoggerEventData, metrics?: LoggerEventMetricMutations): void {
     this.log({level: 'info', code, data, metrics})
   }
 
   warn(
     code: string,
     messageOrError: string | Error,
-    errorOrData?: Error | {},
+    errorOrData?: Error | LoggerEventData,
     data?: LoggerEventData
   ): void {
     this.catch('warn', code, messageOrError, errorOrData, data)
   }
+
+  metric(
+    messageOrMetrics: string | LoggerEventMetricMutations,
+    metrics?: LoggerEventMetricMutations
+  ): void {
+    const message = typeof messageOrMetrics === 'string' ? messageOrMetrics : undefined
+    metrics = typeof messageOrMetrics === 'string' ? metrics : messageOrMetrics
+    this.log({level: 'debug', code: '*METRIC', metrics, data: message ? {message} : {}})
+  }
+}
+
+
+export function matchTags(target: LoggerTags, test: LoggerTags, extraTags = false): boolean {
+  const result = !Object.keys(test).find(tag => target[tag] !== test[tag])
+  if (!result || !extraTags) return result
+  return Object.keys(test).length === Object.keys(target).length
+}
+
+export function scanMetrics<T>(tags: LoggerTags, metricName: string): OperatorFunction<LoggerEvent, T[]> {
+  return events => events.pipe(
+    scan((metrics, e) => {
+      const mutation = (e.metrics || {})[metricName] as LoggerEventMetricMutation<T>
+      if (!mutation) return metrics
+      if (!matchTags(e.tags, tags)) return metrics
+      const {$add: add, $remove: remove, $patch: patch, metricKey} = mutation
+      if (remove) metrics = metrics.filter(data => (
+        !remove.includes((data as unknown as { id: string })[(metricKey || 'id') as 'id'])
+      ))
+      if (add) metrics = [...metrics, ...add]
+      if (patch) metrics = metrics.map(metricData => {
+        const id = (metricData as unknown as { id: string })[(metricKey || 'id') as 'id']
+        const patchData = patch.find(_patchData => (_patchData as unknown as { id: string })[(metricKey || 'id') as 'id'] === id)
+        if (!patchData) return metricData
+        return {...metricData, ...patchData}
+      })
+      return metrics
+    }, [] as T[]),
+    startWith([] as T[]),
+    shareReplay(1)
+  )
 }
 
 export default Logger

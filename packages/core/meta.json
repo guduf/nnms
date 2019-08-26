@@ -1,5 +1,5 @@
 {
   "$schema": "../metaschema.json",
   "name": "core",
-  "externals": ["dotenv", "reflect-metadata", "rxjs", "typedi", "winston"]
+  "externals": ["dotenv", "reflect-metadata", "rxjs", "shortid", "typedi", "winston"]
 }

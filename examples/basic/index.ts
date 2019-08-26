@@ -53,7 +53,7 @@ export class TodoModule {
   ) { }
 
   async init(): Promise<void> {
-    this._ctx.logger.debug('Initial todos list', {items: await this._todos.list()})
+    this._ctx.logger.debug({initialList: await this._todos.list()})
   }
 
   @HttpRoute()
