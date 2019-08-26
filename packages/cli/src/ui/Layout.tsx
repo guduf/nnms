@@ -36,7 +36,7 @@ export function Layout(): React.ReactElement {
           <Box flexGrow={1}>
             <Switch>
               {ROUTES.map(route => <Route key={route.path} {...route} />)}
-              <Route path='' component={() => <Redirect to={'/MODULES'} />} />
+              <Route path='' component={() => <Redirect to={'/DASHBOARD'} />} />
             </Switch>
           </Box>
         </CommandInput>

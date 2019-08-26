@@ -1,8 +1,9 @@
 
-import ApplicationBrowserPage from './ApplicationBrowserPage'
+import ResourceBrowserPage from './ResourceBrowserPage'
 import DebugPage from './DebugPage'
 import { Location } from 'history'
 import { CommandInputState } from './command'
+import DashboardPage from './DashboardPage'
 import ModulePage from './ModulePage'
 
 export interface PageComponentProps {
@@ -21,9 +22,10 @@ export interface PageConfig {
 }
 
 export const PAGE_CONFIGS: PageConfig[] = [
+  {path: 'DASHBOARD', component: DashboardPage},
   {
     path: 'MODULES',
-    component: ApplicationBrowserPage,
+    component: ResourceBrowserPage,
     children: [
       {
         path: ':id',
@@ -37,7 +39,7 @@ export const PAGE_CONFIGS: PageConfig[] = [
   },
   {
     path: 'PROVIDERS',
-    component: ApplicationBrowserPage,
+    component: ResourceBrowserPage,
     children: [
       {
         path: ':id',
@@ -51,7 +53,7 @@ export const PAGE_CONFIGS: PageConfig[] = [
   },
   {
     path: 'PLUGINS',
-    component: ApplicationBrowserPage,
+    component: ResourceBrowserPage,
     children: [
       {
         path: ':id',

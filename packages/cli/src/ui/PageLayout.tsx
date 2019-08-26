@@ -85,7 +85,7 @@ export function PageLayout(
             absEntries
     )
     return {entries, onPress, color, prefix, onSubmit}
-  }, {}, [commandMode, textCommand])
+  }, [commandMode, textCommand])
   if (redir) return <Redirect to={redir} />
   const pageComponentProps = {
     location,

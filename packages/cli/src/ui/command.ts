@@ -43,7 +43,6 @@ export const NextCommandHandler = createContext(undefined as never as NextComman
 
 export function useCommandInput(
   effect: () => CommandInputHandler | null,
-  opts: { distinctUntilChanged?: (keyof CommandInputState)[] } = {},
   deps: any[]
 ): CommandInputState {
   const [state, setState] = useState<CommandInputState>({flash: null, focus: '', query: ''})
@@ -55,10 +54,7 @@ export function useCommandInput(
       return
     }
     const subscr = attachHandler(handler)
-      .pipe(distinctUntilChanged((x, y) => {
-        for (const key of opts.distinctUntilChanged || []) if (x[key] !== y[key]) return false
-        return true
-      }))
+
       .subscribe(state => setState(state))
     setState({flash: null, focus: '', query: ''})
     return () => {
@@ -192,6 +188,7 @@ export function handleCommandPress(
       }
     }
   }
+
   const code = parseCommandKey(char)
   switch (code) {
     case ARROW_LEFT:
