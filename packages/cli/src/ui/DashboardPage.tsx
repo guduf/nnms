@@ -10,6 +10,10 @@ import { Box } from 'ink';
 import { PageTitle } from './theme'
 import { map } from 'rxjs/operators';
 import chalk from 'chalk';
+import LogList from './LogList'
+import LoggerFormat from '../logger_format';
+
+const logFormat = new LoggerFormat({printData: true})
 
 export function DashboardPage(
   {attachTextHandler}: PageComponentProps
@@ -20,9 +24,6 @@ export function DashboardPage(
       map(([modules, plugins, providers]) => ({modules, plugins, providers})),
     )
   ), [])
-  items
-  chalk
-  Table
   const [redir, setRedir] = React.useState('')
   React.useEffect(() => {
     const handler = (entry: string) => {
@@ -33,15 +34,21 @@ export function DashboardPage(
   }, [])
   if (redir) return <Redirect to={`/${redir}`} />
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" flexGrow={1}>
       <PageTitle>Dashboard</PageTitle>
-      <Box marginX={2}>
-        {(['modules', 'plugins', 'providers'] as const).map(kind => (
-          <Box key={kind} flexDirection="column" marginRight={4}>
-            <Box marginBottom={1} marginX={1}>{chalk.cyan(`/${kind.toUpperCase()}`)}</Box>
-            <Table<any> data={items ? items[kind] : []}></Table>
-          </Box>
-        ))}
+      <Box marginTop={1}  marginX={3}>
+        <Box  flexDirection="column">
+          {(['modules', 'plugins', 'providers'] as const).map(kind => (
+            <Box key={kind} flexDirection="column" marginRight={4} minWidth={40} height={15}>
+              <Box marginBottom={1} marginX={1}>{chalk.cyan(`/${kind.toUpperCase()}`)}</Box>
+              <Table<any> data={items ? items[kind].slice(0, 10) : []}></Table>
+            </Box>
+          ))}
+        </Box>
+        <Box flexDirection="column" flexGrow={1}>
+          <Box marginBottom={1} marginX={1}>{chalk.cyan(`/LOGS`)}</Box>
+          <LogList format={logFormat}/>
+        </Box>
       </Box>
     </Box>
   )

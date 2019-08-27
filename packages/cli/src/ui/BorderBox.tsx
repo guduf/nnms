@@ -4,7 +4,7 @@ import { Box, BoxProps } from 'ink'
 
 import c, { Chalk } from 'chalk'
 
-import { useBoxWidth } from './util'
+import { useBoxSize } from './util'
 
 export interface BorderBoxSideProps {
   color: Chalk
@@ -29,7 +29,7 @@ export interface BorderBoxProps {
   justifyContent?: BoxProps['justifyContent']
 }
 export function BorderBox({children, color, justifyContent, fixedWidth}: BorderBoxProps) {
-  const [ref, refWidth] = useBoxWidth()
+  const [ref, {width: refWidth}] = useBoxSize()
   const width = fixedWidth || refWidth
   const chalk = c.keyword(color)
   return (

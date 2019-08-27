@@ -7,6 +7,7 @@ import { LoggerEvent } from 'nnms'
 import LoggerFormat from '../logger_format'
 import { useApplicationContext } from './context'
 import { filter, scan } from 'rxjs/operators'
+import { useBoxSize, filelog, useObservable } from './util';
 
 export interface LogProps {
   filter?: string
@@ -15,28 +16,27 @@ export interface LogProps {
 }
 
 export function LogList(props: LogProps) {
+  const [ref,{width, height}] = useBoxSize()
+  filelog({width, height})
   const {logger: {events}} = useApplicationContext()
-  const [logs, setLogs] = React.useState([] as LoggerEvent[])
-  React.useEffect(() => {
-    const subscr = events.pipe(
+  const logs = useObservable(() => (
+    events.pipe(
       filter(e => {
         if (typeof props.staticFilter === 'function' && !props.staticFilter(e)) return false
         return !props.filter || e.uri.includes(props.filter)
       }),
       scan((acc, e) => [...acc, e], [] as LoggerEvent[])
-    ).subscribe(logs => setLogs(logs))
-    return () => subscr.unsubscribe()
-  }, [events, props.filter])
+    )
+  ), [events, props.filter, height])
   const texts = React.useMemo(() => {
     const format = props.format ? props.format : new LoggerFormat()
-    return logs.map(e => {
+    return (logs || []).slice(-(height || 0)).map(e => {
       try { return format.render(e) } catch (err) { return 'FORMAT_ERROR:' + err.message + '\n'  }
     })
   }, [logs, props.format])
   return (
-    <Box flexGrow={1}>{texts.join('\n')}</Box>
+    <Box ref={ref} flexGrow={1}>{texts.join('\n')}</Box>
   )
 }
 
 export default LogList
-

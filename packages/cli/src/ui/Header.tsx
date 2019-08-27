@@ -3,10 +3,10 @@ import * as React from 'react'
 import chalk from 'chalk'
 import { Box } from 'ink'
 
-import { useBoxWidth, wrapText } from './util'
+import { useBoxSize, wrapText } from './util'
 
 export function Header() {
-  const [ref, width] = useBoxWidth()
+  const [ref, {width}] = useBoxSize()
   const text = wrapText('N&M\'s CLI', width || 0, 'left', 2)
   return (
     <Box ref={ref} width="100%" flexDirection="column" marginBottom={1}>

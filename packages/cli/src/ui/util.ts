@@ -2,12 +2,19 @@ import { appendFileSync } from 'fs'
 import { useState, useCallback, useEffect } from 'react'
 import { Observable } from 'rxjs';
 
-export function useBoxWidth(): [(box: any) => void, number | undefined] {
-  const [width, setWidth] = useState(undefined)
+export interface BoxSize {
+  width?: number
+  height?: number
+}
+
+export function useBoxSize(): [(box: any) => void, BoxSize] {
+  const [size, setSize] = useState({})
   const ref = useCallback(box => {
-    setWidth(box ? box.nodeRef.current.yogaNode.getComputedWidth() : undefined)
+    if (!box) return setSize({})
+    const node = box.nodeRef.current.yogaNode
+    setSize({width: node.getComputedWidth(), height: node.getComputedHeight()})
   }, [])
-  return [ref, width]
+  return [ref, size]
 }
 
 export function filelog(obj: {}) {

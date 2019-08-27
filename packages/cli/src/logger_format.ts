@@ -3,10 +3,13 @@ import moment from 'moment'
 import { safeDump } from 'js-yaml'
 
 import { LoggerEvent, LoggerLevel, LOGGER_LEVELS, LoggerEventData } from 'nnms'
+import { filelog } from './ui/util';
 
 export interface LoggerFormatConfig {
+  printData?: boolean
   printDay?: boolean
   tags?: 'full' | 'resource'
+  width?: number
 }
 
 export class LoggerFormat {
@@ -18,17 +21,18 @@ export class LoggerFormat {
 
   render(e: LoggerEvent): string {
     const color = chalk.keyword(LOGGER_LEVELS[e.level].color)
-    const dataLines = this._getDataLines(color, e.data)
     const headerLine = [
-      color(dataLines.length ? '▼': '►'),
       this._getTimePrefix(moment()),
       this._getLevelPrefix(e.level),
       this._getTagsPrefix(e.tags),
       ...(e.level === 'debug' ? [] : [this._getCode(e.code)]),
       ...(e.message === e.code ? [] : [e.message])
     ].join(' ')
-    if (!e.data) return headerLine + '\n'
-    return [headerLine, ...dataLines, ''].join('\n')
+    if (this._cfg.printData === false || !e.data) return  `${color('►')} ${headerLine}\n`
+    const dataSpace = (this._cfg.width || 0) - 2 - headerLine.length
+    const dataLine = this._getDataLine(color, e.data, dataSpace)
+    if (true) return `${color('►')} ${headerLine}${dataLine}\n`
+    //return [headerLine, ...this._getDataLines(color, e.data), ''].join('\n')
   }
 
   private _getTimePrefix(moment: moment.Moment): string {
@@ -67,8 +71,22 @@ export class LoggerFormat {
     return color(` ${chalk.black(prefix)} `)
   }
 
-  private _getDataLines(color: Chalk, eventData?: LoggerEventData): string[] {
-    if (!eventData) return []
+  private _getDataLine(color: Chalk, eventData: LoggerEventData, space: number): string {
+    let line = ''
+    for (const key in eventData) {
+      const prefix = ` ${color('▪')}${chalk.grey(`${key}:`)} `
+      if (
+        ['number', 'boolean', 'string'].includes(typeof eventData[key]) ||
+        eventData[key] === null
+      ) line += `${prefix}${String(eventData[key])}`
+      else if (Array.isArray(eventData[key])) line += `${prefix}[]`
+      else line += `${prefix}{}`
+    }
+    filelog([line.length, space])
+    return line
+  }
+
+  _getDataLines(color: Chalk, eventData: LoggerEventData): string[] {
     const data = {...eventData}
     delete data.message
     if (!Object.keys(data).length) return []
@@ -77,5 +95,6 @@ export class LoggerFormat {
     ))
   }
 }
+
 
 export default LoggerFormat
