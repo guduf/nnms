@@ -1,6 +1,6 @@
 {
   "name": "nnms-repo",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "N&M's - NodeJS framework for micro services",
   "scripts": {
     "example:basic": "tsc -p examples/basic && node examples/basic/index.js",
@@ -62,9 +62,9 @@
     "yargs": "^13.3.0"
   },
   "optionalDependencies": {
-    "nnms": "file:dist/nnms-0.7.0.tgz",
-    "nnms-cli": "file:dist/nnms-cli-0.7.0.tgz",
-    "nnms-http": "file:dist/nnms-http-0.7.0.tgz",
-    "nnms-nats": "file:dist/nnms-nats-0.7.0.tgz"
+    "nnms": "file:dist/nnms-0.8.0.tgz",
+    "nnms-cli": "file:dist/nnms-cli-0.8.0.tgz",
+    "nnms-http": "file:dist/nnms-http-0.8.0.tgz",
+    "nnms-nats": "file:dist/nnms-nats-0.8.0.tgz"
   }
 }

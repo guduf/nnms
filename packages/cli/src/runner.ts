@@ -8,7 +8,7 @@ import { createElement } from 'react'
 export async function runModules(file: string, opts = {} as { appName?: string, moduleNames?: string[] }) {
   let index = {} as { [key: string]: Function }
   try {
-    index = await import(file.match(/^\.?\.\//) ? join(process.cwd(), file) : file)
+    index = require(file.match(/^\.?\.\//) ? join(process.cwd(), file) : file)
   } catch (err) {
     throw new Error('failed to import index')
   }

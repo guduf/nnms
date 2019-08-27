@@ -53,11 +53,11 @@ export const PAGE_CONFIGS: PageConfig[] = [
   },
   {
     path: 'PLUGINS',
-    component: ResourceExplorerPage,
+    component: ResourceBrowserPage,
     children: [
       {
         path: ':id',
-        component: DebugPage
+        component: ResourceExplorerPage
       }
     ]
   }
