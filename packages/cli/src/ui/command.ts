@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { mergeMap, startWith, distinctUntilChanged, takeUntil, share, skip, map } from 'rxjs/operators'
+import { mergeMap, startWith, distinctUntilChanged, takeUntil, skip, map, shareReplay} from 'rxjs/operators'
 import { BehaviorSubject, of, fromEvent, Observable, EMPTY, timer, Subscription } from 'rxjs'
 
 export enum COMMAND_KEYS {
@@ -46,6 +46,7 @@ export function useCommandInput(
   deps: any[]
 ): CommandInputState {
   const [state, setState] = useState<CommandInputState>({flash: null, focus: '', query: ''})
+  let newState = state
   const attachHandler = useContext(NextCommandHandler)
   useEffect(() => {
     const handler = effect()
@@ -53,10 +54,8 @@ export function useCommandInput(
       attachHandler(null)
       return
     }
-    const subscr = attachHandler(handler)
-
-      .subscribe(state => setState(state))
-    setState({flash: null, focus: '', query: ''})
+    const subscr = attachHandler(handler).subscribe(state => setState(newState = state))
+    setState(newState)
     return () => {
       subscr.unsubscribe()
       attachHandler(null)
@@ -217,8 +216,8 @@ export function watchState(
   let state = EMPTY_STATE
   return handlerChange.pipe(
     distinctUntilChanged(),
-    mergeMap(handler => (
-      handler ?
+    mergeMap(handler => {
+      return handler ?
         input.pipe(
           takeUntil(handlerChange.pipe(skip(1))),
           map(char => handleCommandPress(handler, {...state}, char)),
@@ -229,7 +228,7 @@ export function watchState(
           )
         ) :
         of(EMPTY_STATE)
-    )),
+    }),
     mergeMap(next => {
       if (next === state) return EMPTY
       const prev = {...state}
@@ -243,8 +242,8 @@ export function watchState(
       if (isStateEqual(prev, next)) return EMPTY
       return of(next)
     }),
-    share(),
-    startWith(state)
+    startWith(state),
+    shareReplay(1)
   )
 }
 

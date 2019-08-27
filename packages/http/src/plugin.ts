@@ -133,7 +133,6 @@ export class HttpPlugin {
         if (!(promise instanceof Promise)) promise = Promise.resolve(promise)
         result = await promise
       } catch (err) {
-        console.error(err)
         res.status(500).end()
       }
       res.send(result)

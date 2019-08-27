@@ -10,6 +10,7 @@ import { Box } from 'ink';
 import { PageTitle } from './theme'
 import { map } from 'rxjs/operators';
 import chalk from 'chalk';
+
 export function DashboardPage(
   {attachTextHandler}: PageComponentProps
 ): React.ReactElement {
@@ -19,6 +20,9 @@ export function DashboardPage(
       map(([modules, plugins, providers]) => ({modules, plugins, providers})),
     )
   ), [])
+  items
+  chalk
+  Table
   const [redir, setRedir] = React.useState('')
   React.useEffect(() => {
     const handler = (entry: string) => {
@@ -33,7 +37,7 @@ export function DashboardPage(
       <PageTitle>Dashboard</PageTitle>
       <Box marginX={2}>
         {(['modules', 'plugins', 'providers'] as const).map(kind => (
-          <Box flexDirection="column" marginRight={4}>
+          <Box key={kind} flexDirection="column" marginRight={4}>
             <Box marginBottom={1} marginX={1}>{chalk.cyan(`/${kind.toUpperCase()}`)}</Box>
             <Table<any> data={items ? items[kind] : []}></Table>
           </Box>

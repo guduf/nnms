@@ -6,6 +6,7 @@ import { ErrorWithCatch } from './errors'
 export interface PluginMetric {
   name: string,
   module: string
+  plugin: string
 }
 
 export abstract class PluginContext<TVars extends Record<string, string> = {}, T = {}> extends ResourceContext<TVars> {
@@ -59,10 +60,9 @@ export class PluginMeta<TVars extends Record<string, string> = {}> extends Resou
       if (!(plugin instanceof this.type)) throw new Error('invalid plugin instance')
       if (plugin.init instanceof Promise) await plugin.init
       logger.info('PLUGIN_READY', {mod: modMeta.name, plug: this.name}, {
-        plugins: {$add: [{name: this.name, module: modMeta.name} as PluginMetric]}
+        plugins: {$add: [{name: `${modMeta.name}+${this.name}`, plugin: this.name, module: modMeta.name} as PluginMetric]}
       })
     } catch (catched) {
-      console.error(catched)
       const err = new ErrorWithCatch(`plugin init failed`, catched)
       logger.error('PLUGIN_BOOTSTRAP_FAILED', err.message, err.catched)
       throw err
