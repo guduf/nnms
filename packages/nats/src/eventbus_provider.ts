@@ -44,7 +44,7 @@ export class Eventbus {
   }
 
   registerProxy(name: string, proxy: { [key: string]: (...args: unknown[]) =>  Promise<unknown> }): void {
-    this._ctx.logger.debug(`register proxy of module '${name}'`, {methods: Object.keys(proxy)})
+    this._ctx.logger.debug({message: `register proxy of module '${name}'`, methods: Object.keys(proxy)})
     this._nats.subscribeRequest(`eb.proxy.${name}`, async (e: EventbusProxyMessage) => {
       if (typeof proxy[e.method] !== 'function') throw new Error('missing proxy method')
       let result: any
@@ -53,7 +53,7 @@ export class Eventbus {
       } catch (catched) {
         const err = new ErrorWithCatch(`proxy method '${e.method}' of module '${name}' failed`, catched)
         /* TODO: get the catched message when loggin err */
-        this._ctx.logger.error(err.message, catched)
+        this._ctx.logger.error('FAILED_PROXY', err.message, catched)
         throw err
       }
       return result

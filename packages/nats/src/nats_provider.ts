@@ -17,10 +17,10 @@ export class NatsProvider {
   ) {
     try {
       this._client = connect({url: this._ctx.vars.URL, json: true})
-      this._client.on('error', err => this._ctx.logger.error(err))
+      this._client.on('error', err => this._ctx.logger.error('FAILED_CONNECTION', err))
     } catch (catched) {
       const err = new ErrorWithCatch('client connection failed', catched)
-      this._ctx.logger.error(err)
+      this._ctx.logger.error('FAILED_CONNECTION', err)
       throw err
     }
     this._ctx.logger.info(`Nats listenning on '${this._ctx.vars.URL}'`)
@@ -44,7 +44,7 @@ export class NatsProvider {
       this._client.requestOne(subject, body, timeout, (res: R |NatsError) => {
         if (res instanceof NatsError && res.code === REQ_TIMEOUT) {
           const err = new ErrorWithCatch(`Request failed '${subject}': ${res.message}`, res.chainedError)
-          this._ctx.logger.error(err)
+          this._ctx.logger.error('REQUEST_FAILED', err)
           return reject(err)
         }
         resolve(res as R)
