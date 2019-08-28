@@ -60,7 +60,7 @@ export class PluginMeta<TVars extends Record<string, string> = {}> extends Resou
       if (!(plugin instanceof this.type)) throw new Error('invalid plugin instance')
       if (plugin.init instanceof Promise) await plugin.init
       logger.info('PLUGIN_READY', {mod: modMeta.name, plug: this.name}, {
-        plugins: {$add: [{name: `${modMeta.name}+${this.name}`, plugin: this.name, module: modMeta.name} as PluginMetric]}
+        plugins: {$insert: [{name: `${modMeta.name}+${this.name}`, plugin: this.name, module: modMeta.name} as PluginMetric]}
       })
     } catch (catched) {
       const err = new ErrorWithCatch(`plugin '${modMeta.name}+${this.name}' init failed`, catched)

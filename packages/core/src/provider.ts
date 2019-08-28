@@ -19,7 +19,7 @@ export class ProviderMeta<TVars extends Record<string, string> = {}> extends Res
   async bootstrap(): Promise<void> {
     const {logger} = getContainerContext()
     logger.metric(`bootstrap provider '${this.name}'`, {
-      providers: {$add: [{name: this.name, status: 'bootstrap'} as ProviderMetric]}
+      providers: {$insert: [{name: this.name, status: 'bootstrap'} as ProviderMetric]}
     })
     let provider: { init?: Promise<void> }
     try {

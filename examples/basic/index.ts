@@ -61,20 +61,3 @@ export class TodoModule {
     return this._todos.list()
   }
 }
-
-@ModuleRef('delivery', {HTTP_PORT: '8081'}, HttpPlugin)
-export class DeliveryModule {
-  constructor(
-    private readonly _ctx: ModuleContext,
-    private readonly _todos: TodoService
-  ) { }
-
-  async init(): Promise<void> {
-    this._ctx.logger.debug({initialList: await this._todos.list()})
-  }
-
-  @HttpRoute()
-  list(): Promise<Todo[]> {
-    return this._todos.list()
-  }
-}

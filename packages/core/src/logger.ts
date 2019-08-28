@@ -1,6 +1,6 @@
 import { LogEntry } from 'winston'
 import { Observable, Subject, Subscription, OperatorFunction } from 'rxjs'
-import { scan, shareReplay, startWith } from 'rxjs/operators'
+import { scan, shareReplay, startWith, filter } from 'rxjs/operators'
 import shortid from 'shortid'
 
 export interface LoggerConfig {
@@ -48,9 +48,10 @@ export interface LoggerEventData {
 
 export interface LoggerEventMetricMutation<T extends { [key: string]: any } = { [key: string]: any }> {
   metricKey?: string
-  $add?: T[]
+  $insert?: T[]
+  $upsert?: T[]
   $remove?: string[]
-  $patch?: T[]
+  $patch?: Partial<T>[]
 }
 
 export interface LoggerEventMetricMutations {
@@ -191,24 +192,35 @@ export class Logger {
   }
 }
 
-
-export function matchTags(target: LoggerTags, test: LoggerTags, extraTags = false): boolean {
+export function matchTags(target: LoggerTags, test: Partial<LoggerTags>, extraTags = false): boolean {
   const result = !Object.keys(test).find(tag => target[tag] !== test[tag])
   if (!result || !extraTags) return result
   return Object.keys(test).length === Object.keys(target).length
 }
 
-export function scanMetrics<T>(tags: LoggerTags, metricName: string): OperatorFunction<LoggerEvent, T[]> {
+export function filterByTags(tags: Partial<LoggerTags>): OperatorFunction<LoggerEvent, LoggerEvent> {
+  return events => events.pipe(filter(e => matchTags(e.tags, tags)))
+}
+
+export function scanMetrics<T>(metricName: string): OperatorFunction<LoggerEvent, T[]> {
   return events => events.pipe(
     scan((metrics, e) => {
       const mutation = (e.metrics || {})[metricName] as LoggerEventMetricMutation<T>
       if (!mutation) return metrics
-      if (!matchTags(e.tags, tags)) return metrics
-      const {$add: add, $remove: remove, $patch: patch, metricKey} = mutation
+      const {$insert: insert, $upsert: upsert, $remove: remove, $patch: patch, metricKey} = mutation
       if (remove) metrics = metrics.filter(data => (
         !remove.includes((data as unknown as { id: string })[(metricKey || 'id') as 'id'])
       ))
-      if (add) metrics = [...metrics, ...add]
+      if (insert) metrics = [...metrics, ...insert]
+      if (upsert) metrics = upsert.reduce((acc, upsertMetric) => {
+        const id = (upsertMetric as unknown as { id: string })[(metricKey || 'id') as 'id']
+        const existingData = acc.find(data => (data as unknown as { id: string })[(metricKey || 'id') as 'id'] === id)
+        if (existingData) {
+          const i = acc.indexOf(existingData)
+          return acc.map((existingMetric, j) => i === j ? upsertMetric : existingMetric)
+        }
+        return [...acc, upsertMetric]
+      }, metrics)
       if (patch) metrics = metrics.map(metricData => {
         const id = (metricData as unknown as { id: string })[(metricKey || 'id') as 'id']
         const patchData = patch.find(_patchData => (_patchData as unknown as { id: string })[(metricKey || 'id') as 'id'] === id)

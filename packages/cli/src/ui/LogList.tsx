@@ -7,7 +7,7 @@ import { LoggerEvent } from 'nnms'
 import LoggerFormat from '../logger_format'
 import { useApplicationContext } from './context'
 import { filter, scan } from 'rxjs/operators'
-import { useBoxSize, filelog, useObservable } from './util';
+import { useBoxSize, useObservable } from './util';
 
 export interface LogProps {
   filter?: string
@@ -16,8 +16,7 @@ export interface LogProps {
 }
 
 export function LogList(props: LogProps) {
-  const [ref,{width, height}] = useBoxSize()
-  filelog({width, height})
+  const [ref, {height}] = useBoxSize()
   const {logger: {events}} = useApplicationContext()
   const logs = useObservable(() => (
     events.pipe(

@@ -67,7 +67,7 @@ export class Eventbus {
     if (!(handlerMeta instanceof EventbusHandlerMeta)) throw new Error('invalid method')
     return ((...args: unknown[]) => {
       const e: EventbusProxyMessage = {args, method: handlerMeta.propName}
-      return this._nats.requestOnce(`eb.proxy.${modMeta.name}`, e)
+      return this._nats.requestOnce(`eb.proxy.${modMeta.name}`, e).then(e => { console.log({e}); process.exit(1); return e})
     }) as unknown as T[P]
   }
 }

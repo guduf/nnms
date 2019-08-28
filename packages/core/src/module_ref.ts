@@ -40,7 +40,7 @@ export class ModuleMeta<TVars extends Record<string, string> = {}> extends Resou
     const {logger} = getContainerContext()
     logger.metric(`bootstrap module '${this.name}'`, {
       modules: {
-        $add: [{
+        $insert: [{
           name: this.name,
           status: 'bootstrap',
           plugins: this.plugins.map(pluginMeta => pluginMeta.name)

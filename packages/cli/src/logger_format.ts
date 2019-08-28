@@ -3,7 +3,6 @@ import moment from 'moment'
 import { safeDump } from 'js-yaml'
 
 import { LoggerEvent, LoggerLevel, LOGGER_LEVELS, LoggerEventData } from 'nnms'
-import { filelog } from './ui/util';
 
 export interface LoggerFormatConfig {
   printData?: boolean
@@ -75,7 +74,7 @@ export class LoggerFormat {
     return color(` ${chalk.black(prefix)} `)
   }
 
-  private _getDataLine(eventData: LoggerEventData, space: number): string {
+  private _getDataLine(eventData: LoggerEventData, space = 0): string {
     let line = ''
     for (const key in eventData) {
       const prefix = chalk.grey(` ▪${key}: `)
@@ -85,8 +84,8 @@ export class LoggerFormat {
       ) line += `${prefix}${String(eventData[key])}`
       else if (Array.isArray(eventData[key])) line += `${prefix}[(${eventData[key].length})]`
       else line += `${prefix}{${Object.keys(eventData[key]).length ?  `…` : ''}}`
+      if (space > 0 && line.length > space) return ''
     }
-    filelog([line.length, space])
     return line
   }
 
