@@ -1,7 +1,6 @@
 import { PREFIX, getContainerContext, ResourceMeta, ResourceOpts, ResourceContext, RESOURCE_CONTEXT_TOKEN } from './common'
 import Environment from './environment'
 import { PluginMeta } from './plugin'
-import { ErrorWithCatch } from './errors'
 import Container from 'typedi'
 
 export interface ModuleMetric {
@@ -60,9 +59,8 @@ export class ModuleMeta<TVars extends Record<string, string> = {}> extends Resou
         }
       })
     } catch (catched) {
-      const err = new ErrorWithCatch(`module '${this.name}' init failed`, catched)
-      logger.error('MODULE_BOOTSTRAP_FAILED', err.message, err.catched)
-      throw err
+      logger.error('MODULE_BOOTSTRAP_FAILED', catched)
+      throw catched
     }
     await Promise.all(this.plugins.map(pluginMeta => pluginMeta.bootstrap(this)))
   }

@@ -1,9 +1,6 @@
 import { bootstrap, ModuleMeta, PREFIX } from 'nnms'
 import { join } from 'path'
 
-import { render } from 'ink'
-import NNMSUI from './ui'
-import { createElement } from 'react'
 
 export async function runModules(file: string, opts = {} as { appName?: string, moduleNames?: string[] }) {
   let index = {} as { [key: string]: Function }
@@ -34,5 +31,4 @@ export async function runModules(file: string, opts = {} as { appName?: string, 
       Object.keys(mods).map(modName => mods[modName])
   )
   bootstrap(appName, ...bootstrapedMods)
-  render(createElement(NNMSUI))
 }

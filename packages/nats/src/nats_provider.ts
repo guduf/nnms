@@ -1,30 +1,21 @@
-import { Client, connect, NatsError, REQ_TIMEOUT } from 'nats'
+import { connect, NatsError, REQ_TIMEOUT } from 'nats'
 import { ProviderRef, ProviderContext, ErrorWithCatch } from 'nnms'
-import { Service } from 'typedi'
-import { Observable } from 'rxjs'
+import { Observable, merge, fromEvent, throwError } from 'rxjs'
+import { mergeMap, first, map } from 'rxjs/operators'
 
 const NATS_VARS = {
   URL: 'nats://localhost:4222'
 }
 
-@Service({global: true})
 @ProviderRef('nats', NATS_VARS)
 export class NatsProvider {
-  private readonly _client: Client
-
   constructor(
     private _ctx: ProviderContext<typeof NATS_VARS>
-  ) {
-    try {
-      this._client = connect({url: this._ctx.vars.URL, json: true})
-      this._client.on('error', err => this._ctx.logger.error('FAILED_CONNECTION', err))
-    } catch (catched) {
-      const err = new ErrorWithCatch('client connection failed', catched)
-      this._ctx.logger.error('FAILED_CONNECTION', err)
-      throw err
-    }
-    this._ctx.logger.info(`Nats listenning on '${this._ctx.vars.URL}'`)
-  }
+  ) { }
+
+  private readonly _client = connect({url: this._ctx.vars.URL, json: true})
+
+  readonly init = this._init()
 
   publish<T>(subject: string, msg: T): Promise<void> {
     return new Promise((resolve, reject) => (
@@ -63,6 +54,26 @@ export class NatsProvider {
       }
       this._client.publish(replyTo, result);
     })
+  }
+
+  private async _init(): Promise<void> {
+    try {
+      await this._connect()
+    } catch (err) {
+      console.log(err)
+      process.exit(1)
+      this._ctx.logger.error('FAILED_CONNECTION', err.message)
+      throw err
+    }
+    this._ctx.logger.info(`CLIENT_LISTENING`, {url: this._ctx.vars.URL})
+  }
+
+  private _connect(): Promise<void> {
+    const connectEvents = [
+      fromEvent(this._client, 'connect').pipe(map(() => { })),
+      fromEvent(this._client, 'error').pipe(mergeMap(err => throwError(err)))
+    ]
+    return merge(...connectEvents).pipe(first()).toPromise()
   }
 }
 

@@ -5,33 +5,37 @@ import Environment from './environment'
 import Logger, { scanMetrics, LoggerTags, filterByTags } from './logger'
 import { ModuleMeta, ModuleMetric } from './module_ref'
 import { ProviderMeta, ProviderMetric } from './provider'
-import { PluginMetric } from './plugin';
-import { share } from 'rxjs/operators';
-
+import { PluginMetric } from './plugin'
+import { share } from 'rxjs/operators'
 
 export function extractProviderInjections(...metas: ResourceMeta[]): ProviderMeta[] {
   const raw = metas.reduce((acc, meta) => {
     if (!(meta instanceof ResourceMeta)) throw new Error('invalid meta')
-    const metaProviders = meta.providers.reduce((acc, provider) => [...acc, ...extractProviderInjections(provider)], [] as ProviderMeta[])
-    const paramTypes = Reflect.getMetadata('design:paramtypes', meta.type) as any[] || []
-    return paramTypes.reduce((acc, paramType) => {
-      const paramMeta = Reflect.getMetadata(`${PREFIX}:provider`, paramType)
-      if (!(paramMeta instanceof ProviderMeta)) return acc
-      return [...acc, ...extractProviderInjections(paramMeta)]
-    }, [acc, ...metaProviders])
+    const metaProviders = meta.providers.reduce((acc, provMeta) => (
+      [...acc, provMeta as ProviderMeta, ...extractProviderInjections(provMeta)]
+    ), [] as ProviderMeta[])
+    const pluginProviders = (
+      meta instanceof ModuleMeta ?
+        meta.plugins.reduce((acc, pluginMeta) => (
+          [...acc, ...extractProviderInjections(pluginMeta)]
+        ), [] as ProviderMeta[]) :
+        []
+    )
+    return [...acc, ...metaProviders, ...pluginProviders]
   }, [] as ProviderMeta[])
   return Array.from(new Set(raw))
 }
 
 export async function bootstrapProviders(...metas: ProviderMeta[]): Promise<void> {
-  let remaining = [...metas]
-  let bootstraped = [] as ProviderMeta[]
+  const remaining = [...metas]
+  const bootstraped = [] as ProviderMeta[]
   while (remaining.length) {
     const boostrapable = remaining.find(meta => !(meta.providers || []).find(meta => !bootstraped.includes(meta))) || null
     if (!boostrapable) throw new Error('failed to bootstrap prov')
-    bootstraped = [...bootstraped, boostrapable]
+    bootstraped.push(boostrapable)
     const i = remaining.indexOf(boostrapable)
-    remaining = [...remaining.slice(0, i), ...remaining.slice(i)]
+    remaining.splice(i, 1)
+    await boostrapable.bootstrap()
   }
 }
 

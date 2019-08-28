@@ -1,6 +1,6 @@
 import { LogEntry } from 'winston'
 import { Observable, Subject, Subscription, OperatorFunction } from 'rxjs'
-import { scan, shareReplay, startWith, filter } from 'rxjs/operators'
+import { scan, shareReplay, startWith, filter, distinctUntilChanged } from 'rxjs/operators'
 import shortid from 'shortid'
 
 export interface LoggerConfig {
@@ -104,9 +104,8 @@ export class Logger {
   catch(
     loggerErrorOrLevel: LoggerError | 'debug' | 'error' | 'warn',
     code: string,
-    messageOrError: string | Error,
     dataOrError?: Error | {},
-    data: LoggerEventData = {}
+    data?: LoggerEventData
   ): void {
     if (loggerErrorOrLevel instanceof LoggerError) return this.catch(
       loggerErrorOrLevel.level,
@@ -114,21 +113,12 @@ export class Logger {
       loggerErrorOrLevel.message,
       loggerErrorOrLevel.data
     )
-    const error = (
-      messageOrError instanceof Error ? messageOrError :
-        dataOrError instanceof Error ? dataOrError :
-          null
-    )
-    const message = (
-      typeof messageOrError === 'string' && messageOrError ?
-        messageOrError :
-        error ? error.message : 'INVALID_ERROR_LOG'
-    )
+    const error = dataOrError instanceof Error ? dataOrError : null
     data = dataOrError instanceof Error ? data : dataOrError as {}
     this.log({
       level: loggerErrorOrLevel,
       code,
-      data: {message, ...(error ? {$catched: error.message} : {})}
+      data: {...data, ...(error ? {$catched: error.message} : {})}
     })
   }
 
@@ -162,11 +152,10 @@ export class Logger {
 
   error(
     code: string,
-    messageOrError: string | Error,
-    errorOrData?: Error | {},
+    errorOrData?: Error | LoggerEventData,
     data?: LoggerEventData
   ): void {
-    this.catch('error', code, messageOrError, errorOrData, data)
+    this.catch('error', code, errorOrData, data)
   }
 
   info(code: string, data?: LoggerEventData, metrics?: LoggerEventMetricMutations): void {
@@ -175,11 +164,10 @@ export class Logger {
 
   warn(
     code: string,
-    messageOrError: string | Error,
     errorOrData?: Error | LoggerEventData,
     data?: LoggerEventData
   ): void {
-    this.catch('warn', code, messageOrError, errorOrData, data)
+    this.catch('warn', code, errorOrData, data)
   }
 
   metric(
@@ -230,6 +218,7 @@ export function scanMetrics<T>(metricName: string): OperatorFunction<LoggerEvent
       return metrics
     }, [] as T[]),
     startWith([] as T[]),
+    distinctUntilChanged(),
     shareReplay(1)
   )
 }

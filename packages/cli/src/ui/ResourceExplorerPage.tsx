@@ -8,8 +8,8 @@ import Table from 'ink-table'
 import LogList from './LogList'
 import { PageComponentProps } from './paging'
 import { PageTitle } from './theme';
-import { useObservable, filelog } from './util'
-import { filter, mergeMap, scan, distinctUntilChanged, map, tap, shareReplay } from 'rxjs/operators';
+import { useObservable } from './util'
+import { filter, mergeMap, scan, distinctUntilChanged, map, shareReplay } from 'rxjs/operators';
 import { matchTags, scanMetrics } from 'nnms';
 import { EMPTY } from 'rxjs/internal/observable/empty';
 import { from, Observable } from 'rxjs';
@@ -38,7 +38,6 @@ export function ResourceExplorerPage(
         if (Object.keys(acc).includes(metricName)) return acc
         return {...acc, [metricName]: filteredEvents.pipe(scanMetrics(metricName))}
       }, {} as { [metricName: string]: Observable<any[]> }),
-      tap(e => filelog(Object.keys(e))),
       distinctUntilChanged(),
       mergeMap(metricsMap => (
         from(Object.keys(metricsMap)).pipe(
@@ -48,7 +47,6 @@ export function ResourceExplorerPage(
       scan((acc, {metricName, data}) => ({...acc, [metricName]: data}), {} as { [metricName: string]: any[] })
     )
   }, [id])
-  filelog({metrics})
   return (
     <Box flexGrow={1} flexDirection="column">
       <PageTitle>{`${kind[0] + kind.slice(1, -1).toLowerCase()} Explorer  ${chalk.white(id)}`}</PageTitle>

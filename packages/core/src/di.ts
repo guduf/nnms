@@ -52,7 +52,7 @@ export function refDecorator<TVars extends Record<string, string>, TOpts extends
         }
         const paramMeta = Reflect.getMetadata(`${PREFIX}:provider`, paramType)
         if (paramMeta instanceof ProviderMeta) {
-          if (!providers.includes(paramType)) providers = [...providers, paramType]
+          if (!providers.includes(paramType)) providers = [...providers, paramMeta]
           return () => Container.get(paramMeta.type)
         }
         return null

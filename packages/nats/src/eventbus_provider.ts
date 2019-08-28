@@ -1,4 +1,4 @@
-import { ProviderContext, ProviderRef, ModuleMeta, ErrorWithCatch, PREFIX } from 'nnms'
+import { ProviderContext, ProviderRef, ModuleMeta, PREFIX } from 'nnms'
 
 import { EventbusPlugin, EventbusHandlerMeta } from './eventbus_plugin'
 import NatsProvider from './nats_provider'
@@ -51,10 +51,8 @@ export class Eventbus {
       try {
         result = await proxy[e.method](...e.args)
       } catch (catched) {
-        const err = new ErrorWithCatch(`proxy method '${e.method}' of module '${name}' failed`, catched)
-        /* TODO: get the catched message when loggin err */
-        this._ctx.logger.error('FAILED_PROXY', err.message, catched)
-        throw err
+        this._ctx.logger.error('FAILED_PROXY', catched)
+        throw catched
       }
       return result
     })

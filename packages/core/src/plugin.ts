@@ -1,7 +1,6 @@
 import { ModuleMeta, ModuleContext } from './module_ref'
 import { ResourceContext, ResourceMeta, PREFIX, getMethodPluginMetas, getContainerContext } from './common'
 import Container, { ContainerInstance } from 'typedi'
-import { ErrorWithCatch } from './errors'
 
 export interface PluginMetric {
   name: string,
@@ -63,9 +62,8 @@ export class PluginMeta<TVars extends Record<string, string> = {}> extends Resou
         plugins: {$insert: [{name: `${modMeta.name}+${this.name}`, plugin: this.name, module: modMeta.name} as PluginMetric]}
       })
     } catch (catched) {
-      const err = new ErrorWithCatch(`plugin '${modMeta.name}+${this.name}' init failed`, catched)
-      logger.error('PLUGIN_BOOTSTRAP_FAILED', err.message, err.catched)
-      throw err
+      logger.error('PLUGIN_BOOTSTRAP_FAILED', catched)
+      throw catched
     }
   }
 }
