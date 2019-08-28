@@ -32,7 +32,7 @@ export class ProviderMeta<TVars extends Record<string, string> = {}> extends Res
         }
       })
     } catch (catched) {
-      const err = new ErrorWithCatch(`provider init failed`, catched)
+      const err = new ErrorWithCatch(`provider '${this.name}' init failed`, catched)
       logger.error('PROVIDER_BOOTSTRAP_FAILED', err.message, err.catched)
       throw err
     }

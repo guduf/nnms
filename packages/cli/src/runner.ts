@@ -10,13 +10,17 @@ export async function runModules(file: string, opts = {} as { appName?: string, 
   try {
     index = require(file.match(/^\.?\.\//) ? join(process.cwd(), file) : file)
   } catch (err) {
-    throw new Error('failed to import index')
+    console.error(`failed to import index in '${file}'`)
+    process.exit(1)
   }
   const mods = Object.keys(index).reduce((acc, key) => {
     const modMeta = Reflect.getMetadata(`${PREFIX}:module`, index[key])
-    if (!(modMeta instanceof ModuleMeta)) return acc
     return {...acc, ...(modMeta instanceof ModuleMeta ? {[modMeta.name]: modMeta.type} : {})}
   }, {} as { [key: string]: Function })
+  if (!Object.keys(mods).length) {
+    console.error(`None module has been found in '${file}'`)
+    process.exit(1)
+  }
   const appName = opts.appName || 'app'
   const bootstrapedMods = (
     opts.moduleNames ?

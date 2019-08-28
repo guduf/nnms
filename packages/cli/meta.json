@@ -4,6 +4,7 @@
   "internals": ["core"],
   "externals": [
     "chalk",
+    "history",
     "moment",
     "js-yaml",
     "ink",

@@ -21,18 +21,22 @@ export class LoggerFormat {
 
   render(e: LoggerEvent): string {
     const color = chalk.keyword(LOGGER_LEVELS[e.level].color)
+    const message = e.message || (e.data || {message: null}).message
+    let data = e.data ? {...e.data} : null
+    if (data) delete data.message
+    if (data && !Object.keys(data).length) data = null
     const headerLine = [
       this._getTimePrefix(moment()),
       this._getLevelPrefix(e.level),
       this._getTagsPrefix(e.tags),
       ...(e.level === 'debug' ? [] : [this._getCode(e.code)]),
-      ...(e.message === e.code ? [] : [e.message])
+      ...(message === e.code ? [] : [message])
     ].join(' ')
-    if (this._cfg.printData === false || !e.data) return  `${color('►')} ${headerLine}\n`
+    if (this._cfg.printData === false || !data) return  `${color('►')} ${headerLine}\n`
     const dataSpace = (this._cfg.width || 0) - 2 - headerLine.length
-    const dataLine = this._getDataLine(color, e.data, dataSpace)
-    if (true) return `${color('►')} ${headerLine}${dataLine}\n`
-    //return [headerLine, ...this._getDataLines(color, e.data), ''].join('\n')
+    const dataLine = this._getDataLine(data, dataSpace)
+    if (dataLine) return `${color('►')} ${headerLine}${dataLine}\n`
+    return [`${color('▼')} ${headerLine}`, ...this._getDataLines(color, data), ''].join('\n')
   }
 
   private _getTimePrefix(moment: moment.Moment): string {
@@ -71,24 +75,22 @@ export class LoggerFormat {
     return color(` ${chalk.black(prefix)} `)
   }
 
-  private _getDataLine(color: Chalk, eventData: LoggerEventData, space: number): string {
+  private _getDataLine(eventData: LoggerEventData, space: number): string {
     let line = ''
     for (const key in eventData) {
-      const prefix = ` ${color('▪')}${chalk.grey(`${key}:`)} `
+      const prefix = chalk.grey(` ▪${key}: `)
       if (
         ['number', 'boolean', 'string'].includes(typeof eventData[key]) ||
         eventData[key] === null
       ) line += `${prefix}${String(eventData[key])}`
-      else if (Array.isArray(eventData[key])) line += `${prefix}[]`
-      else line += `${prefix}{}`
+      else if (Array.isArray(eventData[key])) line += `${prefix}[(${eventData[key].length})]`
+      else line += `${prefix}{${Object.keys(eventData[key]).length ?  `…` : ''}}`
     }
     filelog([line.length, space])
     return line
   }
 
-  _getDataLines(color: Chalk, eventData: LoggerEventData): string[] {
-    const data = {...eventData}
-    delete data.message
+  _getDataLines(color: Chalk, data: LoggerEventData): string[] {
     if (!Object.keys(data).length) return []
     return this._deserializeYaml(data).split(/\n/g).map((line, i, lines) => (
       i === lines.length - 1 ? color('▲') : `${color('|')} ${line}`

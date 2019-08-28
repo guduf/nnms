@@ -40,7 +40,7 @@ export class PluginMeta<TVars extends Record<string, string> = {}> extends Resou
     ], [] as { prop: string, meta: unknown, func: (...args: any[]) => Promise<unknown> }[])
     return {
       kind: 'plugin',
-      name: `${modName}:${this.name}`,
+      name: `${modName}+${this.name}`,
       meta: this,
       mode: modCtx.mode,
       logger: modCtx.logger.extend({resource: 'plug', plug: this.name}),
@@ -63,7 +63,7 @@ export class PluginMeta<TVars extends Record<string, string> = {}> extends Resou
         plugins: {$add: [{name: `${modMeta.name}+${this.name}`, plugin: this.name, module: modMeta.name} as PluginMetric]}
       })
     } catch (catched) {
-      const err = new ErrorWithCatch(`plugin init failed`, catched)
+      const err = new ErrorWithCatch(`plugin '${modMeta.name}+${this.name}' init failed`, catched)
       logger.error('PLUGIN_BOOTSTRAP_FAILED', err.message, err.catched)
       throw err
     }

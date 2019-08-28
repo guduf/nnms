@@ -30,10 +30,10 @@ export function LogList(props: LogProps) {
   ), [events, props.filter, height])
   const texts = React.useMemo(() => {
     const format = props.format ? props.format : new LoggerFormat()
-    return (logs || []).slice(-(height || 0)).map(e => {
+    return (logs || []).slice(-(height || 0) / 2).map(e => {
       try { return format.render(e) } catch (err) { return 'FORMAT_ERROR:' + err.message + '\n'  }
     })
-  }, [logs, props.format])
+  }, [logs, props.format, height])
   return (
     <Box ref={ref} flexGrow={1}>{texts.join('\n')}</Box>
   )

@@ -7,13 +7,9 @@ import { combineLatest } from 'rxjs';
 import { map, distinctUntilChanged } from 'rxjs/operators';
 
 export function useCommandState(): {state: CommandInputState & { color: string, prefix: string }, nextHandler: NextCommandHandler } {
-  const [state, setState] = React.useState<CommandInputState & { color: string, prefix: string }>({
-    color: 'white',
-    prefix: '',
-    query: '',
-    focus: '',
-    flash: null
-  })
+  const [state, setState] = React.useState<CommandInputState & { color: string, prefix: string }>(
+    {color: 'white', prefix: '', query: '', focus: '', flash: null}
+  )
   const {stdin, setRawMode} = React.useContext(StdinContext)
   const {stateChange, handlerChange, nextHandler} = React.useMemo(() => createCommandState(setRawMode, stdin), [])
   React.useEffect(() => {
