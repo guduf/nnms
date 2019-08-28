@@ -44,6 +44,7 @@
     "chalk": "^2.4.0",
     "dotenv": "^8.0.0",
     "express": "^4.17.0",
+    "immutable": "^4.0.0-rc.12",
     "ink": "^2.3.0",
     "ink-select-input": "^3.1.2",
     "ink-table": "^2.0.1",

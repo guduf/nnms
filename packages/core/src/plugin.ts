@@ -1,8 +1,9 @@
 import { ModuleMeta, ModuleContext } from './module_ref'
 import { ResourceContext, ResourceMeta, PREFIX, getMethodPluginMetas, getContainerContext } from './common'
 import Container, { ContainerInstance } from 'typedi'
+import { LoggerMetricItem } from './logger'
 
-export interface PluginMetric {
+export interface PluginMetric extends LoggerMetricItem {
   name: string,
   module: string
   plugin: string
@@ -42,7 +43,7 @@ export class PluginMeta<TVars extends Record<string, string> = {}> extends Resou
       name: `${modName}+${this.name}`,
       meta: this,
       mode: modCtx.mode,
-      logger: modCtx.logger.extend({resource: 'plug', plug: this.name}),
+      logger: modCtx.logger.extend({src: 'plug', plug: this.name}),
       vars: modCtx.vars,
       moduleMeta: modCtx.meta,
       moduleMethods,

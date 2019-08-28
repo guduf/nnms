@@ -1,7 +1,8 @@
 import { getContainerContext, ResourceMeta, ResourceContext } from './common'
 import Container from 'typedi';
+import { LoggerMetricItem } from './logger'
 
-export interface ProviderMetric {
+export interface ProviderMetric extends LoggerMetricItem {
   name: string,
   status: 'bootstrap' | 'ready'
 }
@@ -43,7 +44,7 @@ export class ProviderMeta<TVars extends Record<string, string> = {}> extends Res
       kind: 'provider',
       meta: this,
       mode: env.isProduction ? 'prod' : 'dev',
-      logger: logger.extend({resource: 'prov', prov: this.name}),
+      logger: logger.extend({src: 'prov', prov: this.name}),
       vars: env.extract(this.vars, this.name.toUpperCase())
     }
   }

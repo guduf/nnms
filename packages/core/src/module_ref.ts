@@ -2,11 +2,12 @@ import { PREFIX, getContainerContext, ResourceMeta, ResourceOpts, ResourceContex
 import Environment from './environment'
 import { PluginMeta } from './plugin'
 import Container from 'typedi'
+import { LoggerMetricItem } from './logger'
 
-export interface ModuleMetric {
+export interface ModuleMetric extends LoggerMetricItem {
   name: string,
   status: 'bootstrap' | 'ready',
-  plugins: string[]
+  plugins: string
 }
 
 export interface ModuleOpts<TVars extends Record<string, string> = {}>  extends ResourceOpts<TVars> {
@@ -42,7 +43,7 @@ export class ModuleMeta<TVars extends Record<string, string> = {}> extends Resou
         $insert: [{
           name: this.name,
           status: 'bootstrap',
-          plugins: this.plugins.map(pluginMeta => pluginMeta.name)
+          plugins: this.plugins.map(pluginMeta => pluginMeta.name).join(',')
         } as ModuleMetric]
       }
     })
@@ -72,7 +73,7 @@ export class ModuleMeta<TVars extends Record<string, string> = {}> extends Resou
       name: this.name,
       meta: this,
       mode: env.isProduction ? 'prod' : 'dev',
-      logger: logger.extend({resource: 'mod', mod: this.name}),
+      logger: logger.extend({src: 'mod', mod: this.name}),
       vars: env.extract(this.vars, this.name.toUpperCase())
     }
 }

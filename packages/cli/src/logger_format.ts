@@ -3,11 +3,12 @@ import moment from 'moment'
 import { safeDump } from 'js-yaml'
 
 import { LoggerEvent, LoggerLevel, LOGGER_LEVELS, LoggerEventData } from 'nnms'
+import { LoggerTags } from 'nnms';
 
 export interface LoggerFormatConfig {
   printData?: boolean
   printDay?: boolean
-  tags?: 'full' | 'resource'
+  tags?: 'full' | 'src'
   width?: number
 }
 
@@ -45,12 +46,12 @@ export class LoggerFormat {
   }
 
   private _getTagsPrefix(
-    tags: { [tag: string]: string },
-    format = 'resource' as  'full' | 'resource'
+    tags: LoggerTags,
+    format = 'src' as  'full' | 'src'
   ): string {
     const text = (
-      format === 'resource' ?
-        `${tags.resource}:${tags[tags.resource]}` :
+      format === 'src' ?
+        `${tags.src}:${tags[tags.src]}` :
         Object.keys(tags).reduce((acc, tag) => (
           [...acc, `${tag}:${tags[tag]}`]
         ), [] as string[]).join(' ')

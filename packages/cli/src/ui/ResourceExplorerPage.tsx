@@ -10,7 +10,7 @@ import { PageComponentProps } from './paging'
 import { PageTitle } from './theme';
 import { useObservable } from './util'
 import { filter, mergeMap, scan, distinctUntilChanged, map, shareReplay } from 'rxjs/operators';
-import { matchTags, scanMetrics } from 'nnms';
+import { matchTags } from 'nnms';
 import { EMPTY } from 'rxjs/internal/observable/empty';
 import { from, Observable } from 'rxjs';
 
@@ -23,20 +23,20 @@ export function ResourceExplorerPage(
 ): React.ReactElement {
   if (!id) throw new Error('Missing module id')
   const kind = location.pathname.split('/')[1] as 'MODULES' | 'PROVIDERS' | 'PLUGINS'
-  const resource = kind === 'MODULES' ? 'mod' : kind === 'PROVIDERS' ? 'prov' : 'plug'
+  const src = kind === 'MODULES' ? 'mod' : kind === 'PROVIDERS' ? 'prov' : 'plug'
   const {logger: {events}} = useApplicationContext()
   const metrics = useObservable(() => {
-    const resource = kind === 'MODULES' ? 'mod' : kind === 'PROVIDERS' ? 'prov' : 'plug'
+    const src = kind === 'MODULES' ? 'mod' : kind === 'PROVIDERS' ? 'prov' : 'plug'
     const filteredEvents = events.pipe(
-      filter(e => matchTags(e.tags, {resource, [resource]: id})),
+      filter(e => matchTags(e.tags, {src, [src]: id})),
       shareReplay()
     )
     return filteredEvents.pipe(
-      filter(e => matchTags(e.tags, {resource, [resource]: id})),
+      filter(e => matchTags(e.tags, {src, [src]: id})),
       mergeMap(e => e.metrics ? from(Object.keys(e.metrics)) : EMPTY),
       scan((acc, metricName) => {
         if (Object.keys(acc).includes(metricName)) return acc
-        return {...acc, [metricName]: filteredEvents.pipe(scanMetrics(metricName))}
+        return {...acc, [metricName]: EMPTY}
       }, {} as { [metricName: string]: Observable<any[]> }),
       distinctUntilChanged(),
       mergeMap(metricsMap => (
@@ -60,7 +60,7 @@ export function ResourceExplorerPage(
           ))}
         </Box>
         <Box>
-          <LogList staticFilter={e => e.tags.resource === resource && e.tags[resource] === id}/>
+          <LogList staticFilter={e => e.tags.src === src && e.tags[src] === id}/>
         </Box>
       </Box>
     </Box>

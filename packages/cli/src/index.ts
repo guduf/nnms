@@ -7,6 +7,8 @@ import { runModules } from './runner'
 import { render } from 'ink'
 import NNMSUI from './ui'
 import { createElement } from 'react'
+import { LogStore } from './log_store';
+import { combineLatest } from 'rxjs';
 
 if (process.mainModule && process.mainModule.filename === __filename) {
   yargs
@@ -50,6 +52,9 @@ if (process.mainModule && process.mainModule.filename === __filename) {
 }
 
 export function renderJson() {
-  const {logger: {events}} = getContainerContext()
-  events.subscribe(console.log, console.error, () => process.exit(1))
+  const {logger} = getContainerContext()
+  const store = new LogStore(logger)
+  console.log(store)
+  combineLatest
+  //combineLatest(store.logsChange, store.metricsChange).subscribe(console.log)
 }

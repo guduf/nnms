@@ -2,7 +2,7 @@ import Container from 'typedi'
 
 import { PREFIX, ApplicationContext, RESOURCE_CONTEXT_TOKEN, ResourceMeta } from './common'
 import Environment from './environment'
-import Logger, { scanMetrics, LoggerTags, filterByTags } from './logger'
+import Logger, { scanMetricList, LoggerTags, filterByTags } from './logger'
 import { ModuleMeta, ModuleMetric } from './module_ref'
 import { ProviderMeta, ProviderMetric } from './provider'
 import { PluginMetric } from './plugin'
@@ -41,7 +41,7 @@ export async function bootstrapProviders(...metas: ProviderMeta[]): Promise<void
 
 export function bootstrap(name: string, ...mods: Function[]): ApplicationContext {
   const env = new Environment()
-  const tags: LoggerTags = {resource: 'app', app: name}
+  const tags: LoggerTags = {src: 'app', app: name}
   const logger = Logger.create(tags)
   const appEvents = logger.events.pipe(filterByTags(tags), share())
   const ctx: ApplicationContext =  {
@@ -49,9 +49,9 @@ export function bootstrap(name: string, ...mods: Function[]): ApplicationContext
     name,
     env,
     logger,
-    modules: appEvents.pipe(scanMetrics<ModuleMetric>('modules')),
-    providers: appEvents.pipe(scanMetrics<ProviderMetric>('providers')),
-    plugins: appEvents.pipe(scanMetrics<PluginMetric>('plugins'))
+    modules: appEvents.pipe(scanMetricList<ModuleMetric>('modules')),
+    providers: appEvents.pipe(scanMetricList<ProviderMetric>('providers')),
+    plugins: appEvents.pipe(scanMetricList<PluginMetric>('plugins'))
   }
   const _bootstrap = async () => {
     ctx.logger.info('APPLICATION_BOOTSTRAP')

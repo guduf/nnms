@@ -3,6 +3,7 @@ import { HttpPlugin } from 'nnms-http'
 import { EventbusHandler, EventbusPlugin } from 'nnms-nats'
 import { BehaviorSubject, timer } from 'rxjs';
 import { first } from 'rxjs/operators';
+import { LoggerMetricItem } from 'nnms';
 
 const FRUITS = ['apple', 'peach', 'peer', 'lemon'] as const
 
@@ -10,7 +11,7 @@ type Fruit = (typeof FRUITS)[number]
 
 type Stock = Record<Fruit, number>
 
-interface StockMetric {
+interface StockMetric extends LoggerMetricItem {
   fruit: Fruit
   count: number
 }

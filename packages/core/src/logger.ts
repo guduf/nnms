@@ -36,8 +36,10 @@ export const LOGGER_LEVELS: { [level in LoggerLevel]: { color: string} } = {
   debug: {color: 'white'}
 }
 
+export type LoggerSource = 'app' | 'mod' | 'prov' | 'plug'
+
 export interface LoggerTags {
-  resource: 'app' | 'mod' | 'prov' | 'plug'
+  src: LoggerSource
   [tag: string]: string
 }
 
@@ -46,12 +48,18 @@ export interface LoggerEventData {
   [key: string]: any
 }
 
-export interface LoggerEventMetricMutation<T extends { [key: string]: any } = { [key: string]: any }> {
+export interface LoggerMetricItem {
+  [key: string]: string | number | boolean
+}
+
+export type LoggerMetricValue = string | number | boolean | LoggerMetricItem[]
+
+export interface LoggerEventMetricMutation<T extends LoggerMetricValue = LoggerMetricValue> {
   metricKey?: string
-  $insert?: T[]
-  $upsert?: T[]
-  $remove?: string[]
-  $patch?: Partial<T>[]
+  $insert?: T extends Array<LoggerMetricItem> ? T : never
+  $upsert?: T extends Array<LoggerMetricItem> ? T : never
+  $remove?: T extends Array<LoggerMetricItem> ? string[] : never
+  $patch?: T extends Array<infer X> ? Partial<X>[] : never
 }
 
 export interface LoggerEventMetricMutations {
@@ -123,11 +131,13 @@ export class Logger {
   }
 
   extend(tags: LoggerTags): Logger {
-    if (tags.resource === this.tags.resource) throw new Error(
-      `Logger cannot extend the same resource '${tags.resource}'`
+    if (tags.src === this.tags.src) throw new Error(
+      `Logger cannot extend the same src '${tags.src}'`
     )
     const newTags = Object.keys(tags).reduce((acc, tag) => {
-      if (tag !== 'resource' && acc[tag]) throw new Error(`Logger tag '${tag}' cannot be extended`)
+      if (tag !== 'src' && acc[tag]) throw new Error(
+        `Logger tag '${tag}' cannot be extended`
+      )
       return {...acc, [tag]: tags[tag]}
     }, this.tags)
     return new Logger(this._subject, newTags)
@@ -190,31 +200,35 @@ export function filterByTags(tags: Partial<LoggerTags>): OperatorFunction<Logger
   return events => events.pipe(filter(e => matchTags(e.tags, tags)))
 }
 
-export function scanMetrics<T>(metricName: string): OperatorFunction<LoggerEvent, T[]> {
+export function scanMetricList<T extends LoggerMetricItem>(metricName: string): OperatorFunction<LoggerEvent, T[]> {
   return events => events.pipe(
     scan((metrics, e) => {
-      const mutation = (e.metrics || {})[metricName] as LoggerEventMetricMutation<T>
+      const mutation = (e.metrics || {})[metricName] as LoggerEventMetricMutation<T[]>
       if (!mutation) return metrics
-      const {$insert: insert, $upsert: upsert, $remove: remove, $patch: patch, metricKey} = mutation
-      if (remove) metrics = metrics.filter(data => (
-        !remove.includes((data as unknown as { id: string })[(metricKey || 'id') as 'id'])
+      const {$insert, $upsert, $remove, $patch, metricKey} = mutation
+      if ($remove) metrics = metrics.filter(data => (
+        !$remove.includes((data as unknown as { id: string })[(metricKey || 'id') as 'id'])
       ))
-      if (insert) metrics = [...metrics, ...insert]
-      if (upsert) metrics = upsert.reduce((acc, upsertMetric) => {
+      if ($insert) metrics = [...metrics, ...$insert] as T[]
+      if ($upsert) metrics = $upsert.reduce((acc, upsertMetric) => {
         const id = (upsertMetric as unknown as { id: string })[(metricKey || 'id') as 'id']
-        const existingData = acc.find(data => (data as unknown as { id: string })[(metricKey || 'id') as 'id'] === id)
+        const existingData = acc.find(data => (
+          (data as unknown as { id: string })[(metricKey || 'id') as 'id'] === id
+        ))
         if (existingData) {
           const i = acc.indexOf(existingData)
-          return acc.map((existingMetric, j) => i === j ? upsertMetric : existingMetric)
+          return acc.map((existingMetric, j) => i === j ? upsertMetric : existingMetric) as T[]
         }
-        return [...acc, upsertMetric]
+        return [...acc, upsertMetric] as T[]
       }, metrics)
-      if (patch) metrics = metrics.map(metricData => {
+      if ($patch) metrics = metrics.map(metricData => {
         const id = (metricData as unknown as { id: string })[(metricKey || 'id') as 'id']
-        const patchData = patch.find(_patchData => (_patchData as unknown as { id: string })[(metricKey || 'id') as 'id'] === id)
+        const patchData = $patch.find(_patchData => (
+          (_patchData as unknown as { id: string })[(metricKey || 'id') as 'id'] === id
+        ))
         if (!patchData) return metricData
         return {...metricData, ...patchData}
-      })
+      }) as T[]
       return metrics
     }, [] as T[]),
     startWith([] as T[]),
