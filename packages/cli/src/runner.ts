@@ -7,7 +7,7 @@ export function runModules(file: string, opts = {} as { appName?: string, module
   try {
     index = require(file.match(/^\.?\.\//) ? join(process.cwd(), file) : file)
   } catch (err) {
-    console.error(`failed to import index in '${file}'`)
+    console.error(`failed to import index in '${file}'`, err)
     process.exit(1)
   }
   const mods = Object.keys(index).reduce((acc, key) => {
