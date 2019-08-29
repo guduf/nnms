@@ -1,10 +1,13 @@
-import { Logger, LoggerEvent, LoggerSource, LoggerEventMetricMutations } from 'nnms'
-import { BehaviorSubject, Observable } from 'rxjs';
 import { Record as ImmutableRecord, Map, Stack, List } from 'immutable'
-import { map } from 'rxjs/operators'
+import { map, shareReplay, share } from 'rxjs/operators'
+import { BehaviorSubject, Observable } from 'rxjs'
+
+import { Logger, LoggerEvent, LoggerSource, LoggerEventMetricMutations, LoggerMetricValue } from 'nnms'
 
 export const Log = ImmutableRecord(
-  {id: null, code: null, level: null, message: null, data: null} as Omit<LoggerEvent, 'tags'>
+  ['id', 'code', 'level', 'message', 'data', 'timestamp'].reduce((acc, key) => (
+    {...acc, [key]: null}
+  ), {}) as Omit<LoggerEvent, 'tags'>
 )
 
 type MetricPrimitive = string | number | boolean
@@ -13,12 +16,13 @@ export type MetricValue = MetricPrimitive | MetricList
 export type StateItem<T> = { tags: Map<string, string>, entries: T }
 export type State<T> = Map<LoggerSource, Map<string, StateItem<T>>>
 export type LogStack = Stack<ImmutableRecord<Omit<LoggerEvent, 'tags'>>>
+export type MetricMap = Map<string, MetricValue>
 
 export class LogStore {
   private readonly _logs = new BehaviorSubject<State<LogStack>>(
     Map({mod: Map(), prov: Map(), plug: Map()}) as Map<LoggerSource, any>
   )
-  private readonly _metrics = new BehaviorSubject<State<Map<string, MetricValue>>>(
+  private readonly _metrics = new BehaviorSubject<State<MetricMap>>(
     Map({mod: Map(), prov: Map(), plug: Map()}) as Map<LoggerSource, any>
   )
 
@@ -38,12 +42,26 @@ export class LogStore {
   }
 
   getLogs(src: LoggerSource, id: string): Observable<LoggerEvent[]> {
-    return this._logs.pipe(map(state => {
-      const item = state.getIn([src, id]) as StateItem<LogStack>
-      if (!item) return []
-      const tags =  item.tags.toJS()
-      return item.entries.map(entry => ({...entry, tags})).toJS()
-    }))
+    return this._logs.pipe(
+      map(state => {
+        const item = state.getIn([src, id]) as StateItem<LogStack>
+        if (!item) return []
+        const tags = {...item.tags.toJS(), src, [src]: id}
+        return item.entries.map(entry => ({...entry.toJS(), tags})).reverse().toJS()
+      }),
+      share()
+    )
+  }
+
+  getMetrics<T extends { [key: string]: LoggerMetricValue }>(src: LoggerSource, id: string): Observable<T> {
+    return this._metrics.pipe(
+      map(state => {
+        const item = state.getIn([src, id]) as StateItem<MetricMap>
+        if (!item) return {} as T
+        return item.entries.toJS() as T
+      }),
+      shareReplay(1)
+    )
   }
 
   getAllLogs(): Observable<LoggerEvent[]> {
@@ -55,26 +73,20 @@ export class LogStore {
           const item = srcItems.get(id)
           if (!item) return subAcc
           const tags = {src, [src]: id, ...item.tags.toJS()}
-          return item.entries.map(log => ({...log.toJS(), tags})).toJS() as LoggerEvent[]
-        }, acc)
+          return [...subAcc, ...item.entries.map(log => ({...log.toJS(), tags})).toJS() as LoggerEvent[]]
+        }, acc).sort((x, y) => (x.timestamp > y.timestamp ? 1 : -1))
       }, [] as LoggerEvent[])
     }))
   }
 
   private _setInLogs(path: [LoggerSource, string], e: LoggerEvent): void {
     if (e.level === 'debug') return
-    const log = Log({
-      id: e.id,
-      code: e.code,
-      level: e.level,
-      message: e.message,
-      data: e.data
-    })
+    const log = Log(e)
     const oldLogs = this.logs.getIn([...path, 'entries'])
     if (!oldLogs) {
       const logTags = {...e.tags}
       delete logTags.src
-      delete logTags[path[1]]
+      delete logTags[e.tags.src]
       return this._logs.next(this.logs.setIn(path, {tags: Map(logTags), entries: Stack([log])}))
     }
     this._logs.next(this.logs.setIn([...path, 'entries'], oldLogs.unshift(log)))

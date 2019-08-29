@@ -8,6 +8,7 @@ import { render } from 'ink'
 import NNMSUI from './ui'
 import { createElement } from 'react'
 import { LogStore } from './log_store'
+import { createMemoryHistory } from 'history';
 
 if (process.mainModule && process.mainModule.filename === __filename) {
   yargs
@@ -27,8 +28,12 @@ if (process.mainModule && process.mainModule.filename === __filename) {
             string: true,
             alias: 'm'
           })
+          .option('path', {
+            type: 'string',
+            alias: 'p',
+          })
           .option('output', {
-            string: true,
+            type: 'string',
             alias: 'o',
             choices: ['cli', 'json'],
             default: 'cli'
@@ -45,7 +50,10 @@ if (process.mainModule && process.mainModule.filename === __filename) {
         if (cmd.output === 'json') renderJson()
         else {
           const logStore = new LogStore(ctx.logger)
-          render(createElement(NNMSUI, {logStore}))
+          const history = createMemoryHistory(
+            cmd.path ? {initialEntries: [cmd.path]} : {}
+          )
+          render(createElement(NNMSUI, {history, logStore}))
         }
       }
     )

@@ -1,23 +1,23 @@
 import React from 'react'
 
-import { LogStoreProvider } from './log_store'
+import { LogProvider } from './log_context'
 import Layout from './Layout'
-import { createMemoryHistory, History } from 'history'
+import { MemoryHistory } from 'history'
 import { Router } from 'react-router'
 import { LogStore } from '../log_store'
 
 export interface NNMSUIProps {
   logStore: LogStore
+  history: MemoryHistory
 }
 
-export function NNMSUI({logStore}: NNMSUIProps): React.ReactElement {
-  const history = React.useMemo(() => createMemoryHistory() as History, [])
+export function NNMSUI({logStore, history}: NNMSUIProps): React.ReactElement {
   return (
-    <LogStoreProvider value={logStore}>
+    <LogProvider store={logStore}>
       <Router history={history}>
         <Layout />
       </Router>
-    </LogStoreProvider>
+    </LogProvider>
   )
 }
 

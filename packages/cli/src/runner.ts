@@ -1,8 +1,11 @@
-import { bootstrap, ModuleMeta, PREFIX } from 'nnms'
+import { ApplicationContext, bootstrap, ModuleMeta, PREFIX } from 'nnms'
 import { join } from 'path'
 
 
-export function runModules(file: string, opts = {} as { appName?: string, moduleNames?: string[] }) {
+export function runModules(
+  file: string,
+  opts = {} as { appName?: string, moduleNames?: string[] }
+): ApplicationContext {
   let index = {} as { [key: string]: Function }
   try {
     index = require(file.match(/^\.?\.\//) ? join(process.cwd(), file) : file)

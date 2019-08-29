@@ -1,7 +1,7 @@
-import { LogEntry } from 'winston'
 import { Observable, Subject, Subscription, OperatorFunction } from 'rxjs'
 import { scan, shareReplay, startWith, filter, distinctUntilChanged } from 'rxjs/operators'
 import shortid from 'shortid'
+import { LogEntry } from 'winston'
 
 export interface LoggerConfig {
   baseUri?: string[]
@@ -54,6 +54,8 @@ export interface LoggerMetricItem {
 
 export type LoggerMetricValue = string | number | boolean | LoggerMetricItem[]
 
+export interface LoggerMetricMap { [key: string]: LoggerMetricValue }
+
 export interface LoggerEventMetricMutation<T extends LoggerMetricValue = LoggerMetricValue> {
   metricKey?: string
   $insert?: T extends Array<LoggerMetricItem> ? T : never
@@ -68,6 +70,7 @@ export interface LoggerEventMetricMutations {
 
 export interface LoggerEvent<T extends LoggerEventData = LoggerEventData> extends LogEntry {
   id: string
+  timestamp: number
   level: LoggerLevel
   code: string
   tags: LoggerTags
@@ -146,6 +149,7 @@ export class Logger {
   log(e: Pick<LoggerEvent, 'level' | 'code' | 'data' | 'metrics'>): void {
     this._subject.next({
       ...e,
+      timestamp: Date.now(),
       id: shortid(),
       message: (e.data || {message : ''}).message || e.code,
       tags: this.tags

@@ -2,8 +2,7 @@ import chalk, { Chalk } from 'chalk'
 import moment from 'moment'
 import { safeDump } from 'js-yaml'
 
-import { LoggerEvent, LoggerLevel, LOGGER_LEVELS, LoggerEventData } from 'nnms'
-import { LoggerTags } from 'nnms';
+import { LoggerEvent, LoggerTags, LoggerLevel, LOGGER_LEVELS, LoggerEventData } from 'nnms'
 
 export interface LoggerFormatConfig {
   printData?: boolean
@@ -20,6 +19,7 @@ export class LogFormat {
   ) { }
 
   render(e: LoggerEvent): string {
+    if (!e) return chalk.underline('INVALID_LOG')
     const color = chalk.keyword(LOGGER_LEVELS[e.level].color)
     const message = e.message || (e.data || {message: null}).message
     let data = e.data ? {...e.data} : null
