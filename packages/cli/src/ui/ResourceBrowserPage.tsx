@@ -1,6 +1,4 @@
 import React from 'react'
-
-import { useApplicationContext } from './context'
 import { PageComponentProps } from './paging'
 import { Redirect } from 'react-router'
 import { useObservable } from './util'
@@ -8,12 +6,13 @@ import { Observable } from 'rxjs';
 import Table from 'ink-table';
 import { Box, Color } from 'ink';
 import { PageTitle } from './theme'
+import { getContainerContext } from 'nnms'
 
 export function ResourceBrowserPage(
   {location, attachTextHandler, commandState: {focus}}: PageComponentProps
 ): React.ReactElement {
   const kind = location.pathname.split('/')[1] as 'MODULES' | 'PROVIDERS' | 'PLUGINS'
-  const ctx = useApplicationContext()
+  const ctx = React.useMemo(() => getContainerContext(), [])
   const metrics = useObservable(() => {
     const ctxKey = kind.toLocaleLowerCase() as 'modules' | 'providers' | 'plugins'
     return ctx[ctxKey] as Observable<{ name: string }[]>

@@ -12,7 +12,7 @@ export interface LoggerFormatConfig {
   width?: number
 }
 
-export class LoggerFormat {
+export class LogFormat {
   private readonly _deserializeYaml: (data: {}) => string = safeDump;
 
   constructor (
@@ -99,4 +99,4 @@ export class LoggerFormat {
 }
 
 
-export default LoggerFormat
+export default LogFormat

@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { useApplicationContext } from './context'
+import { getContainerContext } from 'nnms'
 import { PageComponentProps } from './paging'
 import { Redirect } from 'react-router'
 import { useObservable } from './util'
@@ -11,14 +11,14 @@ import { PageTitle } from './theme'
 import { map } from 'rxjs/operators';
 import chalk from 'chalk';
 import LogList from './LogList'
-import LoggerFormat from '../logger_format';
+import LogFormat from '../log_format';
 
-const logFormat = new LoggerFormat({printData: true})
+const logFormat = new LogFormat({printData: true})
 
 export function DashboardPage(
   {attachTextHandler}: PageComponentProps
 ): React.ReactElement {
-  const ctx = useApplicationContext()
+  const ctx = getContainerContext()
   const items = useObservable(() => (
     combineLatest(ctx.modules, ctx.plugins, ctx.providers).pipe(
       map(([modules, plugins, providers]) => ({modules, plugins, providers})),

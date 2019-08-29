@@ -2,37 +2,34 @@ import * as React from 'react'
 
 import { Box } from 'ink'
 
-import { LoggerEvent } from 'nnms'
 
-import LoggerFormat from '../logger_format'
-import { useApplicationContext } from './context'
-import { filter, scan } from 'rxjs/operators'
+import LogFormat from '../log_format'
 import { useBoxSize, useObservable } from './util';
+import { LoggerSource } from 'nnms';
+import { useLogStore } from './log_store';
+import { filelog } from './util';
 
 export interface LogProps {
-  filter?: string
-  format?: LoggerFormat
-  staticFilter?: (e: LoggerEvent) => boolean
+  format?: LogFormat
+  filter?: {
+    src: LoggerSource
+    id: string
+  }
 }
 
-export function LogList(props: LogProps) {
+export function LogList({filter, format}: LogProps) {
   const [ref, {height}] = useBoxSize()
-  const {logger: {events}} = useApplicationContext()
+  const logStore = useLogStore()
   const logs = useObservable(() => (
-    events.pipe(
-      filter(e => {
-        if (typeof props.staticFilter === 'function' && !props.staticFilter(e)) return false
-        return !props.filter || e.uri.includes(props.filter)
-      }),
-      scan((acc, e) => [...acc, e], [] as LoggerEvent[])
-    )
-  ), [events, props.filter, height])
+    filter ? logStore.getLogs(filter.src, filter.id) : logStore.getAllLogs()
+  ), [filter])
+  filelog({logs})
   const texts = React.useMemo(() => {
-    const format = props.format ? props.format : new LoggerFormat()
+    const logFormat = format ? format : new LogFormat()
     return (logs || []).slice(-(height || 0) / 2).map(e => {
-      try { return format.render(e) } catch (err) { return 'FORMAT_ERROR:' + err.message + '\n'  }
+      try { return logFormat.render(e) } catch (err) { return 'FORMAT_ERROR:' + err.message + '\n' }
     })
-  }, [logs, props.format, height])
+  }, [logs, format, height])
   return (
     <Box ref={ref} flexGrow={1}>{texts.join('\n')}</Box>
   )

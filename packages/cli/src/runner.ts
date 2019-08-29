@@ -2,7 +2,7 @@ import { bootstrap, ModuleMeta, PREFIX } from 'nnms'
 import { join } from 'path'
 
 
-export async function runModules(file: string, opts = {} as { appName?: string, moduleNames?: string[] }) {
+export function runModules(file: string, opts = {} as { appName?: string, moduleNames?: string[] }) {
   let index = {} as { [key: string]: Function }
   try {
     index = require(file.match(/^\.?\.\//) ? join(process.cwd(), file) : file)
@@ -30,5 +30,5 @@ export async function runModules(file: string, opts = {} as { appName?: string, 
       }) :
       Object.keys(mods).map(modName => mods[modName])
   )
-  bootstrap(appName, ...bootstrapedMods)
+  return bootstrap(appName, ...bootstrapedMods)
 }
