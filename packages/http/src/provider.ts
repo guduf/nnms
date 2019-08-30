@@ -26,7 +26,7 @@ export class HttpProvider {
         reject(err)
       }
     })
-    this.ctx.logger.info('START_SERVER', {name, port})
+    this.ctx.logger.info('START_SERVER', {name, port}, {servers: {$insert: [{name, port}]}})
   }
 
   onInit() {

@@ -31,7 +31,13 @@ export const PAGE_CONFIGS: PageConfig[] = [
         path: ':id',
         component: ResourceExplorerPage,
         children: [
-          {path: 'PLUGINS', component: DebugPage},
+          {
+            path: 'PLUGINS',
+            component: DebugPage,
+            children: [
+              {path: ':id', component: ResourceExplorerPage}
+            ]
+          },
           {path: 'LOG', component: DebugPage}
         ]
       }
@@ -45,20 +51,10 @@ export const PAGE_CONFIGS: PageConfig[] = [
         path: ':id',
         component: ResourceExplorerPage,
         children: [
-          {path: 'PLUGINS', component: DebugPage},
           {path: 'LOG', component: DebugPage}
         ]
       }
     ]
   },
-  {
-    path: 'PLUGINS',
-    component: ResourceBrowserPage,
-    children: [
-      {
-        path: ':id',
-        component: ResourceExplorerPage
-      }
-    ]
-  }
+  {path: 'PLUGINS', component: ResourceBrowserPage}
 ]

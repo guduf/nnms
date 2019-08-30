@@ -43,7 +43,7 @@ export class PluginMeta<TVars extends Record<string, string> = {}> extends Resou
       name: `${modName}+${this.name}`,
       meta: this,
       mode: modCtx.mode,
-      logger: modCtx.logger.extend({src: 'plug', plug: this.name}),
+      logger: modCtx.logger.extend({src: 'plug', plug: `${modName}+${this.name}`}),
       vars: modCtx.vars,
       moduleMeta: modCtx.meta,
       moduleMethods,

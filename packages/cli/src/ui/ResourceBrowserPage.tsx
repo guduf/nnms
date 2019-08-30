@@ -26,12 +26,17 @@ export function ResourceBrowserPage(
   const [redir, setRedir] = React.useState('')
   React.useEffect(() => {
     const handler = (entry: string) => {
-      setRedir(entry)
+      if (kind !== 'PLUGINS') {
+        setRedir(`/${kind}/${entry}`)
+        return true
+      }
+      const [mod, plugin] = entry.split('+')
+      setRedir(`/MODULES/${mod}/PLUGINS/${plugin}`)
       return true
     }
     attachTextHandler(handler, metrics.map(item => item.name))
   }, [metrics.map(item => item.name).join(',')])
-  if (redir) return <Redirect to={`/${kind}/${redir}`} />
+  if (redir) return <Redirect to={redir} />
   return (
     <Box flexDirection="column">
       <PageTitle>{`${kind[0] + kind.slice(1, -1).toLowerCase()} Browser`}</PageTitle>

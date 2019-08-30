@@ -1,6 +1,6 @@
 import { ModuleRef, ModuleContext } from 'nnms'
-import { HttpPlugin } from 'nnms-http'
-import { EventbusHandler, EventbusPlugin } from 'nnms-nats'
+import { HttpPlugin, HttpRoute } from 'nnms-http'
+import { EventbusHandler, EventbusPlugin, EventbusProxy } from 'nnms-nats'
 import { BehaviorSubject, timer } from 'rxjs';
 import { first } from 'rxjs/operators';
 import { LoggerMetricItem } from 'nnms';
@@ -61,9 +61,18 @@ export class DeliveryModule {
   readonly init = this._init()
 
   constructor(
-
+    private _ctx: ModuleContext,
+    @EventbusProxy()
+    private readonly stock: StockModule
   ) { }
 
   private async _init(): Promise<void> {
+    if (true) return
+    this._ctx.logger.info('initial stock', await this.stock.getStock())
+  }
+
+  @HttpRoute({method: 'POST'})
+  async order(command: Partial<Stock>): Promise<boolean> {
+    return Boolean(command)
   }
 }
