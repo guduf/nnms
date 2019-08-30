@@ -139,7 +139,7 @@ export class LogStore {
       )
       if ($patch) metricList = (
         metricList.map(metricData => {
-        const id = (metricData as unknown as { id: string })[(metricKey || 'id') as 'id']
+          const id = (metricData as unknown as ImmutableRecord<{ id: string }>).get((metricKey || 'id') as 'id')
           const patchData = $patch.find(_patchData => (
             (_patchData as unknown as { id: string })[(metricKey || 'id') as 'id'] === id
           ))
