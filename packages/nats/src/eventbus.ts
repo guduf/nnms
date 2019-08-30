@@ -34,9 +34,9 @@ export interface EventbusProxyOpts {
 export class EventbusProxyMeta {
   constructor(target: Function, modType: { new (...args: any[]): any }, index: number) {
     Container.registerHandler({object: target, index, value: () => {
-      const eventbus = Container.get(Eventbus)
-      if (!(eventbus instanceof Eventbus)) throw new Error('failed to fetch eventbus')
-      return eventbus.createProxy(modType)
+      const modMeta = Reflect.getMetadata(`${PREFIX}:module`, modType)
+      const plugin = Container.of(modMeta).get(EventbusPlugin)
+      return plugin.proxy
     }})
   }
 }
@@ -67,7 +67,9 @@ export class Eventbus {
   ) { }
 
   registerProxy(name: string, proxy: { [key: string]: (...args: unknown[]) =>  Promise<unknown> }): void {
-    this._ctx.logger.debug({message: `register proxy of module '${name}'`, methods: Object.keys(proxy)})
+    this._ctx.logger.metric({
+      proxies: {$insert: [{name, methods: Object.keys(proxy).join(', ')}]}
+    })
     this._nats.subscribeRequest(`eb.proxy.${name}`, async (e: EventbusProxyMessage) => {
       if (typeof proxy[e.method] !== 'function') throw new Error('missing proxy method')
       let result: any
@@ -81,24 +83,6 @@ export class Eventbus {
     })
   }
 
-  createProxy<T>(modType: {new (...args: any[]): T }): T {
-    const modMeta = Reflect.getMetadata(`${PREFIX}:module`, modType) as ModuleMeta
-    if (!(modMeta instanceof ModuleMeta)) throw new Error('invalid module meta')
-    this._ctx.logger.debug(`create proxy for module '${modMeta.name}'`)
-    return Object.keys(modType.prototype).reduce((acc, methodKey) => {
-      const handlerMeta = Reflect.getMetadata(`${PREFIX}:plugin:eventbus`, modType.prototype, methodKey)
-      if (!(handlerMeta instanceof EventbusHandlerMeta)) return acc
-      return {
-        ...acc,
-        [methodKey]: (
-          handlerMeta instanceof EventbusHandlerMeta ?
-            this.proxy(modMeta, handlerMeta) :
-            () => Promise.reject('proxy not implemented')
-        )
-      }
-    }, {} as T)
-  }
-
   proxy<T, P extends string & keyof T>(modMeta: ModuleMeta, handlerMeta: EventbusHandlerMeta): T[P] {
     if (!(handlerMeta instanceof EventbusHandlerMeta)) throw new Error('invalid method')
     return ((...args: unknown[]) => {
@@ -110,6 +94,19 @@ export class Eventbus {
 
 @PluginRef('eventbus')
 export class EventbusPlugin {
+  private _proxy?: any
+  private _proxyMethods: string[]
+
+  get proxy(): any {
+    if (!this._proxy) {
+      this._proxy = this._createProxy(this._ctx.moduleMeta)
+      this._ctx.logger.info('PROXY_CREATED', {module: this._ctx.moduleMeta.name}, {
+        proxy: {metricKey: 'methodName', $upsert: this._proxyMethods.map(methodName => ({methodName}))}
+      })
+    }
+    return this._proxy
+  }
+
   constructor(
     private readonly _ctx: PluginContext,
     private readonly _eventbus: Eventbus
@@ -117,7 +114,30 @@ export class EventbusPlugin {
     const proxy = this._ctx.moduleMethods.reduce((acc, {prop, func}) => (
       {...acc, [prop]: func}
     ), {} as { [prop: string]: (...args: unknown[]) => Promise<unknown>})
-    if (Object.keys(proxy).length) this._eventbus.registerProxy(this._ctx.moduleMeta.name, proxy)
+    this._proxyMethods = Object.keys(proxy)
+    if (this._proxyMethods.length) {
+      this._ctx.logger.info('ATTACH_PROXY', {module: this._ctx.moduleMeta.name}, {
+        proxy: {$insert: Object.keys(proxy).map(methodName => ({methodName}))}
+      })
+      this._eventbus.registerProxy(this._ctx.moduleMeta.name, proxy)
+    }
+  }
+
+  private _createProxy<T>(modMeta : ModuleMeta): T {
+    if (!(modMeta instanceof ModuleMeta)) throw new Error('invalid module meta')
+    this._ctx.logger.debug(`create proxy for module '${modMeta.name}'`)
+    return Object.keys(modMeta.type.prototype).reduce((acc, methodKey) => {
+      const handlerMeta = Reflect.getMetadata(`${PREFIX}:plugin:eventbus`, modMeta.type.prototype, methodKey)
+      if (!(handlerMeta instanceof EventbusHandlerMeta)) return acc
+      return {
+        ...acc,
+        [methodKey]: (
+          handlerMeta instanceof EventbusHandlerMeta ?
+            this._eventbus.proxy(modMeta, handlerMeta) :
+            () => Promise.reject('proxy not implemented')
+        )
+      }
+    }, {} as T)
   }
 }
 

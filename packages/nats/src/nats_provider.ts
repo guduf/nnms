@@ -57,6 +57,7 @@ export class NatsProvider {
   }
 
   private async _init(): Promise<void> {
+    this._ctx.logger.metric({client: {$insert: [{url: this._ctx.vars.URL, status: 'pending'}]}})
     try {
       await this._connect()
     } catch (err) {
@@ -65,7 +66,9 @@ export class NatsProvider {
       this._ctx.logger.error('FAILED_CONNECTION', err.message)
       throw err
     }
-    this._ctx.logger.info(`CLIENT_LISTENING`, {url: this._ctx.vars.URL})
+    this._ctx.logger.info(`CLIENT_LISTENING`, {url: this._ctx.vars.URL}, {
+      client: {metricKey: 'url', $patch: [{url: this._ctx.vars.URL, status: 'opened'}]}
+    })
   }
 
   private _connect(): Promise<void> {
