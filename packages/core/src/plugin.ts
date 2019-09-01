@@ -1,9 +1,9 @@
 import { ModuleMeta, ModuleContext } from './module_ref'
 import { ResourceContext, ResourceMeta, PREFIX, getMethodPluginMetas, getContainerContext } from './common'
 import Container, { ContainerInstance } from 'typedi'
-import { LoggerMetricItem } from './logger'
+import { JsonObject } from 'type-fest'
 
-export interface PluginMetric extends LoggerMetricItem {
+export interface PluginMetric extends JsonObject {
   name: string,
   module: string
   plugin: string

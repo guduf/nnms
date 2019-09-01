@@ -2,9 +2,9 @@ import { PREFIX, getContainerContext, ResourceMeta, ResourceOpts, ResourceContex
 import Environment from './environment'
 import { PluginMeta } from './plugin'
 import Container from 'typedi'
-import { LoggerMetricItem } from './logger'
+import { JsonObject } from 'type-fest';
 
-export interface ModuleMetric extends LoggerMetricItem {
+export interface ModuleMetric extends JsonObject {
   name: string,
   status: 'bootstrap' | 'ready',
   plugins: string
@@ -55,7 +55,7 @@ export class ModuleMeta<TVars extends Record<string, string> = {}> extends Resou
       if (mod.init instanceof Promise) await mod.init
       logger.info('MODULE_READY', {mod: this.name}, {
         modules: {
-          metricKey: 'name',
+          $metricKey: 'name',
           $patch: [{name: this.name, status: 'ready'} as Partial<ModuleMetric>]
         }
       })

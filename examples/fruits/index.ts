@@ -3,7 +3,7 @@ import { HttpPlugin, HttpRoute } from 'nnms-http'
 import { EventbusHandler, EventbusPlugin, EventbusProxy } from 'nnms-nats'
 import { BehaviorSubject, timer } from 'rxjs';
 import { first } from 'rxjs/operators';
-import { LoggerMetricItem } from 'nnms';
+import { JsonObject } from 'type-fest';
 
 const FRUITS = ['apple', 'peach', 'peer', 'lemon'] as const
 
@@ -11,7 +11,7 @@ type Fruit = (typeof FRUITS)[number]
 
 type Stock = Record<Fruit, number>
 
-interface StockMetric extends LoggerMetricItem {
+interface StockMetric extends JsonObject {
   fruit: Fruit
   count: number
 }
@@ -36,7 +36,7 @@ export class StockModule {
     this._state = new BehaviorSubject(initialStock)
     this._state.subscribe(stock => this._ctx.logger.metric({
       'stock': {
-        metricKey: 'fruit',
+        $metricKey: 'fruit',
         $upsert: Object.keys(stock).reduce((acc, fruit) => (
           [...acc, {fruit: fruit as Fruit, count: stock[fruit as Fruit]}]
         ), [] as StockMetric[])

@@ -1,8 +1,8 @@
 import { getContainerContext, ResourceMeta, ResourceContext } from './common'
 import Container from 'typedi';
-import { LoggerMetricItem } from './logger'
+import { JsonObject } from 'type-fest';
 
-export interface ProviderMetric extends LoggerMetricItem {
+export interface ProviderMetric extends JsonObject {
   name: string,
   status: 'bootstrap' | 'ready'
 }
@@ -27,7 +27,7 @@ export class ProviderMeta<TVars extends Record<string, string> = {}> extends Res
       if (provider.init instanceof Promise) await provider.init
       logger.info('PROVIDER_READY', {prov: this.name}, {
         providers: {
-          metricKey: 'name',
+          $metricKey: 'name',
           $patch: [{name: this.name, status: 'ready'} as ProviderMetric]
         }
       })

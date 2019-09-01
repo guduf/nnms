@@ -2,6 +2,8 @@ import { Observable, Subject, Subscription, OperatorFunction } from 'rxjs'
 import { scan, shareReplay, startWith, filter, distinctUntilChanged } from 'rxjs/operators'
 import shortid from 'shortid'
 import { LogEntry } from 'winston'
+import { LoggerEventMetricMutations, LoggerMetricMap, applyMetricMutation } from './logger_metrics';
+import { JsonObject } from 'type-fest';
 
 export interface LoggerConfig {
   baseUri?: string[]
@@ -46,26 +48,6 @@ export interface LoggerTags {
 export interface LoggerEventData {
   message?: string
   [key: string]: any
-}
-
-export interface LoggerMetricItem {
-  [key: string]: string | number | boolean
-}
-
-export type LoggerMetricValue = string | number | boolean | LoggerMetricItem[]
-
-export interface LoggerMetricMap { [key: string]: LoggerMetricValue }
-
-export interface LoggerEventMetricMutation<T extends LoggerMetricValue = LoggerMetricValue> {
-  metricKey?: string
-  $insert?: T extends Array<LoggerMetricItem> ? T : never
-  $upsert?: T extends Array<LoggerMetricItem> ? T : never
-  $remove?: T extends Array<LoggerMetricItem> ? string[] : never
-  $patch?: T extends Array<infer X> ? Partial<X>[] : never
-}
-
-export interface LoggerEventMetricMutations {
-  [metricName: string]: LoggerEventMetricMutation
 }
 
 export interface LoggerEvent<T extends LoggerEventData = LoggerEventData> extends LogEntry {
@@ -204,36 +186,12 @@ export function filterByTags(tags: Partial<LoggerTags>): OperatorFunction<Logger
   return events => events.pipe(filter(e => matchTags(e.tags, tags)))
 }
 
-export function scanMetricList<T extends LoggerMetricItem>(metricName: string): OperatorFunction<LoggerEvent, T[]> {
+export function scanMetric<T extends JsonObject>(metricName: string): OperatorFunction<LoggerEvent, T[]> {
   return events => events.pipe(
-    scan((metrics, e) => {
-      const mutation = (e.metrics || {})[metricName] as LoggerEventMetricMutation<T[]>
-      if (!mutation) return metrics
-      const {$insert, $upsert, $remove, $patch, metricKey} = mutation
-      if ($remove) metrics = metrics.filter(data => (
-        !$remove.includes((data as unknown as { id: string })[(metricKey || 'id') as 'id'])
-      ))
-      if ($insert) metrics = [...metrics, ...$insert] as T[]
-      if ($upsert) metrics = $upsert.reduce((acc, upsertMetric) => {
-        const id = (upsertMetric as unknown as { id: string })[(metricKey || 'id') as 'id']
-        const existingData = acc.find(data => (
-          (data as unknown as { id: string })[(metricKey || 'id') as 'id'] === id
-        ))
-        if (existingData) {
-          const i = acc.indexOf(existingData)
-          return acc.map((existingMetric, j) => i === j ? upsertMetric : existingMetric) as T[]
-        }
-        return [...acc, upsertMetric] as T[]
-      }, metrics)
-      if ($patch) metrics = metrics.map(metricData => {
-        const id = (metricData as unknown as { id: string })[(metricKey || 'id') as 'id']
-        const patchData = $patch.find(_patchData => (
-          (_patchData as unknown as { id: string })[(metricKey || 'id') as 'id'] === id
-        ))
-        if (!patchData) return metricData
-        return {...metricData, ...patchData}
-      }) as T[]
-      return metrics
+    scan((metric, e) => {
+      const mutation = (e.metrics || {})[metricName] as LoggerMetricMap
+      if (!mutation) return metric
+      return applyMetricMutation(metric, mutation, e.data) as T[]
     }, [] as T[]),
     startWith([] as T[]),
     distinctUntilChanged(),

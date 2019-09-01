@@ -2,7 +2,7 @@ import Container from 'typedi'
 
 import { PREFIX, ApplicationContext, RESOURCE_CONTEXT_TOKEN, ResourceMeta } from './common'
 import Environment from './environment'
-import Logger, { scanMetricList, LoggerTags, filterByTags } from './logger'
+import Logger, { scanMetric, LoggerTags, filterByTags } from './logger'
 import { ModuleMeta, ModuleMetric } from './module_ref'
 import { ProviderMeta, ProviderMetric } from './provider'
 import { PluginMetric } from './plugin'
@@ -49,9 +49,9 @@ export function bootstrap(name: string, ...mods: Function[]): ApplicationContext
     name,
     env,
     logger,
-    modules: appEvents.pipe(scanMetricList<ModuleMetric>('modules')),
-    providers: appEvents.pipe(scanMetricList<ProviderMetric>('providers')),
-    plugins: appEvents.pipe(scanMetricList<PluginMetric>('plugins'))
+    modules: appEvents.pipe(scanMetric<ModuleMetric>('modules')),
+    providers: appEvents.pipe(scanMetric<ProviderMetric>('providers')),
+    plugins: appEvents.pipe(scanMetric<PluginMetric>('plugins'))
   }
   const _bootstrap = async () => {
     ctx.logger.info('APPLICATION_BOOTSTRAP')

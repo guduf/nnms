@@ -9,7 +9,7 @@ import { PageComponentProps } from './paging'
 import { PageTitle } from './theme'
 import { useLog } from './log_context'
 import { useObservable, filelog } from './util'
-import { LoggerMetricItem } from 'nnms'
+import { JsonObject } from 'type-fest'
 
 export interface PluginBrowserProps {
   modName: string
@@ -31,7 +31,7 @@ export function ResourceExplorerPage(
       <PageTitle>{`${kind[0] + kind.slice(1, -1).toLowerCase()} Explorer  ${chalk.white(id)}`}</PageTitle>
       <Box marginX={2}>
         <Box flexDirection="column" minWidth={40}>
-          <Box marginBottom={1}>{chalk.cyan('./METRICS')}</Box>
+          <Box marginBottom={1}>{chalk.cyanBright('./METRICS')}</Box>
           {Object.keys(metrics).map(key => {
             const metricValue = metrics[key]
             if (['string', 'number', 'boolean'].includes(typeof metricValue)) return (
@@ -39,8 +39,8 @@ export function ResourceExplorerPage(
               )
             return (
               <Box key={key} flexDirection="column">
-                <Box marginLeft={1}>{`${key}:`}</Box>
-                <Table data={(metricValue || []) as LoggerMetricItem[]} />
+                <Box>{chalk.bgCyanBright(` ${chalk.black(key)} `)}</Box>
+                <Table data={(metricValue || []) as JsonObject[]} />
               </Box>
             )
           })}

@@ -1,8 +1,9 @@
-import { Record as ImmutableRecord, Map, Stack, List } from 'immutable'
+import { Record as ImmutableRecord, Map, Stack } from 'immutable'
 import { map, shareReplay, share } from 'rxjs/operators'
 import { BehaviorSubject, Observable } from 'rxjs'
 
-import { Logger, LoggerEvent, LoggerSource, LoggerEventMetricMutations, LoggerMetricValue } from 'nnms'
+import { Logger, LoggerEvent, LoggerSource, LoggerEventMetricMutations, applyMetricMutation } from 'nnms'
+import { JsonObject } from 'type-fest';
 
 export const Log = ImmutableRecord(
   ['id', 'code', 'level', 'message', 'data', 'timestamp'].reduce((acc, key) => (
@@ -10,13 +11,10 @@ export const Log = ImmutableRecord(
   ), {}) as Omit<LoggerEvent, 'tags'>
 )
 
-type MetricPrimitive = string | number | boolean
-export type MetricList = List<Map<string, MetricPrimitive>>
-export type MetricValue = MetricPrimitive | MetricList
 export type StateItem<T> = { tags: Map<string, string>, entries: T }
 export type State<T> = Map<LoggerSource, Map<string, StateItem<T>>>
 export type LogStack = Stack<ImmutableRecord<Omit<LoggerEvent, 'tags'>>>
-export type MetricMap = Map<string, MetricValue>
+export type MetricMap = Map<string, JsonObject[]>
 
 export class LogStore {
   private readonly _logs = new BehaviorSubject<State<LogStack>>(
@@ -30,7 +28,7 @@ export class LogStore {
   readonly metricsChange = this._metrics.asObservable()
 
   get logs(): State<LogStack> { return this._logs.value }
-  get metrics(): State<Map<string, MetricValue>> { return this._metrics.value }
+  get metrics(): State<Map<string, JsonObject[]>> { return this._metrics.value }
 
   constructor(logger: Logger) {
     logger.events.subscribe(e => {
@@ -53,7 +51,7 @@ export class LogStore {
     )
   }
 
-  getMetrics<T extends { [key: string]: LoggerMetricValue }>(src: LoggerSource, id: string): Observable<T> {
+  getMetrics<T extends JsonObject>(src: LoggerSource, id: string): Observable<T> {
     return this._metrics.pipe(
       map(state => {
         const item = state.getIn([src, id]) as StateItem<MetricMap>
@@ -99,56 +97,26 @@ export class LogStore {
       const tags = {...e.tags}
       delete tags.src
       delete tags[path[1]]
-      const entries = this._applyMutations(Map(), e.metrics)
+      const entries = this._applyMutations(Map(), e.metrics, e.data)
       return this._metrics.next(this.metrics.setIn(path, {tags, entries}))
     }
-    const newMetrics = this._applyMutations(oldMetrics, e.metrics)
+    const newMetrics = this._applyMutations(oldMetrics, e.metrics, e.data)
     if (newMetrics.equals(oldMetrics)) return
     this._metrics.next(this.metrics.setIn([...path, 'entries'], newMetrics))
   }
 
   private _applyMutations(
-    metrics: Map<string, MetricValue>,
-    mutations: LoggerEventMetricMutations
-  ): Map<string, MetricValue> {
-    for (const metricName in mutations) {
-      if (['string', 'number', 'boolean'].includes(typeof mutations[metricName])) {
-        metrics = metrics.setIn(metricName, mutations[metricName])
-      }
-      let metricList = metrics.get(metricName) as MetricList || List()
-      const {$remove, $insert, $upsert, $patch, metricKey} = mutations[metricName]
-      if ($remove) metrics = metrics.filter(data => (
-        !$remove.includes((data as unknown as { id: string })[(metricKey || 'id') as 'id'])
-      ))
-      if ($insert) metricList = (
-        metricList.push(...($insert as Record<string, MetricPrimitive>[]).map(item => Map(item)))
+    metrics: Map<string, JsonObject[]>,
+    mutations: LoggerEventMetricMutations,
+    data?: JsonObject
+  ): Map<string, JsonObject[]> {
+    return Object.keys(mutations).reduce((acc, key) => {
+      const nextMetric = applyMetricMutation(
+        metrics.get(key) || [],
+        mutations[key],
+        data
       )
-      if ($upsert) metricList = (
-        $upsert.reduce((acc, upsertMetric) => {
-          const id = (upsertMetric as unknown as { id: string })[(metricKey || 'id') as 'id']
-          const item = Map(upsertMetric as Record<string, MetricPrimitive>)
-          const existingData = acc.find(data => (
-            (data as unknown as { id: string })[(metricKey || 'id') as 'id'] === id
-          ))
-          if (existingData) {
-            const i = acc.indexOf(existingData)
-            return acc.map((existingMetric, j) => i === j ? item : existingMetric)
-          }
-          return acc.push(item)
-        }, metricList)
-      )
-      if ($patch) metricList = (
-        metricList.map(metricData => {
-          const id = (metricData as unknown as ImmutableRecord<{ id: string }>).get((metricKey || 'id') as 'id')
-          const patchData = $patch.find(_patchData => (
-            (_patchData as unknown as { id: string })[(metricKey || 'id') as 'id'] === id
-          ))
-          if (!patchData) return metricData
-          return metricData.merge(patchData as Record<string, MetricPrimitive>)
-        })
-      )
-      metrics = metrics.set(metricName, metricList)
-    }
-    return metrics
+      return acc.set(key, nextMetric)
+    }, metrics)
   }
 }
