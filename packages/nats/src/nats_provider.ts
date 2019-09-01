@@ -1,6 +1,6 @@
 import { connect, NatsError, REQ_TIMEOUT } from 'nats'
 import { ProviderRef, ProviderContext, ErrorWithCatch } from 'nnms'
-import { Observable, merge, fromEvent, throwError } from 'rxjs'
+import { Observable, merge, fromEvent, throwError, Subject } from 'rxjs'
 import { mergeMap, first, map } from 'rxjs/operators'
 
 const NATS_VARS = {
@@ -43,16 +43,39 @@ export class NatsProvider {
     })
   }
 
-  async subscribeRequest<T>(subject: string, handler: (e: T) => any): Promise<number> {
-    return this._client.subscribe(subject, async (e: T, replyTo: string) => {
+  requestMany<R>(subject: string, body: {}): Observable<R> {
+    const sub = new Subject<R>()
+    this._client.request(subject, body, (res: R | NatsError) => {
+      if (res instanceof NatsError) {
+        const err = new ErrorWithCatch(`Request failed '${subject}': ${res.message}`, res.chainedError)
+        this._ctx.logger.error('REQUEST_FAILED', err)
+        sub.error(err)
+        return sub.complete()
+      }
+      sub.next(res)
+    })
+    return sub.asObservable()
+  }
+
+  subscribeRequest<T>(subject: string, handler: (e: T) => any): number {
+    return this._client.subscribe(subject, (e: T, replyTo: string) => {
       let result: any
       try {
-        result = await handler(e)
+        result = handler(e)
       } catch (catched) {
         result = new NatsError(`handler for subject '${subject}' failed`, 'HANDLER_FAILURE')
-        this._ctx.logger.error(result.message, catched)
+        this._ctx.logger.error(result.code, catched)
       }
-      this._client.publish(replyTo, result);
+      if (result instanceof Observable) result.subscribe(
+        e => this._client.publish(replyTo, e),
+        catched => {
+          const err = new NatsError(`handler for subject '${subject}' failed`, 'HANDLER_FAILURE')
+          this._ctx.logger.error(result.code, catched)
+          this._client.publish(replyTo, err)
+        }
+      )
+      else if (result instanceof Promise) result.then(e => this._client.publish(replyTo, e))
+      else this._client.publish(replyTo, result)
     })
   }
 
@@ -67,7 +90,7 @@ export class NatsProvider {
       throw err
     }
     this._ctx.logger.info(`CLIENT_LISTENING`, {url: this._ctx.vars.URL}, {
-      client: {metricKey: 'url', $patch: [{url: this._ctx.vars.URL, status: 'opened'}]}
+      client: {$metricKey: 'url', $patch: [{url: this._ctx.vars.URL, status: 'opened'}]}
     })
   }
 
