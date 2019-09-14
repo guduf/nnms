@@ -53,16 +53,16 @@ export class ModuleMeta<TVars extends Record<string, string> = {}> extends Resou
       const mod = container.get(this.type) as { init?: Promise<void> }
       if (!(mod instanceof this.type)) throw new Error('invalid module instance')
       if (mod.init instanceof Promise) await mod.init
-      logger.info('MODULE_READY', {mod: this.name}, {
-        modules: {
-          $metricKey: 'name',
-          $patch: [{name: this.name, status: 'ready'} as Partial<ModuleMetric>]
-        }
-      })
     } catch (catched) {
       logger.error('MODULE_BOOTSTRAP_FAILED', catched)
       throw catched
     }
+    logger.info('MODULE_READY', {mod: this.name}, {
+      modules: {
+        $metricKey: 'name',
+        $patch: [{name: this.name, status: 'ready'} as Partial<ModuleMetric>]
+      }
+    })
     await Promise.all(this.plugins.map(pluginMeta => pluginMeta.bootstrap(this)))
   }
 

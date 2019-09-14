@@ -84,8 +84,6 @@ export class NatsProvider {
     try {
       await this._connect()
     } catch (err) {
-      console.log(err)
-      process.exit(1)
       this._ctx.logger.error('FAILED_CONNECTION', err.message)
       throw err
     }

@@ -10,7 +10,8 @@ export function runModules(
   try {
     index = require(file.match(/^\.?\.\//) ? join(process.cwd(), file) : file)
   } catch (err) {
-    console.error(`failed to import index in '${file}'`, err)
+    console.error(err)
+    console.error(`failed to import index in '${file}'`)
     process.exit(1)
   }
   const mods = Object.keys(index).reduce((acc, key) => {

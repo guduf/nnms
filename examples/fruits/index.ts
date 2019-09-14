@@ -56,7 +56,7 @@ export class StockModule {
 
 
 
-@ModuleRef('delivery', {HTTP_PORT: '8082'}, HttpPlugin, EventbusPlugin)
+@ModuleRef('delivery', {HTTP_PORT: '8082'}, HttpPlugin)
 export class DeliveryModule {
   readonly init = this._init()
 
@@ -67,7 +67,6 @@ export class DeliveryModule {
   ) { }
 
   private async _init(): Promise<void> {
-    if (true) return
     this._ctx.logger.info('initial stock', await this.stock.getStock())
   }
 
