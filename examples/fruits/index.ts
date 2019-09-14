@@ -1,23 +1,45 @@
 import { ModuleRef, ModuleContext } from 'nnms'
 import { HttpPlugin, HttpRoute } from 'nnms-http'
 import { EventbusHandler, EventbusPlugin, EventbusProxy } from 'nnms-nats'
-import { BehaviorSubject, timer } from 'rxjs';
-import { first } from 'rxjs/operators';
-import { JsonObject } from 'type-fest';
+import { BehaviorSubject, timer } from 'rxjs'
+import { first } from 'rxjs/operators'
+import { JsonObject } from 'type-fest'
+import { MongoDbSchema, Collection, MongoDbProvider } from 'nnms-mongodb'
 
 const FRUITS = ['apple', 'peach', 'peer', 'lemon'] as const
 
-type Fruit = (typeof FRUITS)[number]
+type FruitName = (typeof FRUITS)[number]
 
-type Stock = Record<Fruit, number>
+type Stock = Record<FruitName, number>
 
-interface StockMetric extends JsonObject {
-  fruit: Fruit
+const FRUIT_SCHEMA: MongoDbSchema = {
+  name: 'fruit',
+  bsonType: 'object',
+  required: ['name', 'count'],
+  properties: {
+    name: {bsonType: 'string'},
+    count: {bsonType: 'int'}
+  }
+}
+
+export interface Fruit {
+  name: string
   count: number
 }
 
-@ModuleRef('stock', {}, EventbusPlugin)
+interface StockMetric extends JsonObject {
+  fruit: FruitName
+  count: number
+}
+
+@ModuleRef('stock', {}, MongoDbProvider, EventbusPlugin)
 export class StockModule {
+  constructor(
+    private readonly _ctx: ModuleContext,
+    @Collection(FRUIT_SCHEMA)
+    private readonly _fruits: Collection<Fruit>
+  ) { }
+
   readonly init = this._init()
 
   private _state: BehaviorSubject<Stock>
@@ -27,18 +49,16 @@ export class StockModule {
     return this._state.pipe(first()).toPromise()
   }
 
-  constructor(
-    private readonly _ctx: ModuleContext
-  ) { }
-
   private async _init(): Promise<void> {
+    console.log(this._fruits)
+    process.exit(1)
     const initialStock = await this._getInitialStock()
     this._state = new BehaviorSubject(initialStock)
     this._state.subscribe(stock => this._ctx.logger.metric({
       'stock': {
         $metricKey: 'fruit',
         $upsert: Object.keys(stock).reduce((acc, fruit) => (
-          [...acc, {fruit: fruit as Fruit, count: stock[fruit as Fruit]}]
+          [...acc, {fruit: fruit as FruitName, count: stock[fruit as FruitName]}]
         ), [] as StockMetric[])
       }
     }))

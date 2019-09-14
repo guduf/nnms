@@ -3,6 +3,7 @@ import Environment from './environment'
 import { PluginMeta } from './plugin'
 import Container from 'typedi'
 import { JsonObject } from 'type-fest';
+import { ProviderMeta } from './provider';
 
 export interface ModuleMetric extends JsonObject {
   name: string,
@@ -11,7 +12,7 @@ export interface ModuleMetric extends JsonObject {
 }
 
 export interface ModuleOpts<TVars extends Record<string, string> = {}>  extends ResourceOpts<TVars> {
-  plugins?: Function[]
+  pluginsAndProviders?: Function[]
 }
 
 export abstract class ModuleContext<TVars extends Record<string, string> = {}> extends ResourceContext<TVars> {
@@ -23,16 +24,26 @@ export class ModuleMeta<TVars extends Record<string, string> = {}> extends Resou
   readonly plugins: PluginMeta[]
 
   constructor(type: Function, opts: ModuleOpts<TVars>) {
-    const {plugins, vars} = (opts.plugins || []).reduce((acc, pluginType) => {
-      const pluginMeta = Reflect.getMetadata(`${PREFIX}:plugin`, pluginType) as PluginMeta<TVars>
-      if (!(pluginMeta instanceof PluginMeta)) throw new Error('invalid plugin')
-      const nextVars = Object.keys(pluginMeta.vars).reduce((acc, key) => ({
-        ...acc,
-        [key]: acc[key as keyof TVars] || pluginMeta.vars[key]
-      }), acc.vars as TVars)
-      return {plugins: [...acc.plugins, pluginMeta], vars: nextVars}
-    }, {plugins: [] as PluginMeta[], vars: opts.vars || {} as TVars})
-    super(type, {...opts, vars})
+    const {plugins, providers, vars} = (opts.pluginsAndProviders || []).reduce((acc, type) => {
+      const pluginMeta = Reflect.getMetadata(`${PREFIX}:plugin`, type) as PluginMeta<TVars>
+      if (pluginMeta instanceof PluginMeta) {
+        const nextVars = Object.keys(pluginMeta.vars).reduce((acc, key) => ({
+          ...acc,
+          [key]: acc[key as keyof TVars] || pluginMeta.vars[key]
+        }), acc.vars as TVars)
+        return {providers: acc.providers, plugins: [...acc.plugins, pluginMeta], vars: nextVars}
+      }
+      const providerMeta = Reflect.getMetadata(`${PREFIX}:provider`, type) as ProviderMeta
+      if (providerMeta instanceof ProviderMeta) {
+        return {providers: [...acc.providers, providerMeta], plugins: acc.plugins, vars: acc.vars}
+      }
+      throw new Error('invalid plugin or provider')
+    }, {
+      plugins: [] as PluginMeta[],
+      vars: opts.vars || {} as TVars,
+      providers: [] as ProviderMeta[]
+    })
+    super(type, {...opts, providers: [...(opts.providers || []), ...providers], vars})
     this.plugins = plugins
   }
 

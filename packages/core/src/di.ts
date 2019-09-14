@@ -75,6 +75,6 @@ export const PluginRef = (name: string, vars = {}) => (
   refDecorator('plugin', PluginMeta)({name, vars})
 )
 
-export const ModuleRef = (name: string, vars = {}, ...plugins: Function[]) => (
-  refDecorator('module', ModuleMeta)({name, vars, plugins})
+export const ModuleRef = (name: string, vars = {}, ...pluginsAndProviders: Function[]) => (
+  refDecorator('module', ModuleMeta)({name, vars, pluginsAndProviders})
 )

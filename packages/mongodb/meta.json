@@ -1,0 +1,6 @@
+{
+  "$schema": "../metaschema.json",
+  "name": "mongodb",
+  "internals": ["core"],
+  "externals": ["mongodb"]
+}
