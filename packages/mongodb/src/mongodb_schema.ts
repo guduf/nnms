@@ -42,7 +42,10 @@ export interface MongoDbSchema extends BsonSchema {
   name: string
 }
 
-// TODO - delete
-export const MongoDbSchema = Symbol()
+export const SCHEMA_METADATA_KEY = 'nnms:mongodb:schema'
+
+export function MongoDbSchema(schema: MongoDbSchema): ClassDecorator {
+  return target => Reflect.defineMetadata(SCHEMA_METADATA_KEY, schema, target)
+}
 
 export default MongoDbSchema

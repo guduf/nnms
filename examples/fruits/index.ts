@@ -4,7 +4,7 @@ import { EventbusHandler, EventbusPlugin, EventbusProxy } from 'nnms-nats'
 import { BehaviorSubject, timer } from 'rxjs'
 import { first } from 'rxjs/operators'
 import { JsonObject } from 'type-fest'
-import { MongoDbSchema, Collection, MongoDbProvider } from 'nnms-mongodb'
+import { MongoDbSchema, MongoDbProvider, MongoDb } from 'nnms-mongodb'
 
 const FRUITS = ['apple', 'peach', 'peer', 'lemon'] as const
 
@@ -12,7 +12,7 @@ type FruitName = (typeof FRUITS)[number]
 
 type Stock = Record<FruitName, number>
 
-const FRUIT_SCHEMA: MongoDbSchema = {
+@MongoDbSchema({
   name: 'fruit',
   bsonType: 'object',
   required: ['name', 'count'],
@@ -20,9 +20,8 @@ const FRUIT_SCHEMA: MongoDbSchema = {
     name: {bsonType: 'string'},
     count: {bsonType: 'int'}
   }
-}
-
-export interface Fruit {
+})
+export class Fruit {
   name: string
   count: number
 }
@@ -36,8 +35,8 @@ interface StockMetric extends JsonObject {
 export class StockModule {
   constructor(
     private readonly _ctx: ModuleContext,
-    @Collection(FRUIT_SCHEMA)
-    private readonly _fruits: Collection<Fruit>
+    @MongoDb(Fruit)
+    private readonly _fruits: MongoDb<Fruit>
   ) { }
 
   readonly init = this._init()
@@ -50,8 +49,8 @@ export class StockModule {
   }
 
   private async _init(): Promise<void> {
-    console.log(this._fruits)
-    process.exit(1)
+    const fruits = await this._fruits
+    console.log(fruits.find({}).toArray())
     const initialStock = await this._getInitialStock()
     this._state = new BehaviorSubject(initialStock)
     this._state.subscribe(stock => this._ctx.logger.metric({
