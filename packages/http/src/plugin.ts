@@ -111,12 +111,12 @@ export class HttpPlugin {
     }
     if (methods.before) try { methods.before(app) } catch (catched) {
       const err = new ErrorWithCatch('Failed to execute before http routes hook', catched)
-      this._ctx.logger.error('BEFORE_HOOK_FAILED', err)
+      this._ctx.logger.error('BEFORE_HOOK', err)
     }
     methods.routes.forEach(method => this._registerRoute(routeMatchers, bodyParsers, method))
     if (methods.after) try { methods.after(app) } catch(catched) {
       const err = new ErrorWithCatch('Failed to execute after http routes hook', catched)
-      this._ctx.logger.error('AFTER_HOOK_FAILED', err)
+      this._ctx.logger.error('AFTER_HOOK', err)
     }
     this.init = _http.startServer(this._ctx.moduleMeta.name, this._ctx.vars.HTTP_PORT, app)
   }

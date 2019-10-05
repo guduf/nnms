@@ -23,29 +23,37 @@ export class MongoDbProvider {
     if (!schema || typeof schema !== 'object' || typeof schema.name !== 'string' || !schema.name) {
       throw new Error('invalid schema')
     }
-    if (!this._collections[schema.name]) this._collections[schema.name] = this._load(schema)
+    if (!this._collections[schema.name]) try {
+      this._collections[schema.name] = this._load(schema)
+    } catch (err) {
+      this._ctx.logger.error('LOAD_COLLECTION', err)
+    }
     return this._collections[schema.name];
   }
 
   private async _load(schema: MongoDbSchema): Promise<Collection> {
     if (!schema.name) throw new Error('invalid schema name')
     await this.init
-    this._ctx.logger.metric({collections: {$insert: [{name: schema.name, loaded: false}]}})
+    this._ctx.logger.metric('load collection', {
+      collections: {$insert: [{name: schema.name, loaded: 'pending'}]}
+    })
     const db = this._client.db(this._ctx.vars.DATABASE)
+    const jsonSchema = {...schema}
+    delete jsonSchema.name
     try {
       const {ok} = await (db.command({
         collMod: schema.name,
-        validator: {$jsonSchema: schema},
+        validator: {$jsonSchema: jsonSchema},
         validationLevel: 'moderate',
         validationAction: 'error'
       }) as Promise<{ok: boolean}>)
       if (!ok) throw new Error(`collection check is not OK`)
     } catch (err) {
       if (!(err instanceof MongoError && err.code === 26)) throw err
-      await db.createCollection(schema.name, {validator: {$jsonSchema: schema}})
+      await db.createCollection(schema.name, {validator: {$jsonSchema: jsonSchema}})
     }
-    this._ctx.logger.metric({
-      collections: {$metricKey: 'name', $insert: [{name: schema.name, loaded: true}]}
+    this._ctx.logger.info('LOAD_COLLECTION', {collection: schema.name}, {
+      collections: {$metricKey: 'name', $upsert: [{name: schema.name, loaded: true}]}
     })
     return db.collection(schema.name)
   }
@@ -55,7 +63,7 @@ export class MongoDbProvider {
     try {
       this._client = await connect(this._ctx.vars.URL)
     } catch (err) {
-      this._ctx.logger.error('FAILED_CONNECTION', err.message)
+      this._ctx.logger.error('CONNECTION', err.message)
       throw err
     }
     this._ctx.logger.info(`CLIENT_LISTENING`, {url: this._ctx.vars.URL}, {

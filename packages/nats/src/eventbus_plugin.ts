@@ -58,7 +58,7 @@ export class EventbusPlugin {
       try {
         result = (this._ctx.moduleInstance as any)[meta!.methodKey](...args)
       } catch (catched) {
-        this._ctx.logger.error('METHOD_PROXY_FAILED', {methodKey: meta.methodKey})
+        this._ctx.logger.error('PROXY_METHOD', {methodKey: meta.methodKey})
         throw catched
       }
       return result

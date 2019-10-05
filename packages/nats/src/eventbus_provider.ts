@@ -43,7 +43,7 @@ export class Eventbus {
       try {
         result = await proxyMethods[e.methodKey](...e.args)
       } catch (catched) {
-        this._ctx.logger.error('FAILED_PROXY', catched)
+        this._ctx.logger.error('PROXY_PUBLISHER', catched)
         throw catched
       }
       return result

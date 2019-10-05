@@ -1,10 +1,12 @@
 import { connect, NatsError, REQ_TIMEOUT } from 'nats'
 import { ProviderRef, ProviderContext, ErrorWithCatch } from 'nnms'
-import { Observable, merge, fromEvent, throwError, Subject } from 'rxjs'
-import { mergeMap, first, map } from 'rxjs/operators'
+import { Observable, merge, fromEvent, throwError, Subject, defer } from 'rxjs'
+import { mergeMap, first, map, retry } from 'rxjs/operators'
 
 const NATS_VARS = {
-  URL: 'nats://localhost:4222'
+  URL: 'nats://localhost:4222',
+  REQUEST_TIMEOUT: '3000',
+  REQUEST_RETRIES: '3'
 }
 
 @ProviderRef('nats', NATS_VARS)
@@ -14,6 +16,8 @@ export class NatsProvider {
   ) { }
 
   private readonly _client = connect({url: this._ctx.vars.URL, json: true})
+  private readonly _reqTimeout = +this._ctx.vars.REQUEST_TIMEOUT || +NATS_VARS.REQUEST_TIMEOUT
+  private readonly _reqRetries = +this._ctx.vars.REQUEST_RETRIES || +NATS_VARS.REQUEST_RETRIES
 
   readonly init = this._init()
 
@@ -30,17 +34,10 @@ export class NatsProvider {
     })
   }
 
-  requestOnce<R>(subject: string, body: {}, timeout = 10800): Promise<R> {
-    return new Promise((resolve, reject) => {
-      this._client.requestOne(subject, body, timeout, (res: R |NatsError) => {
-        if (res instanceof NatsError && res.code === REQ_TIMEOUT) {
-          const err = new ErrorWithCatch(`Request failed '${subject}': ${res.message}`, res.chainedError)
-          this._ctx.logger.error('REQUEST_FAILED', err)
-          return reject(err)
-        }
-        resolve(res as R)
-      })
-    })
+  requestOnce<R>(subject: string, body: {}): Promise<R> {
+    return defer(() => this._requestOnce<R>(subject, body))
+      .pipe(retry(this._reqRetries))
+      .toPromise()
   }
 
   requestMany<R>(subject: string, body: {}): Observable<R> {
@@ -48,7 +45,7 @@ export class NatsProvider {
     this._client.request(subject, body, (res: R | NatsError) => {
       if (res instanceof NatsError) {
         const err = new ErrorWithCatch(`Request failed '${subject}': ${res.message}`, res.chainedError)
-        this._ctx.logger.error('REQUEST_FAILED', err)
+        this._ctx.logger.error('REQUEST_MANY', err)
         sub.error(err)
         return sub.complete()
       }
@@ -84,7 +81,7 @@ export class NatsProvider {
     try {
       await this._connect()
     } catch (err) {
-      this._ctx.logger.error('FAILED_CONNECTION', err.message)
+      this._ctx.logger.error('CONNECTION', err.message)
       throw err
     }
     this._ctx.logger.info(`CLIENT_LISTENING`, {url: this._ctx.vars.URL}, {
@@ -98,6 +95,15 @@ export class NatsProvider {
       fromEvent(this._client, 'error').pipe(mergeMap(err => throwError(err)))
     ]
     return merge(...connectEvents).pipe(first()).toPromise()
+  }
+
+  private _requestOnce<R>(subject: string, body: {}): Promise<R> {
+    return new Promise((resolve, reject) => {
+      this._client.requestOne(subject, body, this._reqTimeout, (res: R | NatsError) => {
+        if (res instanceof NatsError && res.code === REQ_TIMEOUT) return reject(res)
+        resolve(res as R)
+      })
+    })
   }
 }
 
