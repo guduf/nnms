@@ -4,9 +4,8 @@ import MongoDbProvider from './mongodb_provider'
 
 import { JsonObject } from 'type-fest'
 import Container from 'typedi'
-import { MongoDbSchema } from 'nnms-mongodb'
 
-import { SCHEMA_METADATA_KEY } from './mongodb_schema'
+import { MongoDbSchema, SCHEMA_METADATA_KEY } from './mongodb_schema'
 
 export interface FindOptions<T = {}, U extends Partial<T> = {}> {
   projection?: (keyof U)[]

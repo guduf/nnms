@@ -97,7 +97,7 @@ async function build(pkgName, tmpPath, opts) {
   }), null)
   const bin = (
     meta.bin ?
-      meta.bin.reduce((acc, path) => ({...acc, [path]: `./bin/${path}.sh`}), {}) :
+      meta.bin.reduce((acc, path) => ({...acc, [path]: `./bin/${path}`}), {}) :
       null
   )
   const pkgJson = {
@@ -116,8 +116,8 @@ async function build(pkgName, tmpPath, opts) {
   if (bin) {
     p(fs.mkdir)(`${tmpPath}/bin`)
     for (const key in bin) await p(fs.copyFile)(
-      path.join(process.cwd(), `packages/${pkgName}/bin/${key}.sh`),
-      `${tmpPath}/bin/${key}.sh`
+      path.join(process.cwd(), `packages/${pkgName}/bin/${key}`),
+      `${tmpPath}/bin/${key}`
     )
     console.log(`🔨 Copy bin`)
   }

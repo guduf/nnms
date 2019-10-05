@@ -1,0 +1,2 @@
+#!/usr/bin/env node
+require('../bundles/nnms-cli.cjs.js');
