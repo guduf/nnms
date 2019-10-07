@@ -35,13 +35,13 @@ export class ModuleMeta<TVars extends Record<string, string> = {}> extends Resou
       }
       const providerMeta = Reflect.getMetadata(`${PREFIX}:provider`, type) as ProviderMeta
       if (providerMeta instanceof ProviderMeta) {
-        return {providers: [...acc.providers, providerMeta], plugins: acc.plugins, vars: acc.vars}
+        return {providers: [...acc.providers, type], plugins: acc.plugins, vars: acc.vars}
       }
       throw new Error('invalid plugin or provider')
     }, {
       plugins: [] as PluginMeta[],
       vars: opts.vars || {} as TVars,
-      providers: [] as ProviderMeta[]
+      providers: [] as Function[]
     })
     super(type, {...opts, providers: [...(opts.providers || []), ...providers], vars})
     this.plugins = plugins

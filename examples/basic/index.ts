@@ -1,6 +1,6 @@
 import { Request } from 'express'
 import { Service } from 'typedi'
-import { ModuleRef, ModuleContext } from 'nnms'
+import { ModuleRef, ModuleContext, ProviderRef } from 'nnms'
 import { HttpRoute, HttpPlugin } from 'nnms-http'
 
 export interface Todo {
@@ -14,7 +14,7 @@ const TODOS: { [id: string]: Todo} = {
   'k2alg4i1bonb': {id: 'k2alg4i1bonb', text: 'Write the documentation', completed: false}
 }
 
-@Service()
+@ProviderRef('todo', {})
 export class TodoService {
   readonly _todos: Map<string, Todo>
 

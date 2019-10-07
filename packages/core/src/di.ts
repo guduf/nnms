@@ -52,7 +52,7 @@ export function refDecorator<TVars extends Record<string, string>, TOpts extends
         }
         const paramMeta = Reflect.getMetadata(`${PREFIX}:provider`, paramType)
         if (paramMeta instanceof ProviderMeta) {
-          if (!providers.includes(paramType)) providers = [...providers, paramMeta]
+          if (!providers.includes(paramType)) providers = [...providers, paramType]
           return () => Container.get(paramMeta.type)
         }
         return null
@@ -67,12 +67,12 @@ export function refDecorator<TVars extends Record<string, string>, TOpts extends
   }
 }
 
-export const ProviderRef = (name: string, vars = {}) => (
-  refDecorator('provider', ProviderMeta)({name, vars})
+export const ProviderRef = (name: string, vars = {}, ...providers: Function[]) => (
+  refDecorator('provider', ProviderMeta)({name, vars, providers})
 )
 
-export const PluginRef = (name: string, vars = {}) => (
-  refDecorator('plugin', PluginMeta)({name, vars})
+export const PluginRef = (name: string, vars = {}, ...providers: Function[]) => (
+  refDecorator('plugin', PluginMeta)({name, vars, providers})
 )
 
 export const ModuleRef = (name: string, vars = {}, ...pluginsAndProviders: Function[]) => (

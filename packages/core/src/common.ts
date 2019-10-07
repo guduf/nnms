@@ -16,7 +16,7 @@ const NAME_REGEX = /^[\w-]{2,32}$/
 
 export interface ResourceOpts<TVars extends Record<string, string> = {}> {
   name: string
-  providers?: ResourceMeta[]
+  providers?: Function[]
   vars?: TVars
 }
 
@@ -33,7 +33,11 @@ export abstract class ResourceMeta<TVars extends Record<string, string> = {}> {
     if (!NAME_REGEX.test(name)) throw new Error('Invalid module name')
     this.name = name
     this.vars = typeof vars === 'object' && vars ? vars : {} as TVars
-    this.providers = providers || []
+    this.providers = (providers || []).map(type => {
+      const providerMeta = Reflect.getMetadata(`${PREFIX}:provider`, type) as ResourceMeta
+      if (!(providerMeta instanceof ResourceMeta)) throw new Error('invalid provider')
+      return providerMeta
+    })
   }
 
   abstract buildContext(container?: ContainerInstance): ResourceContext
