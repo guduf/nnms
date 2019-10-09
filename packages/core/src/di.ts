@@ -1,12 +1,11 @@
 import 'reflect-metadata'
 import { Container, ContainerInstance } from 'typedi'
-import { PREFIX, ResourceMeta, ResourceOpts, getContainerContext, ResourceContext } from './common'
+import { PREFIX, ResourceMeta, ResourceOpts, getContainerContext, ResourceContext, ResourceKind } from './common'
 import { ProviderMeta } from './provider'
 import { ModuleMeta, } from './module_ref'
 import { PluginMeta } from './plugin'
 
-export type RefKind = 'module' | 'plugin' | 'provider'
-
+/* Decorates a module method for a specific plugin. */
 export function pluginMethodDecorator(
   pluginName: string,
   meta: {} | ((target: any, prop: string) => {})
@@ -18,6 +17,7 @@ export function pluginMethodDecorator(
   }
 }
 
+/* Decorates a module parameter for a specific plugin. */
 export function pluginParamDecorator(
   pluginName: string,
   meta: {} | ((target: any, prop: string, index: number) => {})
@@ -29,14 +29,15 @@ export function pluginParamDecorator(
   }
 }
 
-export function refDecorator<TVars extends Record<string, string>, TOpts extends ResourceOpts<TVars> = ResourceOpts<TVars>>(
-  ref: RefKind,
+/* Builds a decorator function for a specific kind and meta type. */
+export function buildResourceDecorator<TVars extends Record<string, string>, TOpts extends ResourceOpts<TVars> = ResourceOpts<TVars>>(
+  kind: ResourceKind,
   metaType: { new (ref: Function, opts: TOpts): ResourceMeta<TVars> }
 ): (opts: TOpts) => ClassDecorator {
   return opts => {
     let providers = opts.providers || []
     return type => {
-      Reflect.defineMetadata(`${PREFIX}:ref`, ref, type)
+      Reflect.defineMetadata(`${PREFIX}:ref`, kind, type)
       const paramTypes = Reflect.getMetadata('design:paramtypes', type) as any[] || []
       paramTypes.map((paramType, index) =>  {
         if (
@@ -62,19 +63,22 @@ export function refDecorator<TVars extends Record<string, string>, TOpts extends
           Container.registerHandler({object: type, index, value})
         })
       const meta = new metaType(type, {...opts, providers})
-      Reflect.defineMetadata(`${PREFIX}:${ref}`, meta, type)
+      Reflect.defineMetadata(`${PREFIX}:${kind}`, meta, type)
     }
   }
 }
 
+/** Decorates a class with provider meta. */
 export const ProviderRef = (name: string, vars = {}) => (
-  refDecorator('provider', ProviderMeta)({name, vars})
+  buildResourceDecorator('provider', ProviderMeta)({name, vars})
 )
 
+/** Decorates a class with plugin meta. */
 export const PluginRef = (name: string, vars = {}) => (
-  refDecorator('plugin', PluginMeta)({name, vars})
+  buildResourceDecorator('plugin', PluginMeta)({name, vars})
 )
 
+/** Decorates a class with module meta. */
 export const ModuleRef = (name: string, vars = {}, ...pluginsAndProviders: Function[]) => (
-  refDecorator('module', ModuleMeta)({name, vars, pluginsAndProviders})
+  buildResourceDecorator('module', ModuleMeta)({name, vars, pluginsAndProviders})
 )

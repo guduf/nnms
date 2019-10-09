@@ -5,7 +5,10 @@
   "scripts": {
     "example:basic": "tsc -p examples/basic",
     "example:fruits": "tsc -p examples/fruits",
+    "docs": "node scripts/docs.js",
+    "docs:generate": "typedoc",
     "build": "node scripts/build.js",
+    "watch": "tsc scripts/build.js",
     "start": "nnms start",
     "test": "jest --config packages/core/jest.config.js"
   },
@@ -40,6 +43,7 @@
     "tar": "^4.4.10",
     "ts-jest": "^24.0",
     "type-fest": "^0.7.1",
+    "typedoc": "^0.15.0",
     "typescript": "^3.5.0"
   },
   "dependencies": {

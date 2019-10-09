@@ -8,6 +8,7 @@ import { ProviderMeta, ProviderMetric } from './provider'
 import { PluginMetric } from './plugin'
 import { share } from 'rxjs/operators'
 
+/** Browses resource metas recursively to extract all providers that must be bootstraped. */
 export function extractProviderInjections(...metas: ResourceMeta[]): ProviderMeta[] {
   const raw = metas.reduce((acc, meta) => {
     if (!(meta instanceof ResourceMeta)) throw new Error('invalid meta')
@@ -26,6 +27,7 @@ export function extractProviderInjections(...metas: ResourceMeta[]): ProviderMet
   return Array.from(new Set(raw))
 }
 
+/* Instantiates and bootstraps providers while respecting inter dependencies. */
 export async function bootstrapProviders(...metas: ProviderMeta[]): Promise<void> {
   const remaining = [...metas]
   const bootstraped = [] as ProviderMeta[]
@@ -39,6 +41,7 @@ export async function bootstrapProviders(...metas: ProviderMeta[]): Promise<void
   }
 }
 
+/* Creates a application and bootstraps all resources. */
 export function bootstrap(name: string, ...mods: Function[]): ApplicationContext {
   const env = new Environment()
   const tags: LoggerTags = {src: 'app', app: name}

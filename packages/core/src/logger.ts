@@ -2,7 +2,7 @@ import { Observable, Subject, Subscription, OperatorFunction } from 'rxjs'
 import { scan, shareReplay, startWith, filter, distinctUntilChanged } from 'rxjs/operators'
 import shortid from 'shortid'
 import { LogEntry } from 'winston'
-import { LoggerEventMetricMutations, LoggerMetricMap, applyMetricMutation } from './logger_metrics';
+import { LoggerEventMetricMutation, applyMetricMutation, LoggerMetricValue } from './logger_metrics';
 import { JsonObject } from 'type-fest';
 
 export interface LoggerConfig {
@@ -57,7 +57,7 @@ export interface LoggerEvent<T extends LoggerEventData = LoggerEventData> extend
   code: string
   tags: LoggerTags
   data?: T
-  metrics?: LoggerEventMetricMutations
+  metrics?: Record<string, LoggerEventMetricMutation>
 }
 
 export class LoggerSubject {
@@ -154,7 +154,7 @@ export class Logger {
     this.catch('error', code, errorOrData, data)
   }
 
-  info(code: string, data?: LoggerEventData, metrics?: LoggerEventMetricMutations): void {
+  info(code: string, data?: LoggerEventData, metrics?: Record<string, LoggerEventMetricMutation>): void {
     this.log({level: 'info', code, data, metrics})
   }
 
@@ -167,8 +167,8 @@ export class Logger {
   }
 
   metric(
-    messageOrMetrics: string | LoggerEventMetricMutations,
-    metrics?: LoggerEventMetricMutations
+    messageOrMetrics: string | Record<string, LoggerEventMetricMutation>,
+    metrics?: Record<string, LoggerEventMetricMutation>
   ): void {
     const message = typeof messageOrMetrics === 'string' ? messageOrMetrics : undefined
     metrics = typeof messageOrMetrics === 'string' ? metrics : messageOrMetrics
@@ -189,7 +189,7 @@ export function filterByTags(tags: Partial<LoggerTags>): OperatorFunction<Logger
 export function scanMetric<T extends JsonObject>(metricName: string): OperatorFunction<LoggerEvent, T[]> {
   return events => events.pipe(
     scan((metric, e) => {
-      const mutation = (e.metrics || {})[metricName] as LoggerMetricMap
+      const mutation = (e.metrics || {})[metricName] as Record<string, LoggerMetricValue>
       if (!mutation) return metric
       return applyMetricMutation(metric, mutation, e.data) as T[]
     }, [] as T[]),

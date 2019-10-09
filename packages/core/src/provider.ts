@@ -43,7 +43,6 @@ export class ProviderMeta<TVars extends Record<string, string> = {}> extends Res
       name: this.name,
       kind: 'provider',
       meta: this,
-      mode: env.isProduction ? 'prod' : 'dev',
       logger: logger.extend({src: 'prov', prov: this.name}),
       vars: env.extract(this.vars, this.name.toUpperCase())
     }

@@ -1,19 +1,15 @@
-import { JsonObject, JsonValue } from "type-fest";
+import { JsonObject, JsonValue } from 'type-fest'
 
+/** Represents a metric value */
 export type LoggerMetricValue = JsonObject[]
 
-export interface LoggerMetricMap { [key: string]: LoggerMetricValue }
-
+/** Represents a metric mutation */
 export interface LoggerEventMetricMutation<T extends LoggerMetricValue = LoggerMetricValue> {
   $metricKey?: string
   $insert?: string | T
   $upsert?: string | T
   $remove?: string | string[]
   $patch?: string | (T extends Array<infer X> ? Partial<X>[] : never)
-}
-
-export interface LoggerEventMetricMutations {
-  [metricName: string]: LoggerEventMetricMutation
 }
 
 const mutationArrayKeywordRegExp = /^\[\$data(\.\w+)*\]$/

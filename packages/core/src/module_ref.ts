@@ -83,7 +83,6 @@ export class ModuleMeta<TVars extends Record<string, string> = {}> extends Resou
       kind: 'module',
       name: this.name,
       meta: this,
-      mode: env.isProduction ? 'prod' : 'dev',
       logger: logger.extend({src: 'mod', mod: this.name}),
       vars: env.extract(this.vars, this.name.toUpperCase())
     }

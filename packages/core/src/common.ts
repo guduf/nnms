@@ -14,18 +14,28 @@ export const RESOURCE_CONTEXT_TOKEN = new Token<ResourceContext>('RESOURCE_CONTE
 
 const NAME_REGEX = /^[\w-]{2,32}$/
 
+/** Represents common options shared across resources. */
 export interface ResourceOpts<TVars extends Record<string, string> = {}> {
+  /** The unique identifier for the resource. */
   name: string
+
+  /**
+   * The array of providers explicitly required by the resource.
+   * @default []
+   */
   providers?: ResourceMeta[]
+
+  /**
+   * The environment variable template of the resource.
+   * @default {}
+   */
   vars?: TVars
 }
 
+/** Represents common properties shared across resource meta. */
 export abstract class ResourceMeta<TVars extends Record<string, string> = {}> {
-  readonly name: string
-  readonly vars: TVars
-  readonly providers: ResourceMeta[]
-
   constructor(
+    /** The class object of the resource*/
     readonly type: Function,
     {name, providers, vars}: ResourceOpts<TVars>
   ) {
@@ -36,11 +46,31 @@ export abstract class ResourceMeta<TVars extends Record<string, string> = {}> {
     this.providers = providers || []
   }
 
+  /** The unique identifier for the resource. */
+  readonly name: string
+
+  /** The environment variable template of the resource. */
+  readonly vars: TVars
+
+  /** The array of providers explicitly required by the resource. */
+  readonly providers: ResourceMeta[]
+
+  /** Creates the resource context. */
   abstract buildContext(container?: ContainerInstance): ResourceContext
 }
+
+/** Represents all kind of resources. */
+export type ResourceKind = 'module' | 'plugin' | 'provider'
+
+/** Represents common properties shared accross application and resource contexts. */
 export abstract class CommonContext {
-  abstract readonly kind: 'application' | 'module' | 'provider' | 'plugin'
+  /** The identifier for context kind. */
+  abstract readonly kind: 'application' | ResourceKind
+
+  /** The specific logger created for the resource. */
   readonly logger: Logger
+
+  /** The unique identifier of the context. */
   readonly name: string
 
   protected constructor() {
@@ -48,24 +78,42 @@ export abstract class CommonContext {
   }
 }
 
+/** Represents properties for application contexts. */
 export abstract class ApplicationContext extends CommonContext {
+  /** The identifier for application context kind. */
   readonly kind: 'application'
+
+  /** The global environment of the application. */
   readonly env: Environment
+
+  /** A observable of module status. */
   readonly modules: Observable<ModuleMetric[]>
+
+  /** A observable of plugins status. */
   readonly plugins: Observable<PluginMetric[]>
+
+  /** A observable of providers status. */
   readonly providers: Observable<ProviderMetric[]>
 }
 
+/** Represents properties for shared accross resource contexts. */
 export abstract class ResourceContext<TVars extends Record<string, string> = {}> extends CommonContext {
-  abstract readonly kind: 'provider' | 'module' | 'plugin'
+  /** The identifier for resource context kind. */
+  abstract readonly kind: ResourceKind
+
+  /** The retrieved meta object of the resource */
   readonly meta: ResourceMeta<TVars>
-  readonly mode: 'dev' | 'prod' | 'test'
-  readonly logger: Logger
+
+  /** The environment variables template compiled for the resource. */
   readonly vars: { readonly [P in keyof TVars]: string }
 }
 
+/** Returns the application context. */
 export function getContainerContext(): ApplicationContext
+
+/** Returns the resource context for a module scoped container. */
 export function getContainerContext(modContainer: ContainerInstance): ResourceContext
+
 export function getContainerContext(modContainer?: ContainerInstance): ApplicationContext | ResourceContext {
   const container = modContainer || Container
   if (!container.has(RESOURCE_CONTEXT_TOKEN)) throw new Error('Container has no resource context')
@@ -73,6 +121,7 @@ export function getContainerContext(modContainer?: ContainerInstance): Applicati
   return ctx
 }
 
+/** Scans the instance prototype to get method metas for a plugin. */
 export function getMethodPluginMetas<T>(
   pluginName: string,
   instance: {}
