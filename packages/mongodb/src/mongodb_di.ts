@@ -1,3 +1,5 @@
+import 'reflect-metadata'
+
 import { Collection as NativeCollection, ObjectId } from 'mongodb'
 
 import MongoDbProvider from './mongodb_provider'

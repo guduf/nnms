@@ -2,5 +2,5 @@
   "$schema": "../metaschema.json",
   "name": "mongodb",
   "internals": ["core"],
-  "externals": ["mongodb"]
+  "externals": ["mongodb", "reflect-metadata"]
 }
