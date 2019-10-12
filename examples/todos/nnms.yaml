@@ -1,0 +1,5 @@
+app: nnms-example-todos
+env:
+  mongodb:
+    default:
+      database: nnms-example-todos

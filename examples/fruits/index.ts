@@ -44,7 +44,8 @@ export class StockModule {
 
   private async _init(): Promise<void> {
     const fruits = await this._fruits
-    console.log(await fruits.find({}).toArray())
+    const stock = await fruits.find({}).toArray()
+    this._ctx.logger.info('INTIAL_STOCK', {stock})
     const initialStock = await this._getInitialStock()
     this._state = new BehaviorSubject(initialStock)
     this._state.subscribe(stock => this._ctx.logger.metric({

@@ -5,8 +5,9 @@ import { Box } from 'ink'
 
 import LogFormat from '../log_format'
 import { useBoxSize, useObservable } from './util';
-import { LoggerSource } from 'nnms';
+import { LoggerSource, LoggerEvent } from 'nnms';
 import { useLog } from './log_context';
+import { scan } from 'rxjs/operators';
 
 export interface LogProps {
   format?: LogFormat
@@ -20,7 +21,9 @@ export function LogList({filter, format}: LogProps) {
   const [ref, {height}] = useBoxSize()
   const {store} = useLog()
   const logs = useObservable(() => (
-    filter ? store.getLogs(filter.src, filter.id) : store.getAllLogs()
+    filter ?
+      store.getLogs(filter.src, filter.id) :
+      store.getAllLogs().pipe(scan((acc, e) => [...acc, e], [] as LoggerEvent[]))
   ), [filter])
   const texts = React.useMemo(() => {
     const logFormat = format ? format : new LogFormat()

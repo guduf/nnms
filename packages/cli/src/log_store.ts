@@ -16,7 +16,14 @@ export type State<T> = Map<LoggerSource, Map<string, StateItem<T>>>
 export type LogStack = Stack<ImmutableRecord<Omit<LoggerEvent, 'tags'>>>
 export type MetricMap = Map<string, JsonObject[]>
 
-export class LogStore {
+export interface LogPublicStore {
+  getAllLogs(): Observable<LoggerEvent>
+  getLogs(src: LoggerSource, id: string): Observable<LoggerEvent[]>
+  getMetrics<T extends JsonObject>(src: LoggerSource, id: string): Observable<T>
+}
+
+export class LogStore implements LogPublicStore {
+  private readonly _events: Observable<LoggerEvent>
   private readonly _logs = new BehaviorSubject<State<LogStack>>(
     Map({mod: Map(), prov: Map(), plug: Map()}) as Map<LoggerSource, any>
   )
@@ -32,7 +39,8 @@ export class LogStore {
   get metrics(): State<Map<string, JsonObject[]>> { return this._metrics.value }
 
   constructor(events: Observable<LoggerEvent>) {
-    this._subscr = events.subscribe(
+    this._events = events.pipe(shareReplay())
+    this._subscr = this._events.subscribe(
       e => {
         const src = e.tags.src
         const srcId = e.tags[src]
@@ -73,19 +81,8 @@ export class LogStore {
     )
   }
 
-  getAllLogs(): Observable<LoggerEvent[]> {
-    return this._logs.pipe(map(state => {
-      return state.keySeq().reduce((acc, src) => {
-        const srcItems = state.get(src)
-        if (!srcItems) return acc
-        return srcItems.keySeq().reduce((subAcc, id) => {
-          const item = srcItems.get(id)
-          if (!item) return subAcc
-          const tags = {src, [src]: id, ...item.tags.toJS()}
-          return [...subAcc, ...item.entries.map(log => ({...log.toJS(), tags})).toJS() as LoggerEvent[]]
-        }, acc).sort((x, y) => (x.timestamp > y.timestamp ? 1 : -1))
-      }, [] as LoggerEvent[])
-    }))
+  getAllLogs(): Observable<LoggerEvent> {
+    return this._events
   }
 
   private _setInLogs(path: [LoggerSource, string], e: LoggerEvent): void {

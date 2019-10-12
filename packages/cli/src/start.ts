@@ -10,7 +10,7 @@ import Command from './command'
 import { LogStore } from './log_store'
 import NNMSUI from './ui'
 
-export const START_COMMAND: Command<{ appName?: string, moduleNames?: string[], path?: string }> = {
+export const START_COMMAND: Command<{ file: string, appName?: string, moduleNames?: string[], path?: string }> = {
   schema: 'start [file] [options]',
   descr: 'Starts one or more N&M\'s modules',
   argv: (yargs) => (

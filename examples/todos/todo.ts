@@ -1,7 +1,4 @@
-import { Request } from 'express'
-import { Service } from 'typedi'
-import { ModuleRef, ModuleContext, ProviderRef } from 'nnms'
-import { HttpRoute, HttpPlugin } from 'nnms-http'
+import { ProviderRef } from 'nnms'
 
 export interface Todo {
   id: string
@@ -15,7 +12,7 @@ const TODOS: { [id: string]: Todo} = {
 }
 
 @ProviderRef('todo', {})
-export class TodoService {
+export default class TodoProvider {
   readonly _todos: Map<string, Todo>
 
   constructor() {
@@ -28,7 +25,7 @@ export class TodoService {
     return Array.from(this._todos.values())
   }
 
-  async get({params: {id}}: Request): Promise<Todo | null> {
+  async get(id: string): Promise<Todo | null> {
     return this._todos.get(id) || null
   }
 
@@ -38,26 +35,9 @@ export class TodoService {
     return todo
   }
 
-  async complete({params: {id}}: Request): Promise<void> {
+  async complete(id: string): Promise<void> {
     const todo = this._todos.get(id)
     if (!todo) throw new Error(`Todo with id '${id}' not found`)
     todo.completed = true
-  }
-}
-
-@ModuleRef('todo', {HTTP_PORT: '8080'}, HttpPlugin)
-export class TodoModule {
-  constructor(
-    private readonly _ctx: ModuleContext,
-    private readonly _todos: TodoService
-  ) { }
-
-  async init(): Promise<void> {
-    this._ctx.logger.debug({initialList: await this._todos.list()})
-  }
-
-  @HttpRoute()
-  list(): Promise<Todo[]> {
-    return this._todos.list()
   }
 }

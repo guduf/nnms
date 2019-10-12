@@ -4,7 +4,7 @@ import { safeDump } from 'js-yaml'
 
 import { LoggerEvent, LoggerTags, LoggerLevel, LOGGER_LEVELS, LoggerEventData } from 'nnms'
 
-export interface LoggerFormatConfig {
+export interface LogFormatConfig {
   printData?: boolean
   printDay?: boolean
   tags?: 'full' | 'src'
@@ -15,7 +15,7 @@ export class LogFormat {
   private readonly _deserializeYaml: (data: {}) => string = safeDump;
 
   constructor (
-    private readonly _cfg: LoggerFormatConfig = {}
+    private readonly _cfg: LogFormatConfig = {}
   ) { }
 
   render(e: LoggerEvent): string {

@@ -1,9 +1,14 @@
 import yargs from 'yargs'
 
+import { REMOTE_COMMAND } from './remote'
+import { PROD_COMMAND } from './prod'
 import { START_COMMAND } from './start'
+import Command from './command'
 
-const COMMANDS = [
-  START_COMMAND
+const COMMANDS: Command<any>[] = [
+  PROD_COMMAND,
+  START_COMMAND,
+  REMOTE_COMMAND
 ]
 
 export default function run(): void {
