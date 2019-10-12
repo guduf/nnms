@@ -15,7 +15,9 @@
     "yargs",
     "react",
     "react-router",
-    "rxjs"
+    "rxjs",
+    "shortid",
+    "ws"
   ],
   "bin": ["nnms"]
 }

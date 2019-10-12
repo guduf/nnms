@@ -1,4 +1,4 @@
-import yargs from 'yargs'
+import yargs, { showHelp } from 'yargs'
 
 import { REMOTE_COMMAND } from './remote'
 import { PROD_COMMAND } from './prod'
@@ -14,6 +14,7 @@ const COMMANDS: Command<any>[] = [
 export default function run(): void {
   yargs.scriptName('nnms').usage('$0 <cmd> [args]')
   for (const cmd of COMMANDS) yargs.command(cmd.schema, cmd.descr, cmd.argv, cmd.cmd)
+  yargs.command({command: '*', handler: () => showHelp()})
   yargs.help().argv
 }
 

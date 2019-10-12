@@ -1,4 +1,4 @@
-app: nnms-example-todos
+build: ./dist/index.js
 env:
   mongodb:
     default:

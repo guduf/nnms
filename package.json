@@ -3,14 +3,16 @@
   "version": "0.11.0",
   "description": "N&M's - NodeJS framework for micro services",
   "scripts": {
-    "example:todos": "tsc -p examples/todos",
-    "example:fruits": "tsc -p examples/fruits",
+    "examples:todos": "tsc -p examples/todos && npm start ./examples/todos/dist/index.js",
+    "examples:fruits": "tsc -p examples/fruits",
     "docs": "node scripts/docs.js",
     "docs:generate": "typedoc",
     "build": "node scripts/build.js",
     "watch": "tsc scripts/build.js",
-    "start": "nnms start",
+    "prod": "nnms prod",
+    "remote": "nnms remote",
     "test": "jest --config packages/core/jest.config.js",
+    "start": "nnms start",
     "cli:dev": "tsc -w -p ./packages/cli/tsconfig.json"
   },
   "keywords": [
@@ -66,7 +68,7 @@
     "react-router": "^5.0.1",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^6.5.2",
-    "shortid": "^2.2.14",
+    "shortid": "^2.2.15",
     "typedi": "^0.8.0",
     "winston": "^3.2.0",
     "winston-transport": "^4.3.0",
@@ -74,10 +76,10 @@
     "yargs": "^13.3.0"
   },
   "optionalDependencies": {
-    "nnms": "file:dist/nnms-0.10.0.tgz",
-    "nnms-cli": "file:dist/nnms-cli-0.10.0.tgz",
-    "nnms-http": "file:dist/nnms-http-0.10.0.tgz",
-    "nnms-mongodb": "file:dist/nnms-mongodb-0.10.0.tgz",
-    "nnms-nats": "file:dist/nnms-nats-0.10.0.tgz"
+    "nnms": "file:dist/nnms-0.11.0.tgz",
+    "nnms-cli": "file:dist/nnms-cli-0.11.0.tgz",
+    "nnms-http": "file:dist/nnms-http-0.11.0.tgz",
+    "nnms-mongodb": "file:dist/nnms-mongodb-0.11.0.tgz",
+    "nnms-nats": "file:dist/nnms-nats-0.11.0.tgz"
   }
 }
