@@ -1,8 +1,8 @@
 import { Record as ImmutableRecord, Map, Stack } from 'immutable'
 import { map, shareReplay, share } from 'rxjs/operators'
-import { BehaviorSubject, Observable } from 'rxjs'
+import { BehaviorSubject, Observable, Subscription } from 'rxjs'
 
-import { Logger, LoggerEvent, LoggerSource, LoggerEventMetricMutation, applyMetricMutation } from 'nnms'
+import { LoggerEvent, LoggerSource, LoggerEventMetricMutation, applyMetricMutation } from 'nnms'
 import { JsonObject } from 'type-fest';
 
 export const Log = ImmutableRecord(
@@ -23,6 +23,7 @@ export class LogStore {
   private readonly _metrics = new BehaviorSubject<State<MetricMap>>(
     Map({mod: Map(), prov: Map(), plug: Map()}) as Map<LoggerSource, any>
   )
+  private readonly _subscr: Subscription
 
   readonly logsChange = this._logs.asObservable()
   readonly metricsChange = this._metrics.asObservable()
@@ -30,13 +31,23 @@ export class LogStore {
   get logs(): State<LogStack> { return this._logs.value }
   get metrics(): State<Map<string, JsonObject[]>> { return this._metrics.value }
 
-  constructor(logger: Logger) {
-    logger.events.subscribe(e => {
-      const src = e.tags.src
-      const srcId = e.tags[src]
-      this._setInLogs([src, srcId], e)
-      this._setInMetrics([src, srcId], e)
-    })
+  constructor(events: Observable<LoggerEvent>) {
+    this._subscr = events.subscribe(
+      e => {
+        const src = e.tags.src
+        const srcId = e.tags[src]
+        this._setInLogs([src, srcId], e)
+        this._setInMetrics([src, srcId], e)
+      },
+      err => {
+        console.error('CRASH', err)
+        process.exit(1)
+      }
+    )
+  }
+
+  complete(): void {
+    this._subscr.unsubscribe()
   }
 
   getLogs(src: LoggerSource, id: string): Observable<LoggerEvent[]> {

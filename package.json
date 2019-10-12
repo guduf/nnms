@@ -10,7 +10,8 @@
     "build": "node scripts/build.js",
     "watch": "tsc scripts/build.js",
     "start": "nnms start",
-    "test": "jest --config packages/core/jest.config.js"
+    "test": "jest --config packages/core/jest.config.js",
+    "cli:dev": "tsc -w -p ./packages/cli/tsconfig.json"
   },
   "keywords": [
     "node",

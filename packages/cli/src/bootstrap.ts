@@ -1,11 +1,11 @@
-import { ApplicationContext, bootstrap, ModuleMeta, PREFIX } from 'nnms'
 import { join } from 'path'
+import { bootstrap, ModuleMeta, PREFIX, LoggerEvent } from 'nnms'
+import { Observable } from 'rxjs'
 
-
-export function runModules(
+export function bootstrapFile(
   file: string,
   opts = {} as { appName?: string, moduleNames?: string[] }
-): ApplicationContext {
+): Observable<LoggerEvent> {
   let index = {} as { [key: string]: Function }
   try {
     index = require(file.match(/^\.?\.\//) ? join(process.cwd(), file) : file)
@@ -34,5 +34,5 @@ export function runModules(
       }) :
       Object.keys(mods).map(modName => mods[modName])
   )
-  return bootstrap(appName, ...bootstrapedMods)
+  return bootstrap(appName, ...bootstrapedMods).logger.events
 }
