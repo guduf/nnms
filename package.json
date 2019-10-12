@@ -75,12 +75,5 @@
     "winston-transport": "^4.3.0",
     "ws": "^7.1.2",
     "yargs": "^13.3.0"
-  },
-  "optionalDependencies": {
-    "nnms": "file:dist/nnms-0.13.0.tgz",
-    "nnms-cli": "file:dist/nnms-cli-0.13.0.tgz",
-    "nnms-http": "file:dist/nnms-http-0.13.0.tgz",
-    "nnms-mongodb": "file:dist/nnms-mongodb-0.13.0.tgz",
-    "nnms-nats": "file:dist/nnms-nats-0.13.0.tgz"
   }
 }
