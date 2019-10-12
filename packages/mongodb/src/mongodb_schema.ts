@@ -37,15 +37,7 @@ export interface BsonSchema extends JSONSchema4 {
   not?: BsonSchema
 }
 
-export interface MongoDbSchema extends BsonSchema {
-  bsonType: 'object'
-  name: string
-}
+// TODO - fix declaration issue
+export const BsonSchema = {}
 
-export const SCHEMA_METADATA_KEY = 'nnms:mongodb:schema'
-
-export function MongoDbSchema(schema: MongoDbSchema): ClassDecorator {
-  return target => Reflect.defineMetadata(SCHEMA_METADATA_KEY, schema, target)
-}
-
-export default MongoDbSchema
+export default BsonSchema

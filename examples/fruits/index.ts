@@ -4,7 +4,7 @@ import { EventbusHandler, EventbusPlugin, EventbusProxy } from 'nnms-nats'
 import { BehaviorSubject, timer } from 'rxjs'
 import { first } from 'rxjs/operators'
 import { JsonObject } from 'type-fest'
-import { MongoDbSchema, MongoDbProvider, MongoDb } from 'nnms-mongodb'
+import { MongoDbSchema, MongoDbProvider, MongoDb, MongoDbProp } from 'nnms-mongodb'
 
 const FRUITS = ['apple', 'peach', 'peer', 'lemon'] as const
 
@@ -12,17 +12,11 @@ type FruitName = (typeof FRUITS)[number]
 
 type Stock = Record<FruitName, number>
 
-@MongoDbSchema({
-  name: 'fruit',
-  bsonType: 'object',
-  required: ['name', 'count'],
-  properties: {
-    name: {bsonType: 'string'},
-    count: {bsonType: 'int'}
-  }
-})
+@MongoDbSchema('fruit')
 export class Fruit {
+  @MongoDbProp(true)
   name: string
+  @MongoDbProp(true)
   count: number
 }
 
