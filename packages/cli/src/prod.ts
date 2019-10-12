@@ -31,12 +31,19 @@ export async function loadConfig(filepath: string): Promise<ProdConfig> {
   return loadYaml(body)
 }
 
-export const PROD_COMMAND: Command<{ configPath: string }> = {
-  schema: 'prod [configPath]',
-  descr: 'Starts one or more N&M\'s modules in a docker container',
-  argv: (yargs) => (yargs as Argv<{ configPath: string }>),
+export const PROD_COMMAND: Command<{ config?: string }> = {
+  schema: 'prod',
+  descr: 'Loads N&M\'s configuration and starts application',
+  argv: (
+    (yargs) => (yargs as Argv<{ config?: string }>)
+      .option('config', {
+        type: 'string',
+        alias: 'c'
+      })
+  ),
   cmd: async cmd => {
-    const configPath = buildConfigPath(cmd.configPath)
+    const configPath = buildConfigPath(cmd.config)
+    console.log(`configPath: '${configPath}'`)
     let config: ProdConfig
     try {
       config = await loadConfig(configPath)

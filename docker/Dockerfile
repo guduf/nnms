@@ -10,4 +10,4 @@ RUN     npm install --global \
   "nnms-http@$NNMS_VERSION " \
   "nnms-mongodb@$NNMS_VERSION " \
   "nnms-nats@$NNMS_VERSION "
-ENTRYPOINT [ "nnms" ]
+ENTRYPOINT ["npx", "nnms" ]

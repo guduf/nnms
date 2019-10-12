@@ -1,4 +1,4 @@
-ARG NNMS_VERSION=0.10.0
+ARG NNMS_VERSION=0.12.0
 
 FROM nnms:${NNMS_VERSION} as runner
 COPY . ./
@@ -10,5 +10,5 @@ RUN npm install
 RUN npm run compile
 
 FROM runner
-COPY --from=builder /opt/app/dist ./
-CMD prod
+COPY --from=builder /opt/app/dist ./dist
+CMD ["prod"]

@@ -1,0 +1,7 @@
+language: nodejs
+services:
+  - docker
+install:
+  - docker pull "nnms:$NNMS_VERSION"
+script:
+  - npm i
