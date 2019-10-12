@@ -28,15 +28,16 @@ function copy(tmpPath) {
   return p(fs.copyFile)('LICENSE.md', `${tmpPath}/LICENSE.md`)
 }
 
+
 function pack(tmpPath, tarballPath) {
   console.log(`🔨 Pack '${tarballPath}'`)
   return p(exec)(`npm pack ${tmpPath}`, {cwd: path.dirname(tarballPath)})
 
 }
 
-function install(tarballPath) {
-  console.log(`🔨 Install '${tarballPath}'`)
-  return p(exec)(`npm install --save-optional ${tarballPath}`)
+async function install(...tarballs) {
+  console.log(`🔨 Install${tarballs.map(p => ` '${p}'`)}`)
+  await p(exec)(`npm install --no-save${tarballs.map(p => ` ${p}`)}`)
 }
 
 async function build(pkgName, tmpPath, opts) {
@@ -65,9 +66,17 @@ async function build(pkgName, tmpPath, opts) {
       }
     })
   }
-
   const externals = (meta.externals || [])
   const internals = (meta.internals || []).map(internal => BASENAME + (internal === 'core' ? '' : `-${internal}`))
+  const distPath = path.join(process.cwd(), './dist')
+  const internalTarballs = (
+    internals.length ?
+      internals.map(targetName => (`${distPath}/${targetName}-${version}.tgz`)) :
+      null
+  )
+  if (internalTarballs) try { await install(...internalTarballs) } catch (err) {
+    throw new Error('failed to install internal dependencies')
+  }
   const rollupOpts = {
     input: `packages/${pkgName}/src/index.ts`,
     external: ['fs', 'path', 'util', ...externals, ...internals],
@@ -121,7 +130,7 @@ async function build(pkgName, tmpPath, opts) {
   await copy(tmpPath)
   const tarballPath = path.join(process.cwd(), `./dist/${pkgFullName}-${version}.tgz`)
   await pack(tmpPath, tarballPath)
-  if (!opts.skipInstall) await install(tarballPath)
+  // if (!opts.skipInstall) await install(tarballPath)
 }
 
 function clean(tmpPath) {
