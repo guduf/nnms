@@ -10,6 +10,7 @@ const path = require('path')
 const tar = require('tar')
 const { exec } = require('child_process')
 const {PACKAGES} = require('./global')
+const mkdirp = require('mkdirp')
 
 argv.option({
   name: 'skipClean',
@@ -134,6 +135,13 @@ function clean(tmpPath) {
 }
 
 (async () => {
+  try {
+    await p(mkdirp)('./tmp')
+    await p(mkdirp)('./dist')
+  } catch(err) {
+    console.error(`❗️ Init failed: ${err.message}`)
+    process.exit(1)
+  }
   let {targets, options} = argv.run()
   if (!targets.length) {
     targets = PACKAGES
