@@ -4,4 +4,6 @@ jobs:
     - stage: install
       script:
       - export NNMS_VERSION=$(node -e "(require('./package.json') || {}).version")
-      - docker pull nnms:$NNMS_VERSION
+      - cat ./package.json
+      - echo "nnms:$NNMS_VERSION"
+      - docker pull "nnms:$NNMS_VERSION"
