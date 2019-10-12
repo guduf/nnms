@@ -1,7 +1,7 @@
-sudo: required
-language: nodejs
-services:
-  - docker
-before_install:
-  - export NNMS_VERSION=$(node -e "(require('./package.json') || {}).version")
-  - docker pull "nnms:$NNMS_VERSION"
+dist: trusty
+jobs:
+  include:
+    - stage: install
+      script:
+      - export NNMS_VERSION=$(node -e "(require('./package.json') || {}).version")
+      - docker pull nnms:$NNMS_VERSION
