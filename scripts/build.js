@@ -7,7 +7,6 @@ const { promisify: p } = require('util')
 const rimraf = require('rimraf')
 const ts = require('typescript')
 const path = require('path')
-const tar = require('tar')
 const { exec } = require('child_process')
 const {BASENAME, PACKAGES} = require('./global')
 const mkdirp = require('mkdirp')
@@ -29,17 +28,15 @@ function copy(tmpPath) {
   return p(fs.copyFile)('LICENSE.md', `${tmpPath}/LICENSE.md`)
 }
 
-function package(tmpPath, tarballPath) {
-  console.log(`🔨 Package to '${tarballPath}'`)
-  return tar.c(
-    {file: tarballPath, cwd: tmpPath, gzip: true},
-    ['.']
-  )
+function pack(tmpPath, tarballPath) {
+  console.log(`🔨 Pack '${tarballPath}'`)
+  return p(exec)(`npm pack ${tmpPath}`, {cwd: path.dirname(tarballPath)})
+
 }
 
 function install(tarballPath) {
   console.log(`🔨 Install '${tarballPath}'`)
-  return p(exec)(`npm install --save-optional ./${tarballPath}`)
+  return p(exec)(`npm install --save-optional ${tarballPath}`)
 }
 
 async function build(pkgName, tmpPath, opts) {
@@ -122,8 +119,8 @@ async function build(pkgName, tmpPath, opts) {
   }
   await p(fs.writeFile)(`${tmpPath}/package.json`, JSON.stringify(pkgJson, null, 2) + '\n')
   await copy(tmpPath)
-  const tarballPath = `dist/${pkgFullName}-${version}.tgz`
-  await package(tmpPath, tarballPath)
+  const tarballPath = path.join(process.cwd(), `./dist/${pkgFullName}-${version}.tgz`)
+  await pack(tmpPath, tarballPath)
   if (!opts.skipInstall) await install(tarballPath)
 }
 
