@@ -1,4 +1,5 @@
 {
+  "BASENAME": "nnms",
   "PACKAGES": [
     "core",
     "cli",

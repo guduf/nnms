@@ -9,7 +9,7 @@ const ts = require('typescript')
 const path = require('path')
 const tar = require('tar')
 const { exec } = require('child_process')
-const {PACKAGES} = require('./global')
+const {BASENAME, PACKAGES} = require('./global')
 const mkdirp = require('mkdirp')
 
 argv.option({
@@ -23,8 +23,6 @@ argv.option({
   type: 'boolean',
   description: 'Skip the installation of the node package in the repository'
 })
-
-const PKG_BASENAME = 'nnms'
 
 function copy(tmpPath) {
   console.log(`🔨 Copy`)
@@ -51,7 +49,7 @@ async function build(pkgName, tmpPath, opts) {
 
   console.log(`👷 Build package '${pkgName}' in '${tmpPath}'`)
 
-  const pkgFullName = `${PKG_BASENAME}${pkgName === 'core' ? '' : `-${pkgName}`}`
+  const pkgFullName = `${BASENAME}${pkgName === 'core' ? '' : `-${pkgName}`}`
   const tsConfigPath = path.join(process.cwd(), `packages/${pkgName}/tsconfig.json`)
 
   function buildTypescriptPlugin(declarationDir) {
@@ -72,7 +70,7 @@ async function build(pkgName, tmpPath, opts) {
   }
 
   const externals = (meta.externals || [])
-  const internals = (meta.internals || []).map(internal => PKG_BASENAME + (internal === 'core' ? '' : `-${internal}`))
+  const internals = (meta.internals || []).map(internal => BASENAME + (internal === 'core' ? '' : `-${internal}`))
   const rollupOpts = {
     input: `packages/${pkgName}/src/index.ts`,
     external: ['fs', 'path', 'util', ...externals, ...internals],

@@ -1,11 +1,10 @@
 dist: trusty
 script:
-- export NNMS_VERSION=$(node -e "console.log((require('./package.json') || {}).version)")
-- 'if [ -z ${NNMS_VERSION+x} ]; then travis_terminate 1; else echo "nnms version:
-  $NNMS_VERSION"; fi'
 - npm install
 - npm run build
-- printenv
-npm:
-  token:
-    secure: cm90YNOVXiv+YMQ8ysUIyrMk1P0euo5+aREFa9oLTJpuL66E+K4AAX+tjJUBNSGg53CcnedXekKsjmajt/3UbA00TSbv1EIIctHR+8+WAiDVuanImBw0xfc9HJbfHK91gHOjkB8wwSXpzJq7+0Wq0NHjTW9UPTKvVITggC0OLuTA2IDLc0Zy4SVxI8x++Mr0CUkEZdwQs3KHRClyGE5zhWGGLV2r4Y5jV+BEQqcTNrGEiNPwbJRv+zHIvunQGLs9difZNNaarTZFpUjYbo8wArFHYxV8EfgZXEJwjEaHCFhfeRhFYc0IuKme4JP92vizdb/aZJ/C1Xls69PaLqlSd6t49La6QMsfbhW0SKeMsC9cmhUfU0zZUIIIIRxjhN+sMiVRhhquMmCR8HgHUcmPmiulGDlxq8CIpm4tNMwTtv8afv88pCAS72GExbeWQxb1k20a9y7Wy+7m/ZacvTJEcRAEtGSvCfNLsh0AtpccqD3fsSE+JvXwsoUugKejyX1bonQa8/s/jnHbkQt802DBDtTZH9Lh3cOM+Ve7SAI7qxJ2fCtcPSzdjccsNp2z3jkSHMKoPsCUzgWt6BPq7ezKeYv6T3fydb8G2VxGEfhHU4UNIUPSo6282cDXuIOr1YpIk0UgEDy7qMP3ulwaJCrLMBK6Ct6JE0RDBtncvPr8jc0=
+- 'if [ -z ${NPM_TOKEN+x} ]; then travis_terminate 1; fi'
+- 'echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > .npmrc'
+- npm run publish
+env:
+  global:
+    secure: fsxxWbiDoT8f/jZhhLiG0qjTCLWoFjLmuZh9Hzzu0B1vJh7IbfArTz3bnMZut/TMBvx2W7Vzltzux/VLuiSl/krJedir25rfatwDbui0Qq+yTOND1A07Uy4iJ2rTdoN3/vlYzyVvbPsE88QE2DWW+E5OMb5Mx/Nyp45Cy7MM6t1EyOPVFp8mIFfimaKJMtTpAxq3ORBHI2uyjA6DRUQV/2ac+1EP2xZHuhHEdwSY8GQkMgY1GpdNruB5iVPwyyDImdWABBiFwmffzS2utvFGEDjFCnw1yZWcYDExkeJ8z3Hs+dtsr5PMKaZi6JWUiS2vv2yvr8uHGMFMfLILXdHGzo6wgbXrhjz2dDtZzNXZuOb2gkMhIBmGOGsvmZuMQaGTBcIVOJ68nHobv1NIINHhzXolSyCHDvg4ejm9bX55839CCQoV3SCDZUT94d8Boziy0e73UJ38K3b1Kt9hHni79DyjqZwoA6AkJKo+VB4EoA8kaLmdFrQDnSe5bWvoyl/dcdYoAJnCYnjvKLC4zyZ1SMmynHIkRNViY/Xp7IDabIWWXQL/g5LOZOUXGQUOVFncRzIsyBsgIuANN/mdecHQMSL14h9y+SLjNly9+LufFMKcxU4ppDRuMq/gQZ9F4ekfs4u6z8OxOfvwA4IrLAyHk/tTgJ589dAf9YcrjF4+x5o=

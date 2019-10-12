@@ -1,18 +1,18 @@
 {
   "name": "nnms-repo",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "N&M's - NodeJS framework for micro services",
   "scripts": {
-    "examples:todos": "tsc -p examples/todos && npm start ./examples/todos/dist/index.js",
-    "examples:fruits": "tsc -p examples/fruits",
-    "docs": "node scripts/docs.js",
+    "build": "node ./scripts/build.js",
+    "cli:dev": "tsc -w -p ./packages/cli/tsconfig.json",
     "docs:generate": "typedoc",
-    "build": "node scripts/build.js",
-    "watch": "tsc scripts/build.js",
+    "docs": "node scripts/docs.js",
+    "examples:fruits": "tsc -p examples/fruits",
+    "examples:todos": "tsc -p examples/todos && npm start ./examples/todos/dist/index.js",
     "nnms": "nnms",
-    "test": "jest --config packages/core/jest.config.js",
+    "publish": "node ./scripts/publish.js",
     "start": "nnms start",
-    "cli:dev": "tsc -w -p ./packages/cli/tsconfig.json"
+    "test": "jest --config packages/core/jest.config.js"
   },
   "keywords": [
     "node",
@@ -77,10 +77,10 @@
     "yargs": "^13.3.0"
   },
   "optionalDependencies": {
-    "nnms": "file:dist/nnms-0.12.0.tgz",
-    "nnms-cli": "file:dist/nnms-cli-0.12.0.tgz",
-    "nnms-http": "file:dist/nnms-http-0.12.0.tgz",
-    "nnms-mongodb": "file:dist/nnms-mongodb-0.12.0.tgz",
-    "nnms-nats": "file:dist/nnms-nats-0.12.0.tgz"
+    "nnms": "file:dist/nnms-0.12.2.tgz",
+    "nnms-cli": "file:dist/nnms-cli-0.12.2.tgz",
+    "nnms-http": "file:dist/nnms-http-0.12.2.tgz",
+    "nnms-mongodb": "file:dist/nnms-mongodb-0.12.2.tgz",
+    "nnms-nats": "file:dist/nnms-nats-0.12.2.tgz"
   }
 }
