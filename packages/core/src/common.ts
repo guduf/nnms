@@ -23,7 +23,7 @@ export interface ResourceOpts<TVars extends Record<string, string> = {}> {
    * The array of providers explicitly required by the resource.
    * @default []
    */
-  providers?: ResourceMeta[]
+  providers?: Function[]
 
   /**
    * The environment variable template of the resource.
@@ -43,7 +43,11 @@ export abstract class ResourceMeta<TVars extends Record<string, string> = {}> {
     if (!NAME_REGEX.test(name)) throw new Error('Invalid module name')
     this.name = name
     this.vars = typeof vars === 'object' && vars ? vars : {} as TVars
-    this.providers = providers || []
+    this.providers = (providers || []).map(type => {
+      const providerMeta = Reflect.getMetadata(`${PREFIX}:provider`, type) as ResourceMeta
+      if (!(providerMeta instanceof ResourceMeta)) throw new Error('invalid provider')
+      return providerMeta
+    })
   }
 
   /** The unique identifier for the resource. */

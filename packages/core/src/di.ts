@@ -53,7 +53,7 @@ export function buildResourceDecorator<TVars extends Record<string, string>, TOp
         }
         const paramMeta = Reflect.getMetadata(`${PREFIX}:provider`, paramType)
         if (paramMeta instanceof ProviderMeta) {
-          if (!providers.includes(paramType)) providers = [...providers, paramMeta]
+          if (!providers.includes(paramType)) providers = [...providers, paramType]
           return () => Container.get(paramMeta.type)
         }
         return null
@@ -69,13 +69,13 @@ export function buildResourceDecorator<TVars extends Record<string, string>, TOp
 }
 
 /** Decorates a class with provider meta. */
-export const ProviderRef = (name: string, vars = {}) => (
-  buildResourceDecorator('provider', ProviderMeta)({name, vars})
+export const ProviderRef = (name: string, vars = {}, ...providers: Function[]) => (
+  buildResourceDecorator('provider', ProviderMeta)({name, vars, providers})
 )
 
 /** Decorates a class with plugin meta. */
-export const PluginRef = (name: string, vars = {}) => (
-  buildResourceDecorator('plugin', PluginMeta)({name, vars})
+export const PluginRef = (name: string, vars = {}, ...providers: Function[]) => (
+  buildResourceDecorator('plugin', PluginMeta)({name, vars, providers})
 )
 
 /** Decorates a class with module meta. */

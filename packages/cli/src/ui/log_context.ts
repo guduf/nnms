@@ -2,7 +2,7 @@ import { createContext, ReactNode, createElement, useContext, ReactElement, useM
 
 import { Observable } from 'rxjs'
 
-import { getContainerContext, LoggerMetricMap } from 'nnms'
+import { getContainerContext, LoggerMetricValue } from 'nnms'
 
 import { LogStore,  } from '../log_store'
 
@@ -13,7 +13,9 @@ export interface LogContext {
 
 export const LogContext = createContext(undefined as never as LogContext)
 
-export interface AppMetrics extends LoggerMetricMap {
+export interface AppMetrics {
+  [key: string]: LoggerMetricValue
+
   modules: { name: string, status: 'bootstrap' | 'ready', plugins: string }[]
   providers: { name: string, status: 'bootstrap' | 'ready' }[]
   plugins: { name: string, plugin: string, module: string }[]

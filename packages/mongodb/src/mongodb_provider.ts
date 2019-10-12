@@ -72,7 +72,10 @@ export class MongoDbProvider {
   private async _init(): Promise<void> {
     this._ctx.logger.metric({client: {$insert: [{url: this._ctx.vars.URL, status: 'pending'}]}})
     try {
-      this._client = await connect(this._ctx.vars.URL)
+      this._client = await connect(this._ctx.vars.URL, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true
+      })
     } catch (err) {
       this._ctx.logger.error('CONNECTION', err.message)
       throw err

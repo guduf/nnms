@@ -2,7 +2,7 @@ import { Record as ImmutableRecord, Map, Stack } from 'immutable'
 import { map, shareReplay, share } from 'rxjs/operators'
 import { BehaviorSubject, Observable } from 'rxjs'
 
-import { Logger, LoggerEvent, LoggerSource, LoggerEventMetricMutations, applyMetricMutation } from 'nnms'
+import { Logger, LoggerEvent, LoggerSource, LoggerEventMetricMutation, applyMetricMutation } from 'nnms'
 import { JsonObject } from 'type-fest';
 
 export const Log = ImmutableRecord(
@@ -107,7 +107,7 @@ export class LogStore {
 
   private _applyMutations(
     metrics: Map<string, JsonObject[]>,
-    mutations: LoggerEventMetricMutations,
+    mutations: Record<string, LoggerEventMetricMutation>,
     data?: JsonObject
   ): Map<string, JsonObject[]> {
     return Object.keys(mutations).reduce((acc, key) => {
