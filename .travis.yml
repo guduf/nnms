@@ -3,7 +3,7 @@ jobs:
   include:
     - stage: install
       script:
-      - node -e "console.log((require('./package.json') || {}).version)"
-      - export NNMS_VERSION=$(node -e "console.log((require('./package.json') || {}).version)")
-      - "[[ -z \"$NNMS_VERSION\" ]] && { echo \"Parameter NNMS_VERSION is empty\" ; travis_terminate 1; }"
-      - docker pull "nnms:$NNMS_VERSION"
+        - export NNMS_VERSION=$(node -e "console.log((require('./package.json') || {}).version)")
+        - printenv
+        - travis_terminate 1
+        - echo FOO
