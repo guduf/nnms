@@ -1,0 +1,9 @@
+{
+  "PACKAGES": [
+    "core",
+    "cli",
+    "http",
+    "mongodb",
+    "nats"
+  ]
+}

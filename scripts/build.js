@@ -9,13 +9,13 @@ const ts = require('typescript')
 const path = require('path')
 const tar = require('tar')
 const { exec } = require('child_process')
+const {PACKAGES} = require('./global')
 
 argv.option({
   name: 'skipClean',
   type: 'boolean',
   description: 'Skip the deletion of the tempory build directory'
 })
-
 
 argv.option({
   name: 'skipInstall',
@@ -134,7 +134,10 @@ function clean(tmpPath) {
 }
 
 (async () => {
-  const {targets, options} = argv.run()
+  let {targets, options} = argv.run()
+  if (!targets.length) {
+    targets = PACKAGES
+  }
   for (const target of targets) {
     const tmpPath = path.join(process.cwd(), `tmp/build/${Date.now()}`)
     try {
