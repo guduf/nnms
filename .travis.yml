@@ -10,7 +10,7 @@ script:
 - export NNMS_VERSION=$(node -e "console.log(require('./package.json').version)")
 - if [ -z ${NNMS_VERSION} ]; then travis_terminate 1; fi
 - if [ -z ${GITHUB_TOKEN+x} ]; then travis_terminate 1; fi
-- git config --set remote.origin.url $(git config --get remote.origin.url | sed "s/https:\/\//https:\/\/$GITHUB_TOKEN@/")
+- git config remote.origin.url $(git config --get remote.origin.url | sed "s/https:\/\//https:\/\/$GITHUB_TOKEN@/")
 - git config --get remote.origin.url
 - if [ -z ${NPM_TOKEN+x} ]; then travis_terminate 1; fi
 - echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > .npmrc
