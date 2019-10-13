@@ -7,7 +7,7 @@ node_js:
 jobs:
   include:
     - stage: deploy
-      if: branch = ci
+      if: branch = ci && tag IS blank
       before_install:
       - if [ -z ${GITHUB_TOKEN+x} ]; then travis_terminate 1; fi
       - echo -e "machine github.com\n  login $GITHUB_TOKEN" > ~/.netrc
