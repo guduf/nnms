@@ -28,11 +28,11 @@ jobs:
       - if [ -z ${CONTAINER_ID} ]; then travis_terminate 1; fi
       - docker cp $CONTAINER_ID:/opt/nnms/dist ./dist || travis_terminate 1
       - git tag $NNMS_VERSION
-      - npm run publish ./dist/nnms-$NNMS_VERSION.tgz || travis_terminate 1
-      - npm run publish ./dist/nnms-cli-$NNMS_VERSION.tgz || travis_terminate 1
-      - npm run publish ./dist/nnms-http-$NNMS_VERSION.tgz || travis_terminate 1
-      - npm run publish ./dist/nnms-mongodb-$NNMS_VERSION.tgz || travis_terminate 1
-      - npm run publish ./dist/nnms-nats-$NNMS_VERSION.tgz || travis_terminate 1
+      - npm publish ./dist/nnms-$NNMS_VERSION.tgz || travis_terminate 1
+      - npm publish ./dist/nnms-cli-$NNMS_VERSION.tgz || travis_terminate 1
+      - npm publish ./dist/nnms-http-$NNMS_VERSION.tgz || travis_terminate 1
+      - npm publish ./dist/nnms-mongodb-$NNMS_VERSION.tgz || travis_terminate 1
+      - npm publish ./dist/nnms-nats-$NNMS_VERSION.tgz || travis_terminate 1
       - docker push guduf/nnms:$NNMS_VERSION
       - git push --tags || travis_terminate 1
 env:
