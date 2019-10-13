@@ -7,11 +7,18 @@ node_js:
 script:
 - npm install
 - npm run build || travis_terminate 1
+- export NNMS_VERSION=$(node -e "console.log(require('./package.json').version)")
+- if [ -z ${NNMS_VERSION} ]; then travis_terminate 1; fi
+- if [ -z ${GITHUB_TOKEN+x} ]; then travis_terminate 1; fi
+- git config --set remote.origin.url $(git config --get remote.origin.url | sed "s/https:\/\//https:\/\/$GITHUB_TOKEN@/")
+- git config --get remote.origin.url
 - if [ -z ${NPM_TOKEN+x} ]; then travis_terminate 1; fi
 - echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > .npmrc
 - if [ -z ${DOCKER_USERNAME+x} ]; then travis_terminate 1; fi
 - if [ -z ${DOCKER_PASSWORD+x} ]; then travis_terminate 1; fi
 - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+- git tag NNMS_VERSION
+- git push --tags
 - npm run publish || travis_terminate 1
 - npm run image -- --push || travis_terminate 1
 env:
@@ -19,3 +26,4 @@ env:
   - secure: RawXfmzHY21l8X6DLrxowk9C4ngWIaOZAcFBRhhzNGzt1hFb8ZHoVVyDrLEMHtKcXvfJEAo0xUBT+JiIhvR97BVMxF2KcUOZkzpVj0KPmfDAU3RIcrpG/YEv06bLgx+mrWZgovCoSsmJbK1Iy2VXU0SbHrIpIfpYRouRefKr0oYMWwbmaW2gIM42L6rU4iMYXhvcBkS8h7hk4COHysQ6HIhUBEKrW8X9mYmSFLLXy/yzxh9k/Lc76Ypj+7RLJmbtlSZIQpbkpbd1T0eMqGACDSg0VZiLu1OkmLXsMDazUaAC7nSAAYHEvlX2DGfs4bpO1nU3lAoD0EQmzNRTaYWD4DBa6P2NckY9rNJ6NJT9oVYARymwkvxHbg/ZGP92JiTIoFnUiUFKoOp6rd+3vpq2gscjRN+nlhXlO9vIQN8Mxn/EB+T+hVQTlpuhPWmp7IjLMbeQlzeBaMwXMZwHko8hrRTfRWiDef/P04AxD6TadeQSxOBvrhsDYulObpTNs/v8xZoIyorA8SjsmYhLoww9e6qAUUHlfsfJqZX28yOqyQx7mTqwGotJwTuE9uMLhNmoXwmJEBZ+mGaHCpeQWZ2fSjljqDtTiyozk+aSdji+/bpTGY0wLBbuTlF9DX7AlbYUU2i2ym9jgw7ebHypWPZnXS38AAdoi6TRve9gLD8z2QU=
   - secure: J1aMldUJ677v7zTo5WKwRHF4AEYggdDG33q4rhFK00QlhIO7HBOPAOgXqNgvry5RRk6Np1eVDmPg07ByraHok7jj9Fi9eGFTTwrIB2KDntb/1RV55nahaGeMCD3h2KhPN6N+XcdA6RvYIUKVCO0sdGT8Q0UUeWBCC8HLcnVvKv5ppoY9BG2t+L9/zM7RczT92DpRwvH4AZMi4YdyY0hMysa2sepW7GO0jO6nOBcGpsoeprD1/OMuELQErgPdZf5qRKxwaChAdQkqp/mCCiPu/A9TTTzwwZSMFPnK1E70UIOZ9OY+DmZyMvajXvYDvnxBHKsaZukQd+saM2Ly+gmr3ueMkXjaxuV7xRU3cvehVczQpGROB9FphKo/O+Q85UaOxmkvlMfiJRNThKXEH6as125u46zyISFs/fw1L8ktgS1z5Azk7VHrpoh7BGm0qfEV1QlSbserx9PVfnaLzbkWv8w98aiRZmEag+YwnEdnLp/DbCg/nbAQ78vAE8j0SyMBlwQYCdIBBcfS8JRC6i1z+Nwe9IuC7PcpnnkJkR0JxGpmWSptfxBfJZarC/yaJayTH5FrZ/oHV1kjiIUAVBovk0CBqfqLuW5awgDPqEbhXIC9OhkOTH/fLvs2PnqfvVs3Er0c5wywO6qLqlaPO+vLvVsamK5zkUd0KKpP6DPecX4=
   - secure: ZXq7TQhLBi/Sbbv2VhMZNx9M4kiQ3WAvRzAbQe6WYAAkQj0u+bPNYFpEvNdbpyCJ2a/KgwHLfw/Pam/5Qyan4w0N4oKZWw+Uzyx3PD71ppwGUnExRHGpCXAGAUxLgqlj3xjy0lcdI1se+Soe5UAWRKcxdRa2zwN/zN91mk5L55Kn+eB72GuEa7uUUDU2jyGXs7jWBW75tyvRWV0X6yhestha/hLZgf9GKXfEjR38PPHeOTOF/CoVUYdZAZc3mlqBRDLZLwy5vg3+4kgB1Px/cpCXwQs4aG1oZEE82/5c0NMb37SK3J9Lzjj2pw74xvFYxOAjqGVTUUQ4sjS7GJdR0eb8VbIxm83WMu0ifcYGJ/Yv5n30ZwVM3IXzamUF4lbkneU4SG7OuOkcCAWTdYfP/EzFwVykEWyVIwPSvDPeWfg7Pz68H0Z76HuEQqJ5tG3vR2dhxJ1B6rxg5+iWfB/AubqmJnz38x+3U6a6tjk7TW6Rj2ToUXkRoYtyYGGk2ML9E7NWXQD0KHZ4ix3kouMU13AbzvvNsPNPHagmgfddV+XOyq2NXT4ncFJWv1DpIwc9XmGWbQes10JDBkgkKiZftu4Mq7irO81oI3jP/hs2qF6v3S0ua43C5ZU7k8rPok3qymi02DUTlpu7cW9v54OekgIl5VLdSqX/XYlMDtEjVg4=
+  - secure: jI08/bwhI6eQBV2/s+y6293oYVZq197tkI9vrr9pAlzDSoBJSSJ20P1k1kB45PSkx8jb6lss1vNs2E0vnoNFDCxm5r3qjae0qGOMJAABmiSNJNgZAx8qOt6+8XQ2AEYGVDJGgOTLROABVYpVfPu0N1RY4eJXWFMjHbseRjgJKGc9naSpmosIX4LEPcky/9AFRAy0Trr0Salg3HUn9hkmLmait7NcojTKLBZ2tL2TaNYX4s79wzwSy1GJ/LBRanRiApvHIEtHXYXEkEA4Mm27yFG6BGf7VfV26UmOVoygu2+QqgtdD7tSKBPGJfc5mWF4PvTx7v0YlhQePm8jfnWzIxtOhEl0tr6mV4hRnseY3RTU5Bb172a2PQxmWZQMKV1VCcAXZpmtF2EWogx8kaqfSdCxwA/XMLxgWtQXeUw8XCf3yNNSd/GfaryGK7JP/whmTbFWhduEVK5f8lOCCy3lSf3bhfuadw59fngrTyuUjjudcKVRSWp381our2v/FQyWzzbE91SOZaxnOMtU43YNauNv9JETHDj5qmoJJ61YjkCK/3x1kUcWjHEh75zT7J1wzOO0YffRPAiGz4alHBri20YvxR2x3R+C5b5tJZbKbox1i3lXe5Vx/Np7ab8dJx2O5b4AvBFS+OY1HxPN3dlN8dX8/7LE9mp/uV5BCcbQHko=
