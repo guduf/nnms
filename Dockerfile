@@ -14,5 +14,5 @@ RUN     \
   npm cache add ./dist/nnms-nats-$NNMS_VERSION.tgz
 WORKDIR /opt/app
 ENV PATH="/opt/app/node_modules/.bin:${PATH}"
-ENTRYPOINT [ "nnms"]
+ENTRYPOINT [ "nnms" ]
 CMD [ "prod" ]
