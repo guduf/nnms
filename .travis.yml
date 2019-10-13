@@ -1,5 +1,7 @@
 dist: trusty
 language: node_js
+services:
+  - docker
 node_js:
   - '12'
 script:
@@ -8,6 +10,7 @@ script:
 - 'if [ -z ${NPM_TOKEN+x} ]; then travis_terminate 1; fi'
 - 'echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > .npmrc'
 - npm run publish || travis_terminate 1
+- npm run image || travis_terminate 1
 env:
   global:
     secure: fsxxWbiDoT8f/jZhhLiG0qjTCLWoFjLmuZh9Hzzu0B1vJh7IbfArTz3bnMZut/TMBvx2W7Vzltzux/VLuiSl/krJedir25rfatwDbui0Qq+yTOND1A07Uy4iJ2rTdoN3/vlYzyVvbPsE88QE2DWW+E5OMb5Mx/Nyp45Cy7MM6t1EyOPVFp8mIFfimaKJMtTpAxq3ORBHI2uyjA6DRUQV/2ac+1EP2xZHuhHEdwSY8GQkMgY1GpdNruB5iVPwyyDImdWABBiFwmffzS2utvFGEDjFCnw1yZWcYDExkeJ8z3Hs+dtsr5PMKaZi6JWUiS2vv2yvr8uHGMFMfLILXdHGzo6wgbXrhjz2dDtZzNXZuOb2gkMhIBmGOGsvmZuMQaGTBcIVOJ68nHobv1NIINHhzXolSyCHDvg4ejm9bX55839CCQoV3SCDZUT94d8Boziy0e73UJ38K3b1Kt9hHni79DyjqZwoA6AkJKo+VB4EoA8kaLmdFrQDnSe5bWvoyl/dcdYoAJnCYnjvKLC4zyZ1SMmynHIkRNViY/Xp7IDabIWWXQL/g5LOZOUXGQUOVFncRzIsyBsgIuANN/mdecHQMSL14h9y+SLjNly9+LufFMKcxU4ppDRuMq/gQZ9F4ekfs4u6z8OxOfvwA4IrLAyHk/tTgJ589dAf9YcrjF4+x5o=

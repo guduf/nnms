@@ -1,6 +1,6 @@
 {
   "name": "nnms-repo",
-  "version": "0.14.0",
+  "version": "0.12.0",
   "description": "N&M's - NodeJS framework for micro services",
   "scripts": {
     "build": "node ./scripts/build.js",
@@ -9,6 +9,7 @@
     "docs": "node scripts/docs.js",
     "examples:fruits": "tsc -p examples/fruits",
     "examples:todos": "tsc -p examples/todos && npm start ./examples/todos/dist/index.js",
+    "image": "node ./scripts/image.js",
     "nnms": "nnms",
     "publish": "node ./scripts/publish.js",
     "start": "nnms start",
@@ -22,6 +23,7 @@
     "type": "git",
     "url": "git://github.com/guduf/nnms.git"
   },
+  "dockerRepository": "guduf/nnms",
   "author": "Guillaume Dufour <contact@guduf.com>",
   "license": "MIT",
   "devDependencies": {
@@ -75,5 +77,12 @@
     "winston-transport": "^4.3.0",
     "ws": "^7.1.2",
     "yargs": "^13.3.0"
-  }
+  },
+  "nnmsPackages": [
+    "core",
+    "cli",
+    "http",
+    "mongodb",
+    "nats"
+  ]
 }

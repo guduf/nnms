@@ -8,7 +8,7 @@ const rimraf = require('rimraf')
 const ts = require('typescript')
 const path = require('path')
 const { exec } = require('child_process')
-const {BASENAME, PACKAGES} = require('./global')
+const { scanPackage } = require('./global')
 const mkdirp = require('mkdirp')
 
 argv.option({
@@ -17,11 +17,6 @@ argv.option({
   description: 'Skip the deletion of the tempory build directory'
 })
 
-argv.option({
-  name: 'skipInstall',
-  type: 'boolean',
-  description: 'Skip the installation of the node package in the repository'
-})
 
 function copy(tmpPath) {
   console.log(`🔨 Copy`)
@@ -40,14 +35,14 @@ async function install(...tarballs) {
   await p(exec)(`npm install --no-save${tarballs.map(p => ` ${p}`)}`)
 }
 
-async function build(pkgName, tmpPath, opts) {
-  const version = rootPkg.version
+async function build(scan, pkgName, tmpPath) {
+  const {basename, version} = scan
   if (!pkgName) throw new Error('Missing env CURRENT_PACKAGE')
   const meta = require(`../packages/${pkgName}/meta.json`)
 
   console.log(`👷 Build package '${pkgName}' in '${tmpPath}'`)
 
-  const pkgFullName = `${BASENAME}${pkgName === 'core' ? '' : `-${pkgName}`}`
+  const pkgFullName = `${basename}${pkgName === 'core' ? '' : `-${pkgName}`}`
   const tsConfigPath = path.join(process.cwd(), `packages/${pkgName}/tsconfig.json`)
 
   function buildTypescriptPlugin(declarationDir) {
@@ -67,7 +62,7 @@ async function build(pkgName, tmpPath, opts) {
     })
   }
   const externals = (meta.externals || [])
-  const internals = (meta.internals || []).map(internal => BASENAME + (internal === 'core' ? '' : `-${internal}`))
+  const internals = (meta.internals || []).map(internal => basename + (internal === 'core' ? '' : `-${internal}`))
   const distPath = path.join(process.cwd(), './dist')
   const internalTarballs = (
     internals.length ?
@@ -92,14 +87,18 @@ async function build(pkgName, tmpPath, opts) {
     console.log(`🔨 Bundle to ${output.format}`)
     await bundle.write(output)
   }
-  const peerDependencies = internals.reduce((acc, dep) => ({
-    ...(acc || {}),
-    [dep]: rootPkg.version
-  }), null)
-  const dependencies = externals.reduce((acc, dep) => ({
-    ...(acc || {}),
-    [dep]: rootPkg.dependencies[dep]
-  }), null)
+  const peerDependencies = internals.reduce((acc, dep) => (
+    {...(acc || {}), [dep]: version}
+  ), null)
+  const dependencies = externals.reduce((acc, dep) => (
+    {...(acc || {}), [dep]: rootPkg.dependencies[dep]}
+  ), null)
+  const devDependencies = externals.reduce((acc, dep) => {
+    const typingDep = `@types/${dep}`
+    const typingVersion = rootPkg.devDependencies[typingDep]
+    if (!typingVersion) return acc
+    return {...(acc || {}),[typingDep]: typingVersion}
+  }, null)
   const bin = (
     meta.bin ?
       meta.bin.reduce((acc, path) => ({...acc, [path]: `./bin/${path}`}), {}) :
@@ -116,7 +115,8 @@ async function build(pkgName, tmpPath, opts) {
     types: 'index.d.ts',
     ...(bin ? {bin} : {}),
     ...(dependencies ? {dependencies} : {}),
-    ...(peerDependencies ? {peerDependencies} : {})
+    ...(peerDependencies ? {peerDependencies} : {}),
+    ...(devDependencies ? {devDependencies} : {})
   }
   if (bin) {
     p(fs.mkdir)(`${tmpPath}/bin`)
@@ -130,7 +130,6 @@ async function build(pkgName, tmpPath, opts) {
   await copy(tmpPath)
   const tarballPath = path.join(process.cwd(), `./dist/${pkgFullName}-${version}.tgz`)
   await pack(tmpPath, tarballPath)
-  // if (!opts.skipInstall) await install(tarballPath)
 }
 
 function clean(tmpPath) {
@@ -139,6 +138,7 @@ function clean(tmpPath) {
 }
 
 (async () => {
+  const scan = await scanPackage()
   try {
     await p(mkdirp)('./tmp')
     await p(mkdirp)('./dist')
@@ -148,12 +148,12 @@ function clean(tmpPath) {
   }
   let {targets, options} = argv.run()
   if (!targets.length) {
-    targets = PACKAGES
+    targets = scan.packages
   }
   for (const target of targets) {
     const tmpPath = path.join(process.cwd(), `tmp/build/${Date.now()}`)
     try {
-      await build(target, tmpPath, options)
+      await build(scan, target, tmpPath)
     } catch (err) {
       console.error(`❗️ Build failed: ${err}`)
       if (!options.skipClean) clean(tmpPath)
