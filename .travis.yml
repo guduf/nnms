@@ -21,7 +21,7 @@ jobs:
       - export NNMS_VERSION=$(node -e "console.log(require('./package.json').version)")
       - if [ -z ${NNMS_VERSION} ]; then travis_terminate 1; fi
       - docker build . --tag guduf/nnms:$NNMS_VERSION || travis_terminate 1
-      - export CONTAINER_ID=$(docker run guduf/nnms:$NNMS_VERSION)
+      - export CONTAINER_ID=$(docker run -d guduf/nnms:$NNMS_VERSION)
       - if [ -z ${CONTAINER_ID} ]; then travis_terminate 1; fi
       - docker cp CONTAINER_ID:/opt/nnms/dist ./dist || travis_terminate 1
       - git tag $NNMS_VERSION
