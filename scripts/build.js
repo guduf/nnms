@@ -96,8 +96,7 @@ async function build(scan, pkgName, tmpPath) {
   const devDependencies = externals.reduce((acc, dep) => {
     const typingDep = `@types/${dep}`
     const typingVersion = rootPkg.devDependencies[typingDep]
-    if (!typingVersion) return acc
-    return {...(acc || {}),[typingDep]: typingVersion}
+    return typingVersion ? {...(acc || {}), [typingDep]: typingVersion} : acc
   }, null)
   const bin = (
     meta.bin ?

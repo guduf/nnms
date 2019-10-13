@@ -1,14 +1,9 @@
-ARG NNMS_VERSION=0.12.0
+ARG NNMS_VERSION=0.15.5
 
-FROM nnms:${NNMS_VERSION} as runner
-COPY . ./
-RUN npm install --production
-
-FROM runner as builder
-ENV NODE_ENV development
+FROM guduf/nnms:${NNMS_VERSION} as runner
+COPY ./package*.json ./
 RUN npm install
+COPY . ./
+ENV NODE_ENV production
 RUN npm run compile
-
-FROM runner
-COPY --from=builder /opt/app/dist ./dist
 CMD ["prod"]

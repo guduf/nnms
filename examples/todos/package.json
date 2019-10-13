@@ -1,6 +1,6 @@
 {
   "name": "nnms-example-todo",
-  "version": "0.12.0",
+  "version": "0.15.5",
   "description": "Basic example of N&M's",
   "license": "MIT",
   "repository": {
@@ -14,7 +14,7 @@
     "typescript": "^3.5.0"
   },
   "dependencies": {
-    "nnms": "^0.12.0",
-    "nnms-http": "^0.12.0"
+    "nnms": "^0.15.5",
+    "nnms-http": "^0.15.5"
   }
 }
