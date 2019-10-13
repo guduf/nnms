@@ -1,6 +1,6 @@
 {
   "name": "nnms-repo",
-  "version": "0.15.7",
+  "version": "0.15.8",
   "description": "N&M's - NodeJS framework for micro services",
   "scripts": {
     "build": "node ./scripts/build.js",
@@ -9,7 +9,6 @@
     "docs": "node scripts/docs.js",
     "examples:fruits": "tsc -p examples/fruits",
     "examples:todos": "tsc -p examples/todos && npm start ./examples/todos/dist/index.js",
-    "image": "node ./scripts/image.js",
     "nnms": "nnms",
     "publish": "node ./scripts/publish.js",
     "start": "nnms start",
@@ -41,7 +40,6 @@
     "@types/react-router": "^5.0.3",
     "@types/shortid": "0.0.29",
     "@types/ws": "^6.0.3",
-    "argv": "0.0.2",
     "eslint": "^6.1.0",
     "jest": "^24.8.0",
     "rimraf": "^2.6.0",
@@ -54,6 +52,7 @@
     "typescript": "^3.5.0"
   },
   "dependencies": {
+    "argv": "0.0.2",
     "body-parser": "^1.19.0",
     "chalk": "^2.4.0",
     "dotenv": "^8.0.0",
