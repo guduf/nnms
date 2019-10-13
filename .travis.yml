@@ -18,7 +18,7 @@ script:
 - if [ -z ${DOCKER_PASSWORD+x} ]; then travis_terminate 1; fi
 - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 - git tag NNMS_VERSION
-- git push --tags
+- git push --tags  || travis_terminate 1
 - npm run publish || travis_terminate 1
 - npm run image -- --push || travis_terminate 1
 env:
