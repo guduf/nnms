@@ -119,7 +119,7 @@ async function build(scan, pkgName, tmpPath) {
     ...(devDependencies ? {devDependencies} : {})
   }
   if (bin) {
-    p(fs.mkdir)(`${tmpPath}/bin`)
+    await p(fs.mkdir)(`${tmpPath}/bin`)
     for (const key in bin) await p(fs.copyFile)(
       path.join(process.cwd(), `packages/${pkgName}/bin/${key}`),
       `${tmpPath}/bin/${key}`
