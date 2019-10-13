@@ -1,0 +1,5 @@
+docs/*
+examples/*
+tmp/*
+node_modules
+Dockerfile

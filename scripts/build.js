@@ -1,15 +1,17 @@
 const argv = require('argv')
+const { exec } = require('child_process')
+const fs = require('fs')
+const glob = require('glob')
+const mkdirp = require('mkdirp')
+const path = require('path')
+const rimraf = require('rimraf')
 const rollup = require('rollup')
 const rollupTypescript = require('rollup-plugin-typescript2')
-const rootPkg = require('../package.json')
-const fs = require('fs')
-const { promisify: p } = require('util')
-const rimraf = require('rimraf')
 const ts = require('typescript')
-const path = require('path')
-const { exec } = require('child_process')
+const { promisify: p } = require('util')
+
+const rootPkg = require('../package.json')
 const { scanPackage } = require('./global')
-const mkdirp = require('mkdirp')
 
 argv.option({
   name: 'skipClean',
@@ -145,6 +147,8 @@ function clean(tmpPath) {
     console.error(`❗️ Init failed: ${err.message}`)
     process.exit(1)
   }
+  const outdatedFiles = await p(glob)(`./dist/*[!${scan.version}]*`)
+  for (const outdatedFile of outdatedFiles) await p(fs.unlink)(outdatedFile)
   let {targets, options} = argv.run()
   if (!targets.length) {
     targets = scan.packages

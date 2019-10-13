@@ -18,13 +18,15 @@ jobs:
       - if [ -z ${DOCKER_PASSWORD+x} ]; then travis_terminate 1; fi
       - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
       script:
-      - npm install
-      - npm run build || travis_terminate 1
       - export NNMS_VERSION=$(node -e "console.log(require('./package.json').version)")
       - if [ -z ${NNMS_VERSION} ]; then travis_terminate 1; fi
+      - docker build . --tag guduf/nnms:$NNMS_VERSION || travis_terminate 1
+      - export CONTAINER_ID=$(docker run --tag guduf/nnms:$NNMS_VERSION)
+      - if [ -z ${CONTAINER_ID} ]; then travis_terminate 1; fi
+      - docker cp CONTAINER_ID:/opt/nnms/dist ./dist || travis_terminate 1
       - git tag $NNMS_VERSION
       - npm run publish || travis_terminate 1
-      - npm run image -- --push || travis_terminate 1
+      - docker push guduf/nnms:$NNMS_VERSION
       - git push --tags || travis_terminate 1
 env:
   global:
