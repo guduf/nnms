@@ -4,20 +4,21 @@ services:
 - docker
 node_js:
 - '12'
-script:
-- npm install
-- npm run build || travis_terminate 1
-- export NNMS_VERSION=$(node -e "console.log(require('./package.json').version)")
-- if [ -z ${NNMS_VERSION} ]; then travis_terminate 1; fi
+before_install:
 - if [ -z ${GITHUB_TOKEN+x} ]; then travis_terminate 1; fi
-- git config remote.origin.url $(git config --get remote.origin.url | sed "s/https:\/\//https:\/\/$GITHUB_TOKEN@/")
-- git config --get remote.origin.url
+- echo -e "machine github.com\n  login $GITHUB_TOKEN" > ~/.netrc
+- git lfs pull
 - if [ -z ${NPM_TOKEN+x} ]; then travis_terminate 1; fi
 - echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > .npmrc
 - if [ -z ${DOCKER_USERNAME+x} ]; then travis_terminate 1; fi
 - if [ -z ${DOCKER_PASSWORD+x} ]; then travis_terminate 1; fi
 - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-- git tag NNMS_VERSION
+script:
+- npm install
+- npm run build || travis_terminate 1
+- export NNMS_VERSION=$(node -e "console.log(require('./package.json').version)")
+- if [ -z ${NNMS_VERSION} ]; then travis_terminate 1; fi
+- git tag $NNMS_VERSION
 - git push --tags  || travis_terminate 1
 - npm run publish || travis_terminate 1
 - npm run image -- --push || travis_terminate 1
