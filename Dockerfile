@@ -1,4 +1,4 @@
-FROM    node:alpine
+FROM    node:carbon-alpine
 WORKDIR /opt/nnms
 COPY    ./package*.json ./
 RUN     npm install
@@ -13,5 +13,6 @@ RUN     \
   npm cache add ./dist/nnms-mongodb-$NNMS_VERSION.tgz && \
   npm cache add ./dist/nnms-nats-$NNMS_VERSION.tgz
 WORKDIR /opt/app
-ENTRYPOINT [ "npx", "nnms", "--quiet" ]
+ENV PATH="/opt/app/node_modules/.bin:${PATH}"
+ENTRYPOINT [ "nnms"]
 CMD [ "prod" ]
