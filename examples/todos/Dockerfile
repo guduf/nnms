@@ -1,4 +1,4 @@
-ARG NNMS_VERSION=0.15.6
+ARG NNMS_VERSION=0.15.7
 
 FROM guduf/nnms:${NNMS_VERSION} as runner
 COPY ./package*.json ./

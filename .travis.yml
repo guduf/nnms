@@ -1,9 +1,9 @@
 dist: trusty
 language: node_js
+cache:
+  npm: false
 services:
 - docker
-node_js:
-- '12'
 jobs:
   include:
     - stage: deploy

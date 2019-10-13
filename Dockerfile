@@ -13,6 +13,5 @@ RUN     \
   npm cache add ./dist/nnms-mongodb-$NNMS_VERSION.tgz && \
   npm cache add ./dist/nnms-nats-$NNMS_VERSION.tgz
 WORKDIR /opt/app
-USER    node
-ENTRYPOINT [ "nnms" ]
+ENTRYPOINT [ "npx", "nnms", "--quiet" ]
 CMD [ "prod" ]
