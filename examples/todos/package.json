@@ -1,6 +1,6 @@
 {
   "name": "nnms-example-todo",
-  "version": "0.15.5",
+  "version": "0.15.6",
   "description": "Basic example of N&M's",
   "license": "MIT",
   "repository": {
@@ -8,13 +8,15 @@
     "url": "git://github.com/guduf/nnms.git"
   },
   "scripts": {
-    "compile": "tsc -p ./tsconfig.json"
+    "compile": "tsc -p ./tsconfig.json",
+    "start": "nnms prod"
   },
   "devDependencies": {
     "typescript": "^3.5.0"
   },
   "dependencies": {
-    "nnms": "^0.15.5",
-    "nnms-http": "^0.15.5"
+    "nnms": "^0.15.6",
+    "nnms-cli": "^0.15.6",
+    "nnms-http": "^0.15.6"
   }
 }
