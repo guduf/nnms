@@ -4,8 +4,10 @@ import { REMOTE_COMMAND } from './remote'
 import { PROD_COMMAND } from './prod'
 import { START_COMMAND } from './start'
 import Command from './command'
+import { BUILD_COMMAND } from './build'
 
 const COMMANDS: Command<any>[] = [
+  BUILD_COMMAND,
   PROD_COMMAND,
   START_COMMAND,
   REMOTE_COMMAND

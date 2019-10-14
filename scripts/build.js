@@ -19,17 +19,9 @@ argv.option({
   description: 'Skip the deletion of the tempory build directory'
 })
 
-
-function copy(tmpPath) {
-  console.log(`🔨 Copy`)
-  return p(fs.copyFile)('LICENSE.md', `${tmpPath}/LICENSE.md`)
-}
-
-
-function pack(tmpPath, tarballPath) {
-  console.log(`🔨 Pack '${tarballPath}'`)
-  return p(exec)(`npm pack ${tmpPath}`, {cwd: path.dirname(tarballPath)})
-
+function clean(tmpPath) {
+  console.log(`🧹 Clean '${tmpPath}'`)
+  return p(rimraf)(tmpPath)
 }
 
 async function install(...tarballs) {
@@ -65,7 +57,7 @@ async function build(scan, pkgName, tmpPath) {
   }
   const externals = (meta.externals || [])
   const internals = (meta.internals || []).map(internal => basename + (internal === 'core' ? '' : `-${internal}`))
-  const distPath = path.join(process.cwd(), './dist')
+  const distPath = path.join(__dirname, '../dist')
   const internalTarballs = (
     internals.length ?
       internals.map(targetName => (`${distPath}/${targetName}-${version}.tgz`)) :
@@ -74,9 +66,10 @@ async function build(scan, pkgName, tmpPath) {
   if (internalTarballs) try { await install(...internalTarballs) } catch (err) {
     throw new Error('failed to install internal dependencies')
   }
+  const pkgPath = path.join(__dirname, `../packages/${pkgName}`)
   const rollupOpts = {
-    input: `packages/${pkgName}/src/index.ts`,
-    external: ['fs', 'path', 'util', ...externals, ...internals],
+    input: `${pkgPath}/src/index.ts`,
+    external: ['child_process', 'fs', 'path', 'util', ...externals, ...internals],
     plugins: [buildTypescriptPlugin(tmpPath)]
   }
   const bundle = await rollup.rollup(rollupOpts)
@@ -119,23 +112,28 @@ async function build(scan, pkgName, tmpPath) {
     ...(peerDependencies ? {peerDependencies} : {}),
     ...(devDependencies ? {devDependencies} : {})
   }
-  if (bin) {
-    await p(fs.mkdir)(`${tmpPath}/bin`)
-    for (const key in bin) await p(fs.copyFile)(
-      path.join(process.cwd(), `packages/${pkgName}/bin/${key}`),
-      `${tmpPath}/bin/${key}`
-    )
-    console.log(`🔨 Copy bin`)
-  }
+  console.log(`🔨 Write package.json`)
   await p(fs.writeFile)(`${tmpPath}/package.json`, JSON.stringify(pkgJson, null, 2) + '\n')
-  await copy(tmpPath)
-  const tarballPath = path.join(process.cwd(), `./dist/${pkgFullName}-${version}.tgz`)
-  await pack(tmpPath, tarballPath)
-}
-
-function clean(tmpPath) {
-  console.log(`🧹 Clean '${tmpPath}'`)
-  return p(rimraf)(tmpPath)
+  if (bin) {
+    console.log(`🔨 Create bin/`)
+    await p(mkdirp)(`${tmpPath}/bin`)
+    for (const key in bin) {
+      console.log(`🔨 Copy bin/${key}`)
+      await p(fs.copyFile)(`${pkgPath}/bin/${key}`, `${tmpPath}/bin/${key}`)
+    }
+  }
+  const assets = await p(glob)(`${pkgPath}/assets/*`)
+  for (const asset of assets) {
+    const relpath = path.relative(pkgPath, asset)
+    const assetPath = `${tmpPath}/${relpath}`
+    console.log(`🔨 Copy ${relpath}`)
+    await p(mkdirp)(path.dirname(assetPath))
+    await p(fs.copyFile)(asset, assetPath)
+  }
+  console.log(`🔨 Copy LICENSE.md`)
+  await p(fs.copyFile)('LICENSE.md', `${tmpPath}/LICENSE.md`)
+  console.log(`🔨 Pack ${pkgFullName}-${version}.tgz`)
+  return p(exec)(`npm pack ${tmpPath}`, {cwd: distPath})
 }
 
 (async () => {
@@ -144,16 +142,11 @@ function clean(tmpPath) {
     await p(mkdirp)('./tmp')
     await p(mkdirp)('./dist')
   } catch(err) {
-    console.error(`❗️ Init failed: ${err.message}`)
+    console.error(`❗️ Create folders failed: ${err.message}`)
     process.exit(1)
   }
-  const outdatedFiles = await p(glob)(`./dist/*[!${scan.version}]*`)
-  for (const outdatedFile of outdatedFiles) await p(fs.unlink)(outdatedFile)
-  let {targets, options} = argv.run()
-  if (!targets.length) {
-    targets = scan.packages
-  }
-  for (const target of targets) {
+  const {targets, options} = argv.run()
+  for (const target of targets.length ? targets : scan.packages) {
     const tmpPath = path.join(process.cwd(), `tmp/build/${Date.now()}`)
     try {
       await build(scan, target, tmpPath)

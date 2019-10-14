@@ -11,3 +11,4 @@ packages/*/src/**/*.js.map
 *.tar
 *.tgz
 .vscode
+.DS_STORE
