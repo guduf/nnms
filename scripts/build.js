@@ -19,17 +19,18 @@ argv.option({
   description: 'Skip the deletion of the tempory build directory'
 })
 
+argv.option({
+  name: 'install',
+  type: 'string',
+  description: 'Install built packages'
+})
+
 function clean(tmpPath) {
   console.log(`🧹 Clean '${tmpPath}'`)
   return p(rimraf)(tmpPath)
 }
 
-async function install(...tarballs) {
-  console.log(`🔨 Install${tarballs.map(p => ` '${p}'`)}`)
-  await p(exec)(`npm install --no-save${tarballs.map(p => ` ${p}`)}`)
-}
-
-async function build(scan, pkgName, tmpPath) {
+async function build(scan, pkgName, tmpPath, install) {
   const {basename, version} = scan
   if (!pkgName) throw new Error('Missing env CURRENT_PACKAGE')
   const meta = require(`../packages/${pkgName}/meta.json`)
@@ -58,14 +59,6 @@ async function build(scan, pkgName, tmpPath) {
   const externals = (meta.externals || [])
   const internals = (meta.internals || []).map(internal => basename + (internal === 'core' ? '' : `-${internal}`))
   const distPath = path.join(__dirname, '../dist')
-  const internalTarballs = (
-    internals.length ?
-      internals.map(targetName => (`${distPath}/${targetName}-${version}.tgz`)) :
-      null
-  )
-  if (internalTarballs) try { await install(...internalTarballs) } catch (err) {
-    throw new Error('failed to install internal dependencies')
-  }
   const pkgPath = path.join(__dirname, `../packages/${pkgName}`)
   const rollupOpts = {
     input: `${pkgPath}/src/index.ts`,
@@ -133,7 +126,12 @@ async function build(scan, pkgName, tmpPath) {
   console.log(`🔨 Copy LICENSE.md`)
   await p(fs.copyFile)('LICENSE.md', `${tmpPath}/LICENSE.md`)
   console.log(`🔨 Pack ${pkgFullName}-${version}.tgz`)
-  return p(exec)(`npm pack ${tmpPath}`, {cwd: distPath})
+  await p(exec)(`npm pack ${tmpPath}`, {cwd: distPath})
+  await p(exec)(`npm cache add ${distPath}/${pkgFullName}-${version}.tgz`)
+  if (install) {
+    console.log(`🔨 Install (${install}) ${pkgFullName}-${version}.tgz`)
+    await p(exec)(`npm install --${install} ${distPath}/${pkgFullName}-${version}.tgz`)
+  }
 }
 
 (async () => {
@@ -149,7 +147,7 @@ async function build(scan, pkgName, tmpPath) {
   for (const target of targets.length ? targets : scan.packages) {
     const tmpPath = path.join(process.cwd(), `tmp/build/${Date.now()}`)
     try {
-      await build(scan, target, tmpPath)
+      await build(scan, target, tmpPath, options.install)
     } catch (err) {
       console.error(`❗️ Build failed: ${err}`)
       if (!options.skipClean) clean(tmpPath)

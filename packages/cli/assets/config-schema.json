@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "nnms.guduf.com/config-schema.json",
+  "type": "object",
+  "properties": {
+    "app": {
+      "type": "string",
+      "description": "The name of the application. Use package.json name if not specified."
+    },
+    "env": {
+      "type": "object",
+      "description": "The object representing default environment variables injected before bootstrap.",
+      "default": {}
+    },
+    "dist": {
+      "type": "string",
+      "description": "The file path of the compiled output.",
+      "default": "./dist"
+    },
+    "sources": {
+      "type": "array",
+      "description": "The file paths of the typescript file exporting modules.",
+      "items": {"type": "string"},
+      "default": ["./src/index.ts"]
+    },
+    "remotePort": {
+      "type": "number",
+      "description": "The registred port used by the log socker server.",
+      "minimum": 1024,
+      "maximum": 49151,
+      "default": 6390
+    },
+    "logFormat": {
+      "$id": "./log-format-schema.json",
+      "default": {}
+    },
+    "tsConfig": {
+      "type": "string",
+      "description": "The file path of the typescript file exporting modules.",
+      "default": "./tsconfig.json"
+    },
+    "root": {
+      "type": "string",
+      "description": "The directory path used to resolve relative paths.",
+      "default": "."
+    }
+  }
+}

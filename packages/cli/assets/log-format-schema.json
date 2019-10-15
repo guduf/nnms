@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "nnms.guduf.com/log-format-schema.json",
+  "type": "object",
+  "properties": {
+    "printData": {
+      "type": "boolean",
+      "description": "Whether the data of the log should be displayed"
+    },
+    "printDate": {
+      "type": "boolean",
+      "description": "Whether the date of the log should be displayed"
+    },
+    "tags": {
+      "type": "string",
+      "description": "If 'src' then only tag with 'src' or '[src]' as key will be displayed.",
+      "enum": ["all", "src"]
+    },
+    "width": {
+      "type": "number",
+      "min": 0,
+      "max": 1000
+    }
+  }
+}

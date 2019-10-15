@@ -7,7 +7,7 @@ import { LoggerEvent, LoggerTags, LoggerLevel, LOGGER_LEVELS, LoggerEventData } 
 export interface LogFormatConfig {
   printData?: boolean
   printDay?: boolean
-  tags?: 'full' | 'src'
+  tags?: 'all' | 'src'
   width?: number
 }
 

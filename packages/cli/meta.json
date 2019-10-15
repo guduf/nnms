@@ -11,12 +11,16 @@
     "ink",
     "ink-select-input",
     "ink-table",
+    "mkdirp",
     "winston-transport",
     "yargs",
     "react",
     "react-router",
+    "rollup",
+    "rollup-plugin-typescript2",
     "rxjs",
     "shortid",
+    "typescript",
     "ws"
   ],
   "bin": ["nnms"]

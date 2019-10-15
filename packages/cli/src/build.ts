@@ -7,17 +7,24 @@ import { tap } from 'rxjs/operators'
 import { merge } from 'rxjs'
 import Command from './command'
 import { Argv } from 'yargs'
+import { loadConfig } from './shared'
 
-export const BUILD_COMMAND: Command<{ file: string, appName?: string, moduleNames?: string[], path?: string }> = {
+export const BUILD_COMMAND: Command<{ path?: string }> = {
   schema: 'build [file] [options]',
   descr: 'Build a docker for image N&M\'s application',
   argv: (yargs) => (
     (yargs as Argv<{ file: string }>)
+    .option('path', {
+      type: 'string',
+      alias: 'p',
+      descr: 'The filepath of N&M\'s configuration'
+    })
   ),
-  cmd: async () => {
+  cmd: async cmd => {
+    const config = await loadConfig(cmd.path)
     const id = await buildImage({
-      context: '/Users/guduf/Projects/nnms/examples/todos',
-      tag: 'nnms-examples-todos'
+      context: config.root,
+      tag: config.app
     })
     console.log({id})
   }
@@ -33,6 +40,7 @@ export async function buildImage({context, tag}: BuildImageOpts): Promise<string
   join(__dirname, '../assets/Dockerfile')
   const dockerFile = '/Users/guduf/Projects/nnms/packages/cli/assets/Dockerfile'
   await p(access)(dockerFile)
+  console.log(`nnms tag '${imageTag}'`)
   const process = spawn(
     'docker',
     ['build', context, '--tag', tag, '--file', dockerFile, '--build-arg', `NNMS_TAG=${imageTag}`]

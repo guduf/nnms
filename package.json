@@ -1,6 +1,6 @@
 {
   "name": "nnms-repo",
-  "version": "0.15.8",
+  "version": "0.16.0",
   "description": "N&M's - NodeJS framework for micro services",
   "scripts": {
     "build": "node ./scripts/build.js",
@@ -52,6 +52,7 @@
     "typescript": "^3.5.0"
   },
   "dependencies": {
+    "ajv": "^6.10.2",
     "argv": "0.0.2",
     "body-parser": "^1.19.0",
     "chalk": "^2.4.0",
