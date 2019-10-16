@@ -1,14 +1,18 @@
 import yargs from 'yargs'
-import { COMPILE_COMMAND } from './compile'
-import { REMOTE_COMMAND } from './remote'
-import { PROD_COMMAND } from './prod'
-import { START_COMMAND } from './start'
+import { BUILD_COMMAND } from './commands/build'
 import Command from './command'
-import { BUILD_COMMAND } from './build'
+import { COMPILE_COMMAND } from './commands/compile'
+import { LINK_COMMAND } from './commands/link'
+import { PACK_COMMAND } from './commands/pack'
+import { PROD_COMMAND } from './commands/prod'
+import { REMOTE_COMMAND } from './commands/remote'
+import { START_COMMAND } from './commands/start'
 
 const COMMANDS: Command<any>[] = [
   BUILD_COMMAND,
   COMPILE_COMMAND,
+  LINK_COMMAND,
+  PACK_COMMAND,
   PROD_COMMAND,
   START_COMMAND,
   REMOTE_COMMAND

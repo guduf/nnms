@@ -1,8 +1,10 @@
+**/.git
+**/.DS_Store
+**/node_modules
+
 docs/*
+examples
 dist/*
 tmp/*
-
-examples
-node_modules
-
 Dockerfile
+

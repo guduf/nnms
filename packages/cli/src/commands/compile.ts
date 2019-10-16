@@ -1,11 +1,14 @@
-import { Argv } from 'yargs'
+import mkdirp from 'mkdirp'
 import { Plugin, InputOptions, rollup } from 'rollup'
-import Command from './command'
-import { loadConfig, Config } from './shared'
+import commonjs from 'rollup-plugin-commonjs'
+import json from 'rollup-plugin-json'
+import resolve from 'rollup-plugin-node-resolve'
 import rollupTypescript from 'rollup-plugin-typescript2'
 import typescript from 'typescript'
 import { promisify as p } from 'util'
-import mkdirp from 'mkdirp'
+import { Argv } from 'yargs'
+import Command from '../command'
+import { loadConfig, Config } from '../shared'
 
 export const COMPILE_COMMAND: Command<{ path?: string }> = {
   schema: 'compile',
@@ -24,6 +27,8 @@ export const COMPILE_COMMAND: Command<{ path?: string }> = {
   }
 }
 
+const NODE_BUILTIN = ['buffer', 'cluster', 'crypto', 'events', 'fs', 'http', 'net', 'path', 'querystring', 'querystring', 'stream', 'tty', 'url', 'util', 'zlib']
+
 function buildTypescriptPlugin(config: Config): Plugin {
   return rollupTypescript({
     cacheRoot: 'tmp/rts2_cache',
@@ -33,22 +38,25 @@ function buildTypescriptPlugin(config: Config): Plugin {
     tsconfigOverride: {
       compilerOptions: {
         module: 'esnext',
-        target: 'ES2015',
-        declaration: true,
-        declarationDir: './types'
+        target: 'ES2015'
       }
     }
   })
 }
 
-export async function compile(config: Config): Promise<void> {
+export async function compile(config: Config, resolveModules = false): Promise<void> {
   const inputOpts: InputOptions = {
     input: config.sources,
-    plugins: [buildTypescriptPlugin(config)]
+    plugins: [
+      buildTypescriptPlugin(config),
+      ...(resolveModules ? [resolve({preferBuiltins: true, dedupe: ['typedi']}), commonjs(), json() as Plugin] : [])
+    ],
+    external: [...NODE_BUILTIN, 'nnms', 'typedi']
   }
+  console.log(`🛠  bundle ${config.sources.map(src => `'${src}'`).join(', ')}`)
   const bundle = await rollup(inputOpts)
-  console.log('mkdirp')
+  console.log(`📁  create '${config.dist}'`)
   await p(mkdirp)(config.dist)
-  console.log('write')
-  await bundle.write({dir: config.dist, format: 'cjs'})
+  console.log(`✏️  write cjs output`)
+  await bundle.write({dir: `${config.dist}/bundle.js`, format: 'cjs'})
 }

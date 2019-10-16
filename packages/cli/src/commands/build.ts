@@ -5,9 +5,10 @@ import { promisify as p } from 'util'
 import { fromEvent } from 'rxjs'
 import { tap } from 'rxjs/operators'
 import { merge } from 'rxjs'
-import Command from './command'
 import { Argv } from 'yargs'
-import { loadConfig, getNNMSVersion } from './shared'
+
+import Command from '../command'
+import { loadConfig, getNNMSVersion } from '../shared'
 
 const DEFAULT_BUILDER_IMAGE = 'guduf/nnms'
 

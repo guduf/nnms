@@ -2,9 +2,9 @@ import { Argv, showHelp } from 'yargs'
 
 import { getContainerContext } from 'nnms'
 
-import Command from './command'
-import LogFormat from './log_format'
-import LogStoreRemote from './log_store_remote'
+import Command from '../command'
+import LogFormat from '../log_format'
+import LogStoreRemote from '../log_store_remote'
 
 export const REMOTE_COMMAND: Command<{ url: string }> = {
   schema: 'remote [url]',

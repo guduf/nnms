@@ -1,11 +1,11 @@
-import { Argv } from 'yargs'
 import path from 'path'
+import { Argv } from 'yargs'
 
-import { bootstrapFile } from './bootstrap'
-import Command from './command'
-import LogSocket from './log_socket'
-import LogFormat from './log_format'
-import { loadConfig } from './shared'
+import { bootstrapFile } from '../bootstrap'
+import Command from '../command'
+import LogSocket from '../log_socket'
+import LogFormat from '../log_format'
+import { loadConfig } from '../shared'
 
 export function buildConfigPath(configPath?: string): string {
   if (!configPath) return path.join(process.cwd(), './nnms.yaml')

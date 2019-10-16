@@ -128,8 +128,8 @@ async function build(scan, pkgName, tmpPath, install) {
   console.log(`🔨 Pack ${pkgFullName}-${version}.tgz`)
   await p(exec)(`npm pack ${tmpPath}`, {cwd: distPath})
   await p(exec)(`npm cache add ${distPath}/${pkgFullName}-${version}.tgz`)
-  if (install) {
-    console.log(`🔨 Install (${install}) ${pkgFullName}-${version}.tgz`)
+  if (install && install !== 'false') {
+    console.log(`🔌  Install (${install}) ${pkgFullName}-${version}.tgz`)
     await p(exec)(`npm install --${install} ${distPath}/${pkgFullName}-${version}.tgz`)
   }
 }
