@@ -6,6 +6,7 @@ import { join, dirname } from 'path'
 import { lstat, readFile, stat } from 'fs'
 import  { promisify as p } from 'util'
 import Ajv from 'ajv'
+import semverRegex from 'semver-regex'
 
 export interface Config {
   app: string
@@ -85,4 +86,11 @@ export async function loadConfig(configPath = ''): Promise<Config> {
     throw new Error(`failed to validate config`)
   }
   return computed
+}
+
+export function getNNMSVersion(): string {
+  const npmConfig = require(join(__dirname, '../package.json')) as { version: string }
+  const version = (npmConfig.version || '').replace(/^v/, '')
+  if (!semverRegex().test(version)) throw new Error('invalid version')
+  return version
 }

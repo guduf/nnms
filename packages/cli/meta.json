@@ -3,6 +3,7 @@
   "name": "cli",
   "internals": ["core"],
   "externals": [
+    "ajv",
     "chalk",
     "history",
     "moment",
@@ -19,6 +20,7 @@
     "rollup",
     "rollup-plugin-typescript2",
     "rxjs",
+    "semver-regex",
     "shortid",
     "typescript",
     "ws"

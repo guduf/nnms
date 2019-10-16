@@ -1,5 +1,8 @@
 docs/*
-examples/*
+dist/*
 tmp/*
+
+examples
 node_modules
+
 Dockerfile

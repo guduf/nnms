@@ -7,24 +7,37 @@ import { tap } from 'rxjs/operators'
 import { merge } from 'rxjs'
 import Command from './command'
 import { Argv } from 'yargs'
-import { loadConfig } from './shared'
+import { loadConfig, getNNMSVersion } from './shared'
 
-export const BUILD_COMMAND: Command<{ path?: string }> = {
+const DEFAULT_BUILDER_IMAGE = 'guduf/nnms'
+
+export const BUILD_COMMAND: Command<{ path?: string, tag?: string, builder?: string }> = {
   schema: 'build [file] [options]',
   descr: 'Build a docker for image N&M\'s application',
   argv: (yargs) => (
     (yargs as Argv<{ file: string }>)
-    .option('path', {
-      type: 'string',
-      alias: 'p',
-      descr: 'The filepath of N&M\'s configuration'
-    })
+      .option('path', {
+        type: 'string',
+        alias: 'p',
+        descr: 'The filepath of N&M\'s configuration'
+      })
+      .option('tag', {
+        type: 'string',
+        alias: 't',
+        descr: 'The tag for the built image'
+      })
+      .option('builder', {
+        type: 'string',
+        alias: 'b',
+        descr: 'The N&M\'s base image'
+      })
   ),
   cmd: async cmd => {
     const config = await loadConfig(cmd.path)
     const id = await buildImage({
       context: config.root,
-      tag: config.app
+      appTag: cmd.tag || config.app,
+      builderImage: cmd.builder || `${DEFAULT_BUILDER_IMAGE}:${getNNMSVersion()}`
     })
     console.log({id})
   }
@@ -32,18 +45,20 @@ export const BUILD_COMMAND: Command<{ path?: string }> = {
 
 export interface BuildImageOpts {
   context: string
-  tag: string
+  appTag: string
+  builderImage: string
 }
 
-export async function buildImage({context, tag}: BuildImageOpts): Promise<string> {
-  const imageTag = 'latest'
+export async function buildImage(
+  {context, appTag, builderImage}: BuildImageOpts
+): Promise<string> {
   join(__dirname, '../assets/Dockerfile')
   const dockerFile = '/Users/guduf/Projects/nnms/packages/cli/assets/Dockerfile'
   await p(access)(dockerFile)
-  console.log(`nnms tag '${imageTag}'`)
+  console.log(`builder image '${builderImage}'`)
   const process = spawn(
     'docker',
-    ['build', context, '--tag', tag, '--file', dockerFile, '--build-arg', `NNMS_TAG=${imageTag}`]
+    ['build', context, '--tag', appTag, '--file', dockerFile, '--build-arg', `BUILDER_IMAGE=${builderImage}`]
   )
   let imageId = ''
   const subscr = merge(
