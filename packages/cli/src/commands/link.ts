@@ -32,6 +32,6 @@ export async function link(distPath: string, install = 'no-save'): Promise<void>
   if (!tarballs.length) throw new Error(
     `none file match '${distPath}/nnms*-${getNNMSVersion()}.tgz'`
   )
-  console.log(`🔌  link ${tarballs.map(t => `'${t.match(/\/(nnms(?:[\w-]*))-\d[^\/]*$/)![1]}'`).join(',')}`)
+  console.log(`🔌  link ${tarballs.map(t => `'${t.match(/\/(nnms(?:[\w-]*))-\d[^\/]*$/)![1]}'`).join(' ')}`)
   await p(exec)(`npm install --${install} ${tarballs.join(' ')}`)
 }

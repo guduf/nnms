@@ -39,11 +39,11 @@ export interface JsonModuleMeta extends JsonResourceMeta {
   plugins: JsonResourceMeta[]
 }
 
-export async function buildModuleMap(sourcePath: string, cwd = process.cwd()): Promise<Record<string, JsonModuleMeta>> {
+export async function buildModuleMap(bundlePath: string, cwd = process.cwd()): Promise<Record<string, JsonModuleMeta>> {
   const script = `
     const { ModuleMeta } = require('nnms')
     try {
-      source = require('${sourcePath}')
+      source = require('${bundlePath}')
     } catch (err) {
       console.error(err)
       throw new Error('source file cannot be loaded')
@@ -63,8 +63,8 @@ export async function buildModuleMap(sourcePath: string, cwd = process.cwd()): P
 export async function pack(config: Config, skipLink?: boolean): Promise<void> {
   if (!skipLink) await link(`${process.env['NNMS_PATH'] || '/opt/nnms'}/dist`, 'save')
   await compile(config, true)
+  const moduleMap = await buildModuleMap(`${config.dist}/index.js`, config.dist)
   console.log(`✏️  write '${config.dist}/nnms.pack.json'`)
-  await p(writeFile)(`${config.dist}/nnms.pack.json`, JSON.stringify(config, null, 2))
-  const moduleMap = await buildModuleMap(`${config.dist}/bundle.js`, config.dist)
-  console.log(moduleMap)
+  const packedConfig = {...config, moduleMap}
+  await p(writeFile)(`${config.dist}/nnms.pack.json`, JSON.stringify(packedConfig, null, 2))
 }

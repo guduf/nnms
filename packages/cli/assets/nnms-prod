@@ -1,12 +1,8 @@
 #!/usr/bin/env node
-const NNMS_VERSION = process.env['NNMS_VERSION']
-if (!NNMS_VERSION) {
-  console.error(`ERROR missing env 'NNMS_VERSION'`)
-  process.exit(1)
+console.log(`nnms-prod`)
+const config = require('./nnms.pack.json')
+if (!config) {
+    console.error('cannot retrieve packed config')
+    process.exit(1)
 }
-console.log(`nnms-start v${NNMS_VERSION}`)
-let config
-try { config = require() } catch (err) {
-  console.error(err)
-  console.error(`ERROR cannot require './nnms.json'`)
-}
+console.log(config)

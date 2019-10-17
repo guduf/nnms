@@ -58,5 +58,5 @@ export async function compile(config: Config, resolveModules = false): Promise<v
   console.log(`📁  create '${config.dist}'`)
   await p(mkdirp)(config.dist)
   console.log(`✏️  write cjs output`)
-  await bundle.write({dir: `${config.dist}/bundle.js`, format: 'cjs'})
+  await bundle.write({dir: config.dist, format: 'cjs'})
 }
