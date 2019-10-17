@@ -1,5 +1,5 @@
 import { spawn } from 'child_process'
-import { access } from 'fs'
+import { access, lstat } from 'fs'
 import { join } from 'path'
 import { promisify as p } from 'util'
 import { fromEvent } from 'rxjs'
@@ -53,9 +53,9 @@ export interface BuildImageOpts {
 export async function buildImage(
   {context, appTag, builderImage}: BuildImageOpts
 ): Promise<string> {
-  join(__dirname, '../assets/Dockerfile')
-  const dockerFile = '/Users/guduf/Projects/nnms/packages/cli/assets/Dockerfile'
+  const dockerFile = join(__dirname, '../assets/Dockerfile')
   await p(access)(dockerFile)
+  await p(lstat)(context)
   console.log(`builder image '${builderImage}'`)
   const process = spawn(
     'docker',

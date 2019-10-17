@@ -5,8 +5,8 @@ import { promisify as p } from 'util'
 import Command from '../command'
 import { loadConfig, Config } from '../shared'
 import { compile } from './compile'
-import { ModuleMeta } from 'nnms'
 import { link } from './link'
+import { JsonObject } from 'type-fest'
 
 export const PACK_COMMAND: Command<{ path?: string, skipLink?: boolean }> = {
   schema: 'pack',
@@ -29,8 +29,17 @@ export const PACK_COMMAND: Command<{ path?: string, skipLink?: boolean }> = {
   }
 }
 
+export interface JsonResourceMeta {
+  name: string
+  vars: JsonObject
+  providers: JsonResourceMeta[]
+}
 
-export async function buildModuleMap(sourcePath: string, cwd = process.cwd()): Promise<Record<string, ModuleMeta>> {
+export interface JsonModuleMeta extends JsonResourceMeta {
+  plugins: JsonResourceMeta[]
+}
+
+export async function buildModuleMap(sourcePath: string, cwd = process.cwd()): Promise<Record<string, JsonModuleMeta>> {
   const script = `
     const { ModuleMeta } = require('nnms')
     try {

@@ -63,7 +63,7 @@ export async function loadConfig(configPath = ''): Promise<Config> {
   )
   const pathBuilder = (filepath: string): string => {
     filepath = filepath.startsWith('/') ? filepath : join(root, filepath)
-    return filepath.replace(/\/$/, '')
+    return filepath.replace(/(\/|\\)$/, '')
   }
   const npmConfig = require(join(dirname(configPath), './package.json'))
   const computed: Config = {

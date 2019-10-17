@@ -22,7 +22,7 @@ export const LINK_COMMAND: Command<{ dist?: string, install?: string }> = {
       !cmd.dist ?
         '/opt/nnms/dist' :
         cmd.dist.startsWith('/') ? cmd.dist : join(process.cwd(), cmd.dist)
-    ).replace(/\/$/, '')
+    ).replace(/(\/|\\)$/, '')
     await link(distPath, cmd.install)
   }
 }

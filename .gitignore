@@ -10,5 +10,10 @@ packages/*/src/**/*.js
 packages/*/src/**/*.js.map
 *.tar
 *.tgz
-.vscode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
 .DS_STORE

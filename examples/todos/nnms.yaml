@@ -2,4 +2,4 @@ build: ./dist
 env:
   mongodb:
     default:
-      database: nnms-example-todos
+      database: nnms-examples-todos
