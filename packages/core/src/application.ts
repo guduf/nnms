@@ -42,9 +42,12 @@ export async function bootstrapProviders(...metas: ProviderMeta[]): Promise<void
 }
 
 /* Creates a application and bootstraps all resources. */
-export function bootstrap(name: string, ...mods: Function[]): ApplicationContext {
+export function bootstrap(
+  consumer: (e: Event) => void ,
+  ...mods: Function[]
+): ApplicationContext {
   const env = new Environment()
-  const tags: LoggerTags = {src: 'app', app: name}
+  const tags: LoggerTags = {src: 'app', app: 'my-app'}
   const logger = Logger.create(tags)
   const appEvents = logger.events.pipe(filterByTags(tags), share())
   const ctx: ApplicationContext =  {
