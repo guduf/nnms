@@ -1,4 +1,5 @@
 import { exec } from 'child_process'
+import glob from 'glob'
 import { writeFile } from 'fs'
 import { promisify as p } from 'util'
 
@@ -39,7 +40,7 @@ export interface JsonModuleMeta extends JsonResourceMeta {
   plugins: JsonResourceMeta[]
 }
 
-export async function buildModuleMap(bundlePath: string, cwd = process.cwd()): Promise<Record<string, JsonModuleMeta>> {
+export async function buildModuleMap(bundlePath: string, cwd = process.cwd()): Promise<Record<string, JsonModuleMeta & { exportKey: string }>> {
   const script = `
     const { ModuleMeta } = require('nnms')
     try {
@@ -48,10 +49,10 @@ export async function buildModuleMap(bundlePath: string, cwd = process.cwd()): P
       console.error(err)
       throw new Error('source file cannot be loaded')
     }
-    const map = Object.keys(source).reduce((acc, key) => {
-      const modMeta = Reflect.getMetadata('nnms:module', source[key])
+    const map = Object.keys(source).reduce((acc, exportKey) => {
+      const modMeta = Reflect.getMetadata('nnms:module', source[exportKey])
       if (!modMeta) return acc
-      if (modMeta instanceof ModuleMeta) return {...acc, [modMeta.name]: modMeta}
+      if (modMeta instanceof ModuleMeta) return {...acc, [modMeta.name]: {...modMeta, exportKey}}
       return acc
     }, {})
     console.log(JSON.stringify(map))
@@ -63,8 +64,20 @@ export async function buildModuleMap(bundlePath: string, cwd = process.cwd()): P
 export async function pack(config: Config, skipLink?: boolean): Promise<void> {
   if (!skipLink) await link(`${process.env['NNMS_PATH'] || '/opt/nnms'}/dist`, 'save')
   await compile(config, true)
-  const moduleMap = await buildModuleMap(`${config.dist}/index.js`, config.dist)
+  let dist = {} as Record<string, JsonModuleMeta & { filepath: string }>
+  const bundles = await p(glob)(`${config.dist}/*.js`)
+  for (const filepath of bundles) {
+    const moduleMap = await buildModuleMap(filepath, config.dist)
+    if (!Object.keys(moduleMap).length) continue
+    dist = {
+      ...dist,
+      ...Object.keys(moduleMap).reduce((acc, metaName) => {
+        if (dist[metaName]) throw new Error('duplicate module')
+        return {...acc, [metaName]: {...moduleMap[metaName], filepath}}
+      }, {} as Record<string, JsonModuleMeta & { filepath: string, exportKey: string }>)
+    }
+  }
   console.log(`✏️  write '${config.dist}/nnms.pack.json'`)
-  const packedConfig = {...config, moduleMap}
+  const packedConfig = {...config, dist}
   await p(writeFile)(`${config.dist}/nnms.pack.json`, JSON.stringify(packedConfig, null, 2))
 }

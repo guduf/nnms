@@ -1,8 +1,15 @@
 #!/usr/bin/env node
-console.log(`nnms-prod`)
-const config = require('./nnms.pack.json')
+const config = require('./dist/nnms.pack.json')
 if (!config) {
     console.error('cannot retrieve packed config')
     process.exit(1)
 }
-console.log(config)
+const nnms = require('nnms')
+if (typeof nnms.bootstrap !== 'function') {
+    console.error('cannot nnms bootstrap')
+    process.exit(1)
+}
+const appName = config.app
+const mods = Object.keys(config.dist).map(key => require(config.dist[key].filepath)[config.dist[key].exportKey])
+const context = nnms.bootstrap(appName, ...mods)
+context.logger.events.subscribe(console.log, console.error)

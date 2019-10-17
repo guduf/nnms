@@ -17,4 +17,4 @@ COPY    --from=builder /opt/nnms/dist /opt/nnms/dist
 COPY    --from=builder /opt/app/dist /opt/app/dist
 RUN     npm install nnms typedi
 RUN     chmod +x nnms-prod
-CMD     nnms-prod
+CMD     ./nnms-prod
