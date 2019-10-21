@@ -2,10 +2,10 @@ import { PREFIX, getContainerContext, ResourceMeta, ResourceOpts, ResourceContex
 import Environment from './environment'
 import { PluginMeta } from './plugin'
 import Container from 'typedi'
-import { JsonObject } from 'type-fest';
-import { ProviderMeta } from './provider';
+import { ProviderMeta } from './provider'
+import { LogMetricValue } from './log'
 
-export interface ModuleMetric extends JsonObject {
+export interface ModuleMetric extends LogMetricValue {
   name: string,
   status: 'bootstrap' | 'ready',
   plugins: string
@@ -49,7 +49,7 @@ export class ModuleMeta<TVars extends Record<string, string> = {}> extends Resou
 
   async bootstrap(): Promise<void> {
     const {logger} = getContainerContext()
-    logger.metric(`bootstrap module '${this.name}'`, {
+    logger.metrics(`bootstrap module '${this.name}'`, {
       modules: {
         $insert: [{
           name: this.name,
@@ -70,7 +70,7 @@ export class ModuleMeta<TVars extends Record<string, string> = {}> extends Resou
     }
     logger.info('MODULE_READY', {mod: this.name}, {
       modules: {
-        $metricKey: 'name',
+        $index: 'name',
         $patch: [{name: this.name, status: 'ready'} as Partial<ModuleMetric>]
       }
     })

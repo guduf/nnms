@@ -3,9 +3,11 @@ import { Argv } from 'yargs'
 
 import { bootstrapFile } from '../bootstrap'
 import Command from '../command'
-import LogSocket from '../log_socket'
+import { LogSocket } from '../log_socket'
 import LogFormat from '../log_format'
 import { loadConfig } from '../shared'
+import { Log } from 'nnms'
+import { map } from 'rxjs/operators'
 
 export function buildConfigPath(configPath?: string): string {
   if (!configPath) return path.join(process.cwd(), './nnms.yaml')
@@ -34,7 +36,7 @@ export const PROD_COMMAND: Command<{ config?: string }> = {
     const build = config.dist || './index.js'
     const events = bootstrapFile(path.join(configDir, build), {appName: config.app})
     const format = new LogFormat(config.logFormat || {})
-    events.subscribe(e => console.log(format.render(e)))
-    new LogSocket(remotePort, events)
+    events.subscribe(e => console.log(format.render(Log.fromEvent(e))))
+    new LogSocket(remotePort, events.pipe(map(e => Log.fromEvent(e))))
   }
 }

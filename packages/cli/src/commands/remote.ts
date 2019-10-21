@@ -1,10 +1,8 @@
 import { Argv, showHelp } from 'yargs'
 
-import { getContainerContext } from 'nnms'
-
 import Command from '../command'
 import LogFormat from '../log_format'
-import LogStoreRemote from '../log_store_remote'
+import { LogStoreRemote } from '../log_store_remote'
 
 export const REMOTE_COMMAND: Command<{ url: string }> = {
   schema: 'remote [url]',
@@ -19,12 +17,7 @@ export const REMOTE_COMMAND: Command<{ url: string }> = {
     }
     const format = new LogFormat()
     const remote = await LogStoreRemote.create(cmd.url)
-    remote.getAllLogs().subscribe(e => console.log(format.render(e)))
+    // TODO - remove any assertion
+    remote.getAllLogs().subscribe(e => console.log(format.render(e as any)))
   }
 }
-
-export function renderJson() {
-  const {logger} = getContainerContext()
-  logger.events.subscribe(console.log, console.error, () => process.exit(1))
-}
-

@@ -1,8 +1,8 @@
 import { getContainerContext, ResourceMeta, ResourceContext } from './common'
 import Container from 'typedi';
-import { JsonObject } from 'type-fest';
+import { LogMetricValue } from './log'
 
-export interface ProviderMetric extends JsonObject {
+export interface ProviderMetric extends LogMetricValue {
   name: string,
   status: 'bootstrap' | 'ready'
 }
@@ -18,7 +18,7 @@ export class ProviderMeta<TVars extends Record<string, string> = {}> extends Res
 
   async bootstrap(): Promise<void> {
     const {logger} = getContainerContext()
-    logger.metric(`bootstrap provider '${this.name}'`, {
+    logger.metrics(`bootstrap provider '${this.name}'`, {
       providers: {$insert: [{name: this.name, status: 'bootstrap'} as ProviderMetric]}
     })
     let provider: { init?: Promise<void> }
@@ -27,7 +27,7 @@ export class ProviderMeta<TVars extends Record<string, string> = {}> extends Res
       if (provider.init instanceof Promise) await provider.init
       logger.info('PROVIDER_READY', {prov: this.name}, {
         providers: {
-          $metricKey: 'name',
+          $index: 'name',
           $patch: [{name: this.name, status: 'ready'} as ProviderMetric]
         }
       })

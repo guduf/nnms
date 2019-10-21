@@ -22,3 +22,11 @@ export function NNMSUI({logStore, history}: NNMSUIProps): React.ReactElement {
 }
 
 export default NNMSUI
+
+/*
+  const logStore = new LogStore(events)
+  const history = createMemoryHistory(
+    cmd.path ? {initialEntries: [cmd.path]} : {}
+  )
+  render(createElement(NNMSUI, {history, logStore}))
+*/

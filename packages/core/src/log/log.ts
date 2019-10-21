@@ -1,11 +1,12 @@
+import Ajv, { ValidateFunction } from 'ajv'
+import { ObjectId } from 'bson'
+import { JSONSchema4 as JsonSchema } from 'json-schema'
 import { distinctUntilChanged, filter, scan, shareReplay, startWith } from 'rxjs/operators'
 import { OperatorFunction } from 'rxjs'
 import { JsonObject } from 'type-fest'
 
-import { applyMetricMutation, LogMetricMutation, LogMetricValue, LOG_METRIC_MUTATION_SCHEMA } from './log_metric'
 import { Event } from '../event'
-import { JSONSchema4 } from 'json-schema'
-import Ajv from 'ajv'
+import { applyMetricMutation, LogMetricMutation, LogMetricValue, LOG_METRIC_MUTATION_SCHEMA } from './log_metric'
 
 export const LOG_LEVELS = ['DBG', 'ERR', 'INF', 'WAR'] as const
 
@@ -18,48 +19,88 @@ export const LOG_LEVEL_PROPS: { [level in LogLevel]: { color: string} } = {
   WAR: {color: 'yellow'}
 }
 
-export interface LoggerTags {
+export interface LogTags {
   src: string
   [tag: string]: string
 }
 
 export type LogData = JsonObject & { msg?: string }
 
-export interface Log<T extends LogData = LogData> {
-  lvl: LogLevel
-  code: string
-  tags: LoggerTags
-  data?: T
-  metrics?: Record<string, LogMetricMutation>
-  timestamp: Date
+export interface LogValue {
+  l: LogLevel
+  c: string
+  t: LogTags
+  d?: LogData
+  m?: Record<string, LogMetricMutation>
 }
 
-const LOG_SCHEMA: JSONSchema4 = {
+export class Log<T extends LogData = LogData> {
+  private static _validator: ValidateFunction
+
+  static fromEvent<T extends LogData = LogData>(e: Event): Log<T> {
+    return new Log<T>(e.id, e.timestamp, JSON.parse(e.data.toString()))
+  }
+
+  static create<T extends LogData = LogData>(
+    input: Pick<Log, 'level' | 'code' | 'tags' | 'metrics' | 'data'>
+  ): Log<T> {
+    if (!Log._validator) Log._validator = new Ajv().compile(LOG_SCHEMA)
+    const valid = Log._validator(input)
+    if (!valid) {
+      console.error(Log._validator.errors)
+      throw new TypeError('invalid log')
+    }
+    const date = new Date()
+    const id = ObjectId.createFromTime(date.getTime() / 1e3)
+    const value = {
+      l: input.level,
+      c: input.code,
+      t: input.tags,
+      d: input.data,
+      m: input.metrics
+    }
+    return new Log<T>(id, date, value)
+  }
+
+  private constructor(
+    readonly id: ObjectId,
+    readonly date: Date,
+    private readonly _value: LogValue
+  ) { }
+
+  get level(): LogLevel { return this._value.l }
+  get code(): string { return this._value.c }
+  get tags(): LogTags { return this._value.t }
+  get data(): T | undefined { return this._value.d as T | undefined }
+  get metrics(): Record<string, LogMetricMutation> | undefined { return this._value.m }
+
+  toEvent(): Event {
+    return Event.create({
+      type: 'LOG',
+      id: this.id,
+      data: JSON.stringify(this._value),
+      timestamp: this.date
+    })
+  }
+}
+
+const LOG_SCHEMA: JsonSchema = {
   type: 'object',
-  required: ['code', 'lvl', 'tags'],
+  required: ['code', 'level', 'tags'],
   properties: {
-    lvl: {type: 'string', enum: [...LOG_LEVELS]},
-    code: {type: 'string', pattern: '^[\\w-]{2,32}$'},
+    level: {type: 'string', enum: [...LOG_LEVELS]},
+    code: {type: 'string', pattern: '^\\*?[\\w-]{2,32}$'},
     data: {type: 'object', minProperties: 1},
+    timestamp: {type: 'string', format: 'date-time'},
     metrics: {
       type: 'object',
-      patternProperties: {
-        '^[\\w+]{2, 16}$': {
-          type: 'array',
-          items: LOG_METRIC_MUTATION_SCHEMA,
-          minItems: 1
-        }
-      },
+      patternProperties: {'^[\\w+]{2,32}$': LOG_METRIC_MUTATION_SCHEMA},
       additionalProperties: false,
       minProperties: 1
     },
     tags: {
-      properties: {
-        src: {type: 'string', pattern: '^[\\w-]{2,6}$'}
-      },
-      patternProperties: {
-        '^[\\w-]{2,128}$': {type: 'string', pattern: '^[\\w-]{2,128}$'}
-      },
+      properties: {src: {type: 'string', pattern: '^[\\w-]{2,6}$'}},
+      patternProperties: {'^[\\w-]{2,128}$': {type: 'string', minimum: 2, maximum: 128}},
       minProperties: 2,
       maxProperties: 64,
       additionalProperties: false
@@ -67,34 +108,17 @@ const LOG_SCHEMA: JSONSchema4 = {
   },
   additionalProperties: false
 }
-
-export class LogEvent {
-  private static _validator: any
-  constructor() {
-    if (!LogEvent._validator) {
-      LogEvent._validator = new Ajv().compile(LOG_SCHEMA)
-    }
-  }
-}
-
-export function LogEvent(log: Log): Event {
-  if (!LOG_LEVELS.includes(log.lvl)) throw new TypeError('lvl is not included in LOG_LEVELS')
-  if (!LOG_CODE_REGEX.test(log.code)) throw new TypeError('code is not matching LOG_CODE_REGEX')
-  if (!LOG_SOURCES.includes(log.tags.src)) throw new TypeError('tags.src is not included LOG_SOURCES')
-  const valid
-}
-
-export function matchTags(target: LoggerTags, test: Partial<LoggerTags>, extraTags = false): boolean {
+export function matchTags(target: LogTags, test: Partial<LogTags>, extraTags = false): boolean {
   const result = !Object.keys(test).find(tag => target[tag] !== test[tag])
   if (!result || !extraTags) return result
   return Object.keys(test).length === Object.keys(target).length
 }
 
-export function filterByTags(tags: Partial<LoggerTags>): OperatorFunction<Log, Log> {
+export function filterByTags(tags: Partial<LogTags>): OperatorFunction<Log, Log> {
   return events => events.pipe(filter(e => matchTags(e.tags, tags)))
 }
 
-export function scanMetric<T extends LogMetricValue[number]>(metricName: string): OperatorFunction<Log, T[]> {
+export function scanMetric<T extends LogMetricValue>(metricName: string): OperatorFunction<Log, T[]> {
   return events => events.pipe(
     scan((metric, e) => {
       const mutation = (e.metrics || {})[metricName] as Record<string, LogMetricValue>
