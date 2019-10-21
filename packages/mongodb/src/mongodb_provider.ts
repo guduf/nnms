@@ -2,7 +2,9 @@ import { connect, MongoClient, Collection, MongoError } from 'mongodb'
 import { ProviderRef, ProviderContext } from 'nnms'
 
 import { SCHEMA_METADATA_KEY, MongoDbSchemaMeta } from './mongodb_meta'
-import { BsonSchema } from './mongodb_schema'
+import { buildBsonSchema } from './mongodb_meta'
+import Ajv, { Ajv as Validator, ErrorObject } from 'ajv'
+import applyBsonTypes from 'ajv-bsontype'
 
 const MONGODB_VARS = {
   URL: 'mongodb://localhost:27017',
@@ -13,10 +15,15 @@ const MONGODB_VARS = {
 export class MongoDbProvider {
   constructor(
     private readonly _ctx: ProviderContext<typeof MONGODB_VARS>
-  ) { }
+  ) {
+    const validator = new Ajv()
+    applyBsonTypes(validator)
+    this._validator = validator;
+  }
 
   private readonly _collections = {} as { [name: string]: Promise<Collection> }
   private _client: MongoClient
+  private readonly _validator: Validator
 
   readonly init = this._init()
 
@@ -30,26 +37,25 @@ export class MongoDbProvider {
     return this._collections[meta.name];
   }
 
+  async validate(type: { new () : any }, data: object): Promise<ErrorObject[] | null> {
+    const meta = Reflect.getMetadata(SCHEMA_METADATA_KEY, type) as MongoDbSchemaMeta
+    if (!meta) throw new TypeError('cannot retrieve meta')
+    if (!this._validator.getSchema(meta.name)) throw new TypeError('cannot retrieve schema name')
+    try {
+      await this._validator.validate(meta.name, data)
+    } catch (catched) {
+      return catched.errors
+    }
+    return null
+  }
+
   private async _load(meta: MongoDbSchemaMeta): Promise<Collection> {
     await this.init
     this._ctx.logger.metric('load collection', {
       collections: {$insert: [{name: meta.name, loaded: 'pending'}]}
     })
-    const {props, required} = Object.keys(meta.props).reduce((acc, key) => {
-      const prop = {...meta.props[key]}
-      delete prop.required
-      delete prop.unique
-      return {
-        props: {...acc.props, [key]: prop},
-        required: [...acc.required, ...(meta.props[key].required ? [key] : [])],
-        unique: [...acc.unique, ...(meta.props[key].unique ? [key] : [])]
-      }
-    }, {props: {} as BsonSchema['properties'], required: [] as string[], unique: [] as string[]})
-    const schema: BsonSchema = {
-      bsonType: 'object',
-      required,
-      properties: props
-    }
+    const schema = buildBsonSchema(meta)
+    this._validator.addSchema({$async: true, ...schema}, meta.name)
     const db = this._client.db(this._ctx.vars.DATABASE)
     try {
       const {ok} = await (db.command({

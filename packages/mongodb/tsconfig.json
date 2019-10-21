@@ -3,8 +3,9 @@
   "compilerOptions": {
     "baseUrl": "./"
   },
-  "files": [
-    "src/index.ts"
+  "include": [
+    "src/index.ts",
+    "typings/*"
   ],
   "exclude": [
     "src/test",
