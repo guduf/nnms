@@ -2,9 +2,9 @@ import { Observable } from 'rxjs'
 import { JsonValue } from 'type-fest'
 import WebSocket, { Server as WebSocketServer } from 'ws'
 
-import { LoggerEvent } from 'nnms'
+import { Log } from 'nnms'
 
-import { LogStore } from './log_store'
+import { LogStore, LogRecord } from './log_store'
 
 export interface SocketRequest {
   method: string
@@ -28,11 +28,11 @@ export type SocketResponse<T extends JsonValue = {}> = (
   SocketSuccessResponse<T> | SocketErrorResponse
 )
 
-export default class LogSocket {
+export class LogSocket {
   private readonly _store: LogStore
   private readonly _wss: WebSocketServer
 
-  constructor(port: number, events: Observable<LoggerEvent>) {
+  constructor(port: number, events: Observable<Log>) {
     this._store = new LogStore(events)
     this._wss = new WebSocketServer({port})
     this._wss.on('connection', socket => {
@@ -43,7 +43,7 @@ export default class LogSocket {
   _handleRequest(socket: WebSocket, body: string): void {
     const req = JSON.parse(body) as SocketRequest
     const {topic} = req
-    let events: Observable<JsonValue>
+    let events: Observable<LogRecord>
     switch (req.method) {
       case 'getAllLogs': events = this._store.getAllLogs(); break
       default: {

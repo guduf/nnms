@@ -1,10 +1,10 @@
 import { exec } from 'child_process'
 import glob from 'glob'
+import { join } from 'path'
 import { promisify as p } from 'util'
 
 import Command from '../command'
 import { getNNMSVersion } from '../shared'
-import { join } from 'path'
 
 export const LINK_COMMAND: Command<{ dist?: string, install?: string }> = {
   schema: 'link [dist]',

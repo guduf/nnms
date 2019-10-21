@@ -1,11 +1,7 @@
 
 import { Container, ContainerInstance, Token } from 'typedi'
-import { Logger } from './logger'
+import { Logger } from './log'
 import Environment from './environment'
-import { Observable } from 'rxjs'
-import { ModuleMetric } from './module_ref'
-import { PluginMetric } from './plugin'
-import { ProviderMetric } from './provider'
 
 export const PREFIX = 'nnms'
 export const PREFIX_UPPER = PREFIX.toUpperCase()
@@ -89,15 +85,6 @@ export abstract class ApplicationContext extends CommonContext {
 
   /** The global environment of the application. */
   readonly env: Environment
-
-  /** A observable of module status. */
-  readonly modules: Observable<ModuleMetric[]>
-
-  /** A observable of plugins status. */
-  readonly plugins: Observable<PluginMetric[]>
-
-  /** A observable of providers status. */
-  readonly providers: Observable<ProviderMetric[]>
 }
 
 /** Represents properties for shared accross resource contexts. */

@@ -1,3 +1,5 @@
+import { exec } from 'child_process'
+import glob from 'glob'
 import { safeLoad as loadYaml } from 'js-yaml'
 import { JsonObject } from 'type-fest'
 
@@ -30,6 +32,61 @@ const DEFAULT_CONFIG: Config = {
   root: '.'
 }
 
+export interface JsonResourceMeta {
+  name: string
+  vars: JsonObject
+  providers: JsonResourceMeta[]
+}
+
+export interface JsonModuleMeta extends JsonResourceMeta {
+  plugins: JsonResourceMeta[]
+}
+
+export async function buildModuleMap(
+  bundlePath: string,
+  cwd = process.cwd()
+): Promise<Record<string, JsonModuleMeta & { exportKey: string }>> {
+  const script = `
+    const { ModuleMeta } = require('nnms')
+    try {
+      source = require('${bundlePath}')
+    } catch (err) {
+      console.error(err)
+      throw new Error('source file cannot be loaded')
+    }
+    const map = Object.keys(source).reduce((acc, exportKey) => {
+      const modMeta = Reflect.getMetadata('nnms:module', source[exportKey])
+      if (!modMeta) return acc
+      if (modMeta instanceof ModuleMeta) return {...acc, [modMeta.name]: {...modMeta, exportKey}}
+      return acc
+    }, {})
+    console.log(JSON.stringify(map))
+`
+  const {stdout} = await p(exec)(`node -e "${script}"`, {cwd})
+  return JSON.parse(stdout)
+}
+
+export type ModuleMap = Record<string, JsonModuleMeta & { filepath: string, exportKey: string }>
+
+export async function buildModulesMap(distPath: string): Promise<ModuleMap> {
+  let dist = {} as ModuleMap
+  const bundles = await p(glob)(`${distPath}/*.js`)
+  for (const filepath of bundles) {
+    const moduleMap = await buildModuleMap(filepath, distPath)
+    if (!Object.keys(moduleMap).length) continue
+    dist = {
+      ...dist,
+      ...Object.keys(moduleMap).reduce((acc, metaName) => {
+        if (dist[metaName]) throw new Error(
+          `duplicate module '${metaName}' between '${dist[metaName].filepath}' and '${filepath}'`
+        )
+        return {...acc, [metaName]: {...moduleMap[metaName], filepath}}
+      }, {} as Record<string, JsonModuleMeta & { filepath: string, exportKey: string }>)
+    }
+  }
+  return dist
+}
+
 export async function loadConfig(configPath = ''): Promise<Config> {
   if (!configPath.startsWith('/')) configPath = join(process.cwd(), configPath)
   const isDirectory = await p(lstat)(configPath).then(stat => stat.isDirectory()).catch(() => false)
@@ -45,7 +102,7 @@ export async function loadConfig(configPath = ''): Promise<Config> {
       }
     }
   }
-  console.log(`load config '${configPath}'`)
+  console.log(`⚙️  load config '${configPath}'`)
   const body = await p(readFile)(configPath, 'utf8')
   if (!body) throw new Error(`failed to read config at path '${configPath}'`)
   let config = null as Partial<Config> | null

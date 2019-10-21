@@ -1,15 +1,15 @@
 import { Observable, EMPTY, fromEvent, throwError, merge, of } from 'rxjs'
-import { JsonObject, JsonValue } from 'type-fest'
+import { JsonObject } from 'type-fest'
 import WebSocket from 'ws'
 
-import { LoggerSource, LoggerEvent } from 'nnms'
+import { Log } from 'nnms'
 
-import { LogPublicStore } from './log_store'
+import { LogPublicStore, LogRecord } from './log_store'
 import { map, mergeMap, first, share } from 'rxjs/operators'
 import shortid from 'shortid'
 import { SocketResponse } from './log_socket'
 
-export default class LogStoreRemote implements LogPublicStore {
+export class LogStoreRemote implements LogPublicStore {
   private readonly _ws: WebSocket
   private readonly _responses: Observable<SocketResponse>
 
@@ -30,10 +30,11 @@ export default class LogStoreRemote implements LogPublicStore {
     )
   }
 
-  private _sendRequest<T extends JsonValue>(
+  private _sendRequest<T extends Log>(
     method: string,
-    query = {} as JsonValue
-  ): Observable<T> {
+    query = {} as Record<string, string>
+    // TODO - remove any assertion
+  ): Observable<any> {
     const topic = shortid()
     const obs = this._responses.pipe(
       mergeMap(res => {
@@ -47,15 +48,15 @@ export default class LogStoreRemote implements LogPublicStore {
 
   }
 
-  getAllLogs(): Observable<LoggerEvent> {
+  getAllLogs(): Observable<LogRecord> {
     return this._sendRequest('getAllLogs')
   }
 
-  getLogs(src: LoggerSource, id: string): Observable<LoggerEvent[]> {
+  getLogs(src: string, id: string): Observable<LogRecord[]> {
     return this._sendRequest('getLogs', {src, id})
   }
 
-  getMetrics<T extends JsonObject>(src: LoggerSource, id: string): Observable<T> {
+  getMetrics<T extends JsonObject>(src: string, id: string): Observable<T> {
     return this._sendRequest('getMetrics', {src, id})
 
   }
