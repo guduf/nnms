@@ -1,7 +1,7 @@
+import { ErrorObject } from 'ajv'
 import { Collection as NativeCollection, FilterQuery, UpdateQuery } from 'mongodb'
 
 import MongoDbProvider from './mongodb_provider'
-import { ErrorObject } from 'ajv'
 
 export interface MongoDbCollection<T> {
   readonly native: Promise<NativeCollection<T>>
@@ -41,7 +41,7 @@ export class MongoDbCollectionImpl<T> implements MongoDbCollection<T> {
 
   async upsert(query: FilterQuery<T>, data: T): Promise<void> {
     const native = await this.native
-    await native.updateMany(query, data, {upsert: true})
+    await native.replaceOne(query, data, {upsert: true})
   }
 
   async update(query: FilterQuery<T>, data: UpdateQuery<T>): Promise<void> {

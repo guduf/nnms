@@ -69,16 +69,16 @@ export function buildResourceDecorator<TVars extends Record<string, string>, TOp
 }
 
 /** Decorates a class with provider meta. */
-export const ProviderRef = (name: string, vars = {}, ...providers: Function[]) => (
+export const ProviderRef = (name: string, vars: Record<string, string>, ...providers: Function[]) => (
   buildResourceDecorator('provider', ProviderMeta)({name, vars, providers})
 )
 
 /** Decorates a class with plugin meta. */
-export const PluginRef = (name: string, vars = {}, ...providers: Function[]) => (
+export const PluginRef = (name: string, vars: Record<string, string>, ...providers: Function[]) => (
   buildResourceDecorator('plugin', PluginMeta)({name, vars, providers})
 )
 
 /** Decorates a class with module meta. */
-export const ModuleRef = (name: string, vars = {}, ...pluginsAndProviders: Function[]) => (
+export const ModuleRef = (name: string, vars: Record<string, string>, ...pluginsAndProviders: Function[]) => (
   buildResourceDecorator('module', ModuleMeta)({name, vars, pluginsAndProviders})
 )

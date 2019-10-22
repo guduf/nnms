@@ -1,6 +1,6 @@
 import 'reflect-metadata'
 
-import { ObjectId } from 'mongodb'
+import { ObjectId, Decimal128 } from 'mongodb'
 import Container from 'typedi'
 
 import { MongoDbCollection as _MongoDbCollection, MongoDbCollectionImpl } from './_mongodb_collection'
@@ -33,13 +33,14 @@ export function MongoDbSchema(name: string): ClassDecorator {
 export function reflectBsonType(target: Object, propKey: string): BsonType | null {
   const propType = Reflect.getMetadata('design:type', target, propKey)
   switch (propType) {
-    case ObjectId: return 'objectId'
-    case String: return 'string'
-    case Number: return 'int'
+    case Array: return 'array'
     case Boolean: return 'bool'
     case Buffer: return 'binData'
-    case Array: return 'array'
     case Date: return 'date'
+    case Decimal128: return 'decimal'
+    case Number: return 'int'
+    case ObjectId: return 'objectId'
+    case String: return 'string'
     default: {
       return null
     }

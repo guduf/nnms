@@ -1,3 +1,4 @@
+import 'reflect-metadata'
 import path from 'path'
 import { bootstrap, ModuleMeta, PREFIX, LoggerEvent } from 'nnms'
 import { Observable } from 'rxjs'
@@ -10,6 +11,7 @@ export function bootstrapFile(
   try {
     index = require(filePath.match(/^\.?\.\//) ? path.join(process.cwd(), filePath) : filePath)
   } catch (err) {
+    console.error(err)
     process.exit(1)
   }
   const mods = Object.keys(index).reduce((acc, key) => {
