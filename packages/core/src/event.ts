@@ -27,7 +27,7 @@ export class Event {
         Buffer.from(input.data && typeof input.data === 'string' ? input.data : '')
     )
     return new Event({
-      i: input.id || ObjectId.createFromTime(date.getTime() / 1e3),
+      i: input.id || new ObjectId(),
       e: input.type,
       d: new Binary(data),
       t: date.getMilliseconds()
@@ -50,7 +50,7 @@ export class Event {
   get id(): ObjectId { return this._value.i }
   get type(): string { return this._value.e }
   get data(): Binary { return this._value.d }
-  get timestamp(): Date { return new Date(this._value.i.generationTime + this._value.t) }
+  get timestamp(): Date { return new Date(this._value.i.getTimestamp().getTime() + this._value.t) }
 
   serialize(): Buffer { return serialize(this._value) }
 }

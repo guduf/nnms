@@ -11,8 +11,9 @@ import Command from '../command'
 import { loadConfig, getNNMSVersion } from '../shared'
 
 const DEFAULT_BUILDER_IMAGE = 'guduf/nnms'
+const DEFAULT_RUNNER_IMAGE_TAG = 'carbon:alpine'
 
-export const BUILD_COMMAND: Command<{ path?: string, tag?: string, builder?: string }> = {
+export const BUILD_COMMAND: Command<{ path?: string, tag?: string, builder?: string, runner?: string }> = {
   schema: 'build [file] [options]',
   descr: 'Build a docker for image N&M\'s application',
   argv: (yargs) => (
@@ -32,13 +33,19 @@ export const BUILD_COMMAND: Command<{ path?: string, tag?: string, builder?: str
         alias: 'b',
         descr: 'The N&M\'s base image'
       })
+      .option('runner', {
+        type: 'string',
+        alias: 'r',
+        descr: 'The N&M\'s base image'
+      })
   ),
   cmd: async cmd => {
     const config = await loadConfig(cmd.path)
     const id = await buildImage({
       context: config.root,
       appTag: cmd.tag || config.app,
-      builderImage: cmd.builder || `${DEFAULT_BUILDER_IMAGE}:${getNNMSVersion()}`
+      builderImage: cmd.builder || `${DEFAULT_BUILDER_IMAGE}:${getNNMSVersion()}`,
+      runnerImage: cmd.runner || DEFAULT_RUNNER_IMAGE_TAG
     })
     console.log({id})
   }
@@ -48,18 +55,27 @@ export interface BuildImageOpts {
   context: string
   appTag: string
   builderImage: string
+  runnerImage: string
 }
 
 export async function buildImage(
-  {context, appTag, builderImage}: BuildImageOpts
+  {context, appTag, builderImage, runnerImage}: BuildImageOpts
 ): Promise<string> {
   const dockerFile = join(__dirname, '../assets/Dockerfile')
   await p(access)(dockerFile)
   await p(lstat)(context)
-  console.log(`builder image '${builderImage}'`)
+  console.log(`🖼 builder image '${builderImage}'`)
+  console.log(`🖼 runner image '${runnerImage}'`)
   const process = spawn(
     'docker',
-    ['build', context, '--tag', appTag, '--file', dockerFile, '--build-arg', `BUILDER_IMAGE=${builderImage}`]
+    [
+      'build',
+      context,
+      '--tag', appTag,
+      '--file', dockerFile,
+      '--build-arg', `BUILDER_IMAGE=${builderImage}`,
+      '--build-arg', `RUNNER_IMAGE=${runnerImage}`,
+    ]
   )
   let imageId = ''
   const subscr = merge(

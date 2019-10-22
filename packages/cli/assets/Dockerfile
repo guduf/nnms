@@ -1,11 +1,12 @@
 ARG   BUILDER_IMAGE
+ARG   RUNNER_IMAGE
 FROM  ${BUILDER_IMAGE} as builder
 COPY  ./package*.json ./
 RUN   npm install
 COPY  . ./
 RUN   nnms pack
 
-FROM    node:carbon-alpine
+FROM    ${RUNNER_IMAGE}
 WORKDIR /opt/app
 ENV     NODE_ENV production
 COPY    --from=builder \

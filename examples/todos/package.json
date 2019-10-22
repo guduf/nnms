@@ -9,14 +9,14 @@
   },
   "scripts": {
     "compile": "tsc -p ./tsconfig.json",
-    "start": "nnms prod"
+    "nnms": "nnms"
   },
   "devDependencies": {
+    "nnms-cli": "^0.19.0",
     "typescript": "^3.5.0"
   },
   "dependencies": {
-    "nnms": "^0.16.0",
-    "nnms-cli": "^0.16.0",
-    "nnms-http": "^0.16.0"
+    "nnms": "^0.19.0",
+    "nnms-http": "^0.19.0"
   }
 }

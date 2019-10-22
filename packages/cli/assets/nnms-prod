@@ -9,10 +9,12 @@ if (typeof nnms.bootstrap !== 'function') {
     console.error('cannot nnms bootstrap')
     process.exit(1)
 }
-const appName = config.app
-const mods = Object.keys(config.dist).map(key => require(config.dist[key].filepath)[config.dist[key].exportKey])
-const events = nnms.bootstrap(appName, ...mods)
-events.subscribe(
-  e => console.log(nnms.Log.fromEvent(e)),
-  console.error
-)
+const mods = Object.keys(config.dist).map(key => (
+  require(config.dist[key].filepath)[config.dist[key].exportKey]
+))
+const events = nnms.bootstrap(...mods)
+events.subscribe(e => console.log(nnms.Log.fromEvent(e).toJson()))
+process.on('SIGINT', () => {
+  console.log('\ncaught interrupt signal')
+  process.exit(0)
+})

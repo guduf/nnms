@@ -86,6 +86,18 @@ export class Log<T extends LogData = LogData> {
       timestamp: this.date
     })
   }
+
+  toJson(): JsonObject {
+    return {
+      id: this.id.toHexString(),
+      date: this.date.toISOString(),
+      level: this.level,
+      code: this.code,
+      tags: this.tags,
+      ...(this.data ? {data: this.data} : {}),
+      ...(this.metrics ? {metrics: this.metrics} : {}),
+    } as JsonObject
+  }
 }
 
 const LOG_SCHEMA: JsonSchema = {

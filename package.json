@@ -1,6 +1,6 @@
 {
   "name": "nnms-repo",
-  "version": "0.19.2",
+  "version": "0.20.0",
   "description": "N&M's - NodeJS framework for micro services",
   "scripts": {
     "dev": "node ./scripts/dev.js",
@@ -50,6 +50,7 @@
     "ajv-bsontype": "^1.0.7",
     "argv": "0.0.2",
     "body-parser": "^1.19.0",
+    "bson": "^4.0.2",
     "chalk": "^2.4.0",
     "dotenv": "^8.0.0",
     "express": "^4.17.0",
