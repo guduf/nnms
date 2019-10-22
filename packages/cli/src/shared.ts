@@ -42,6 +42,8 @@ export interface JsonModuleMeta extends JsonResourceMeta {
   plugins: JsonResourceMeta[]
 }
 
+const MODULE_MAP_REGEX = /({.*})$/
+
 export async function buildModuleMap(
   bundlePath: string,
   cwd = process.cwd()
@@ -61,8 +63,10 @@ export async function buildModuleMap(
       return acc
     }, {})
     console.log(JSON.stringify(map))
-`
+  `
   const {stdout} = await p(exec)(`node -e "${script}"`, {cwd})
+  const match = stdout.match(MODULE_MAP_REGEX)
+  if (!match) throw new Error('invalid output')
   return JSON.parse(stdout)
 }
 
