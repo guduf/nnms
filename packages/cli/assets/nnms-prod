@@ -11,5 +11,8 @@ if (typeof nnms.bootstrap !== 'function') {
 }
 const appName = config.app
 const mods = Object.keys(config.dist).map(key => require(config.dist[key].filepath)[config.dist[key].exportKey])
-const context = nnms.bootstrap(appName, ...mods)
-context.logger.events.subscribe(console.log, console.error)
+const events = nnms.bootstrap(appName, ...mods)
+events.subscribe(
+  e => console.log(nnms.Log.fromEvent(e)),
+  console.error
+)

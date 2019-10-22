@@ -7,6 +7,7 @@ import rollupTypescript from 'rollup-plugin-typescript2'
 import typescript from 'typescript'
 import { promisify as p } from 'util'
 import { Argv } from 'yargs'
+
 import Command from '../command'
 import { loadConfig, Config } from '../shared'
 
@@ -14,16 +15,21 @@ export const COMPILE_COMMAND: Command<{ path?: string }> = {
   schema: 'compile',
   descr: 'Compile a N&M\'s application',
   argv: (yargs) => (
-    (yargs as Argv<{ config?: string }>)
+    (yargs as Argv<{ path?: string, resolveModule?: boolean }>)
       .option('path', {
         type: 'string',
         alias: 'p',
         descr: 'The filepath of N&M\'s configuration'
       })
+      .option('resolveModule', {
+        type: 'boolean',
+        alias: 'r',
+        descr: 'Whether the node modules should be bundled'
+      })
   ),
   cmd: async cmd => {
     const config = await loadConfig(cmd.path)
-    await compile(config)
+    await compile(config, Boolean(cmd.resolveModule))
   }
 }
 

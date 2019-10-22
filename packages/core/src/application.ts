@@ -1,12 +1,12 @@
 import Container from 'typedi'
 
 import { PREFIX, ApplicationContext, RESOURCE_CONTEXT_TOKEN, ResourceMeta } from './common'
+import { Event } from './event'
 import Environment from './environment'
-import Logger, { scanMetric, LoggerTags, filterByTags } from './logger'
-import { ModuleMeta, ModuleMetric } from './module_ref'
-import { ProviderMeta, ProviderMetric } from './provider'
-import { PluginMetric } from './plugin'
-import { share } from 'rxjs/operators'
+import { Logger, LogTags } from './log'
+import { ModuleMeta } from './module_ref'
+import { ProviderMeta } from './provider'
+import { Observable, Subject } from 'rxjs'
 
 /** Browses resource metas recursively to extract all providers that must be bootstraped. */
 export function extractProviderInjections(...metas: ResourceMeta[]): ProviderMeta[] {
@@ -42,21 +42,18 @@ export async function bootstrapProviders(...metas: ProviderMeta[]): Promise<void
 }
 
 /* Creates a application and bootstraps all resources. */
-export function bootstrap(name: string, ...mods: Function[]): ApplicationContext {
+export function bootstrap(...mods: Function[]): Observable<Event> {
   const env = new Environment()
-  const tags: LoggerTags = {src: 'app', app: name}
-  const logger = Logger.create(tags)
-  const appEvents = logger.events.pipe(filterByTags(tags), share())
+  const tags: LogTags = {src: 'app', app: 'my-app'}
+  const events = new Subject<Event>()
+  const logger = new Logger(tags, log => events.next(log.toEvent()))
   const ctx: ApplicationContext =  {
     kind: 'application',
-    name,
+    name: 'my-app',
     env,
-    logger,
-    modules: appEvents.pipe(scanMetric<ModuleMetric>('modules')),
-    providers: appEvents.pipe(scanMetric<ProviderMetric>('providers')),
-    plugins: appEvents.pipe(scanMetric<PluginMetric>('plugins'))
+    logger
   }
-  const _bootstrap = async () => {
+  setTimeout(async () => {
     ctx.logger.info('APPLICATION_BOOTSTRAP')
     if (Container.has(ApplicationContext as any)) {
       throw new Error('global container has another ApplicationContext')
@@ -76,7 +73,6 @@ export function bootstrap(name: string, ...mods: Function[]): ApplicationContext
         {...acc, [name]: plugins.map(plugin => plugin.name)}
       ), {})
     })
-  }
-  _bootstrap()
-  return ctx
+  })
+  return events
 }

@@ -1,12 +1,12 @@
 import 'reflect-metadata'
 import path from 'path'
-import { bootstrap, ModuleMeta, PREFIX, LoggerEvent } from 'nnms'
+import { bootstrap, ModuleMeta, PREFIX, Event } from 'nnms'
 import { Observable } from 'rxjs'
 
 export function bootstrapFile(
   filePath: string,
   opts = {} as { appName?: string, moduleNames?: string[] }
-): Observable<LoggerEvent> {
+): Observable<Event> {
   let index = {} as { [key: string]: Function }
   try {
     index = require(filePath.match(/^\.?\.\//) ? path.join(process.cwd(), filePath) : filePath)
@@ -27,7 +27,6 @@ export function bootstrapFile(
     console.error(`none module has been found in '${filePath}'`)
     process.exit(1)
   }
-  const appName = opts.appName || 'app'
   const bootstrapedMods = (
     opts.moduleNames ?
       opts.moduleNames.map(modName => {
@@ -39,5 +38,5 @@ export function bootstrapFile(
       }) :
       Object.keys(mods).map(modName => mods[modName])
   )
-  return bootstrap(appName, ...bootstrapedMods).logger.events
+  return bootstrap(...bootstrapedMods)
 }

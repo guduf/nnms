@@ -2,6 +2,7 @@ import { ModuleRef, ModuleContext } from 'nnms'
 import { HttpRoute, HttpPlugin } from 'nnms-http'
 
 import TodoProvider, { Todo } from './todo'
+import { JsonArray } from 'type-fest'
 
 export const API_VARS = {
   HTTP_PORT: '8080'
@@ -15,7 +16,7 @@ export class ApiModule {
   ) { }
 
   async init(): Promise<void> {
-    this._ctx.logger.debug({initialList: await this._todos.list()})
+    this._ctx.logger.debug({initialList: await this._todos.list() as unknown as JsonArray})
   }
 
   @HttpRoute()

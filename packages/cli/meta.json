@@ -26,7 +26,6 @@
     "semver-regex",
     "shortid",
     "typescript",
-    "winston-transport",
     "ws",
     "yargs"
   ],
