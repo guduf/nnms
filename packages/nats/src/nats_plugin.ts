@@ -21,7 +21,7 @@ export function NatsSubscriber(
   return pluginMethodDecorator('nats', meta)
 }
 
-@PluginRef('nats')
+@PluginRef('nats', {})
 export class NatsPlugin {
   constructor(
     ctx: PluginContext,

@@ -51,7 +51,7 @@ export class MongoDbProvider {
 
   private async _load(meta: MongoDbSchemaMeta): Promise<Collection> {
     await this.init
-    this._ctx.logger.metric('load collection', {
+    this._ctx.logger.metrics('load collection', {
       collections: {$insert: [{name: meta.name, loaded: 'pending'}]}
     })
     const schema = buildBsonSchema(meta)
@@ -70,13 +70,13 @@ export class MongoDbProvider {
       await db.createCollection(meta.name, {validator: {$jsonSchema: schema}})
     }
     this._ctx.logger.info('LOAD_COLLECTION', {collection: meta.name}, {
-      collections: {$metricKey: 'name', $upsert: [{name: meta.name, loaded: true}]}
+      collections: {$index: 'name', $upsert: [{name: meta.name, loaded: true}]}
     })
     return db.collection(meta.name)
   }
 
   private async _init(): Promise<void> {
-    this._ctx.logger.metric({client: {$insert: [{url: this._ctx.vars.URL, status: 'pending'}]}})
+    this._ctx.logger.metrics({client: {$insert: [{url: this._ctx.vars.URL, status: 'pending'}]}})
     try {
       this._client = await connect(this._ctx.vars.URL, {
         useNewUrlParser: true,
@@ -87,7 +87,7 @@ export class MongoDbProvider {
       throw err
     }
     this._ctx.logger.info(`CLIENT_LISTENING`, {url: this._ctx.vars.URL}, {
-      client: {$metricKey: 'url', $patch: [{url: this._ctx.vars.URL, status: 'opened'}]}
+      client: {$index: 'url', $patch: [{url: this._ctx.vars.URL, status: 'opened'}]}
     })
   }
 }

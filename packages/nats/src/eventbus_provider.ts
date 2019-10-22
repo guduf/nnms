@@ -32,7 +32,7 @@ export class Eventbus {
   ) { }
 
   registerProxy(name: string, proxyMethods: ProxyMethods): void {
-    this._ctx.logger.metric({
+    this._ctx.logger.metrics({
       proxies: {$upsert: [{name, methods: Object.keys(proxyMethods).join(', ')}]}
     })
     this._nats.subscribeRequest(`${this._subjectPrefix}.${name}`, async (e: EventbusProxyMessage) => {

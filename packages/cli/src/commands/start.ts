@@ -1,7 +1,6 @@
-import { Observable } from 'rxjs'
 import { Argv } from 'yargs'
 
-import { Event, Log, bootstrap } from 'nnms'
+import { Log, bootstrap } from 'nnms'
 
 import Command from '../command'
 import LogFormat from '../log_format'
@@ -28,9 +27,5 @@ export const START_COMMAND: Command<{ path?: string }> = {
     const events = bootstrap(...mods)
     events.subscribe(e => console.log(format.render(Log.fromEvent(e))))
   }
-}
-
-export function renderJson(events: Observable<Event>) {
-  events.subscribe(console.log, console.error, () => process.exit(1))
 }
 

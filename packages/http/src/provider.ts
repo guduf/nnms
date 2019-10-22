@@ -3,7 +3,7 @@ import { ProviderRef, ProviderContext } from 'nnms'
 import { Service } from 'typedi'
 
 @Service({global: true})
-@ProviderRef('http')
+@ProviderRef('http', {})
 export class HttpProvider {
   private _servers: { [port: string]: { name: string } }
 

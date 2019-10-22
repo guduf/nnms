@@ -30,7 +30,7 @@ export function EventbusProxy(): ParameterDecorator {
   }
 }
 
-@PluginRef('eventbus')
+@PluginRef('eventbus', {})
 export class EventbusPlugin {
   constructor(
     private readonly _ctx: PluginContext,
@@ -50,7 +50,7 @@ export class EventbusPlugin {
     const logData =  {method: meta.methodKey, returnType: meta.returnType}
     this._ctx.logger.info(
       'REGISTER_PROXY_METHOD', logData, {
-        proxyMethods: {$metricKey: 'method', $upsert: [{...logData, success: 0, error: 0}]}
+        proxyMethods: {$index: 'method', $upsert: [{...logData, success: 0, error: 0}]}
       }
     )
     return (...args: JsonArray)  => {

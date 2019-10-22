@@ -77,7 +77,7 @@ export class NatsProvider {
   }
 
   private async _init(): Promise<void> {
-    this._ctx.logger.metric({client: {$insert: [{url: this._ctx.vars.URL, status: 'pending'}]}})
+    this._ctx.logger.metrics({client: {$insert: [{url: this._ctx.vars.URL, status: 'pending'}]}})
     try {
       await this._connect()
     } catch (err) {
@@ -85,7 +85,7 @@ export class NatsProvider {
       throw err
     }
     this._ctx.logger.info(`CLIENT_LISTENING`, {url: this._ctx.vars.URL}, {
-      client: {$metricKey: 'url', $patch: [{url: this._ctx.vars.URL, status: 'opened'}]}
+      client: {$index: 'url', $patch: [{url: this._ctx.vars.URL, status: 'opened'}]}
     })
   }
 
