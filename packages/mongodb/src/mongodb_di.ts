@@ -1,31 +1,24 @@
 import 'reflect-metadata'
 
-import { Collection as NativeCollection, ObjectId } from 'mongodb'
-
-import MongoDbProvider from './mongodb_provider'
-
-import { JsonObject } from 'type-fest'
+import { ObjectId } from 'mongodb'
 import Container from 'typedi'
+
+import { MongoDbCollection as _MongoDbCollection, MongoDbCollectionImpl } from './_mongodb_collection'
+import MongoDbProvider from './mongodb_provider'
 
 import { SCHEMA_METADATA_KEY, PROPS_META_KEY, MongoDbPropMeta, reflectMongoDbSchema } from './mongodb_meta'
 import { BsonType, BsonSchema, BSON_TYPES } from './mongodb_schema'
 
-export interface FindOptions<T = {}, U extends Partial<T> = {}> {
-  projection?: (keyof U)[]
-  limit?: number
-  sort?: JsonObject
-}
-
-export function MongoDb<T>(type: { new (): T }): ParameterDecorator {
+export function MongoDbCollection<T>(type: { new (): T }): ParameterDecorator {
   return (target, _, index): void => {
     Container.registerHandler({object: target, index, value: () => {
       if (!Container.has(MongoDbProvider)) throw new Error('missing mongodb')
-      return Container.get(MongoDbProvider).connect(type)
+      return new MongoDbCollectionImpl(Container.get(MongoDbProvider), type)
     }})
   }
 }
 
-export type MongoDb<T> = Promise<NativeCollection<T>>
+export type MongoDbCollection<T> = _MongoDbCollection<T>
 
 export function MongoDbSchema(name: string): ClassDecorator {
   return target => {
@@ -78,8 +71,8 @@ export function getPropBsonType(
 }
 
 export function MongoDbProp(
-  typeOrRequiredOrOpts: BsonType | Function | MongoDbPropOpts | [BsonType] | [Function] | [MongoDbPropOpts] | boolean = false,
-  optsOrRequired: MongoDbPropOpts | boolean = false
+  typeOrRequiredOrOpts: BsonType | Function | MongoDbPropOpts | [BsonType] | [Function] | [MongoDbPropOpts] | boolean = {},
+  optsOrRequired: MongoDbPropOpts | boolean = {}
 ): PropertyDecorator {
   return (target, propKey) => {
     const type = typeof typeOrRequiredOrOpts === 'boolean' ? null : getPropBsonType(typeOrRequiredOrOpts)

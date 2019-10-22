@@ -37,7 +37,7 @@ export class MongoDbProvider {
     return this._collections[meta.name];
   }
 
-  async validate(type: { new () : any }, data: object): Promise<ErrorObject[] | null> {
+  async validate<T>(type: { new () : any }, data: T): Promise<ErrorObject[] | null> {
     const meta = Reflect.getMetadata(SCHEMA_METADATA_KEY, type) as MongoDbSchemaMeta
     if (!meta) throw new TypeError('cannot retrieve meta')
     if (!this._validator.getSchema(meta.name)) throw new TypeError('cannot retrieve schema name')
