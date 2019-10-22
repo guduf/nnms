@@ -61,7 +61,7 @@ export async function buildModuleMap(
       return acc
     }, {})
     console.log(JSON.stringify(map))
-`
+  `
   const {stdout} = await p(exec)(`node -e "${script}"`, {cwd})
   return JSON.parse(stdout)
 }

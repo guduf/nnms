@@ -45,6 +45,10 @@ export class Log<T extends LogData = LogData> {
     input: Pick<Log, 'level' | 'code' | 'tags' | 'metrics' | 'data'>
   ): Log<T> {
     if (!Log._validator) Log._validator = new Ajv().compile(LOG_SCHEMA)
+    if (typeof input.data === 'object' && !Object.keys(input.data).length) {
+      input = {...input}
+      delete (input as { data: {}}).data
+    }
     const valid = Log._validator(input)
     if (!valid) {
       console.error(Log._validator.errors)
