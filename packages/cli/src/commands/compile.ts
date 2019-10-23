@@ -33,7 +33,7 @@ export const COMPILE_COMMAND: Command<{ path?: string }> = {
   }
 }
 
-const NODE_BUILTIN = ['buffer', 'cluster', 'crypto', 'events', 'fs', 'http', 'net', 'path', 'querystring', 'querystring', 'stream', 'tty', 'url', 'util', 'zlib']
+const NODE_BUILTIN = ['buffer', 'cluster', 'crypto', 'dns', 'events', 'fs', 'http', 'https', 'module', 'net', 'os', 'path', 'querystring', 'querystring', 'stream', 'tls', 'tty', 'url', 'util', 'zlib']
 
 function buildTypescriptPlugin(config: Config): Plugin {
   return rollupTypescript({
@@ -51,13 +51,14 @@ function buildTypescriptPlugin(config: Config): Plugin {
 }
 
 export async function compile(config: Config, resolveModules = false): Promise<void> {
+  console.log(config.externals)
   const inputOpts: InputOptions = {
     input: config.sources,
     plugins: [
       buildTypescriptPlugin(config),
-      ...(resolveModules ? [resolve({preferBuiltins: true, dedupe: ['typedi']}), commonjs(), json() as Plugin] : [])
+      ...(resolveModules ? [resolve({preferBuiltins: true, dedupe: ['typedi', 'mongodb']}), commonjs(), json() as Plugin] : [])
     ],
-    external: [...NODE_BUILTIN, 'nnms', 'typedi']
+    external: [...NODE_BUILTIN, 'nnms', 'typedi', ...config.externals]
   }
   console.log(`🛠  bundle ${config.sources.map(src => `'${src}'`).join(', ')}`)
   const bundle = await rollup(inputOpts)

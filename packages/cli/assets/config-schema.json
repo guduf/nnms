@@ -25,7 +25,7 @@
     },
     "remotePort": {
       "type": "number",
-      "description": "The registred port used by the log socker server.",
+      "description": "registred port used by the log socker server.",
       "minimum": 1024,
       "maximum": 49151,
       "default": 6390
@@ -36,13 +36,18 @@
     },
     "tsConfig": {
       "type": "string",
-      "description": "The file path of the typescript file exporting modules.",
+      "description": "file path of the typescript file exporting modules.",
       "default": "./tsconfig.json"
     },
     "root": {
       "type": "string",
-      "description": "The directory path used to resolve relative paths.",
+      "description": "directory path used to resolve relative paths.",
       "default": "."
+    },
+    "externals": {
+      "type": "array",
+      "description": "modules that should not be included in the bundle",
+      "default": []
     }
   }
 }

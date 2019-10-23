@@ -1,6 +1,6 @@
 import 'reflect-metadata'
 
-import { ObjectId, Decimal128 } from 'mongodb'
+import { ObjectId, Decimal128 } from 'bson'
 import Container from 'typedi'
 
 import { MongoDbCollection as _MongoDbCollection, MongoDbCollectionImpl } from './_mongodb_collection'
@@ -93,7 +93,7 @@ export function MongoDbProp(
     if (typeof propKey === 'symbol') return
     const bsonType = meta.bsonType || reflectBsonType(target, propKey)
     if (!bsonType) throw new Error(
-      `invalid bson type for property '${propKey}' of class (${target})`
+      `invalid bson type for property '${propKey}' of class ${target}`
     )
     const props = (
       Reflect.getMetadata(PROPS_META_KEY, target) || {}

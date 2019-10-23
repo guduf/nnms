@@ -3,3 +3,5 @@ env:
   mongodb:
     default:
       database: nnms-examples-todos
+externals:
+  - nnms-http

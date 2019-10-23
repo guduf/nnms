@@ -19,6 +19,7 @@ export interface Config {
   tsConfig: string
   remotePort: number
   root: string
+  externals: string[]
 }
 
 const DEFAULT_CONFIG: Config = {
@@ -29,7 +30,8 @@ const DEFAULT_CONFIG: Config = {
   dist: './dist',
   tsConfig: './tsconfig.json',
   remotePort: 6390,
-  root: '.'
+  root: '.',
+  externals: []
 }
 
 export interface JsonResourceMeta {
@@ -133,7 +135,8 @@ export async function loadConfig(configPath = ''): Promise<Config> {
     ),
     dist: pathBuilder(config.dist || DEFAULT_CONFIG.dist),
     tsConfig: pathBuilder(config.tsConfig || DEFAULT_CONFIG.tsConfig),
-    remotePort: DEFAULT_CONFIG.remotePort
+    remotePort: DEFAULT_CONFIG.remotePort,
+    externals: config.externals || []
   }
   Object.freeze(computed)
   const schema = await p(readFile)(join(__dirname, '../assets/config-schema.json'))

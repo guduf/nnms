@@ -11,7 +11,7 @@ import Command from '../command'
 import { loadConfig, getNNMSVersion } from '../shared'
 
 const DEFAULT_BUILDER_IMAGE = 'guduf/nnms'
-const DEFAULT_RUNNER_IMAGE_TAG = 'carbon:alpine'
+const DEFAULT_RUNNER_IMAGE_TAG = 'node:carbon-alpine'
 
 export const BUILD_COMMAND: Command<{ path?: string, tag?: string, builder?: string, runner?: string }> = {
   schema: 'build [file] [options]',
@@ -41,11 +41,13 @@ export const BUILD_COMMAND: Command<{ path?: string, tag?: string, builder?: str
   ),
   cmd: async cmd => {
     const config = await loadConfig(cmd.path)
+    const nodeExternals = ['nnms', 'typedi', ...config.externals]
     const id = await buildImage({
       context: config.root,
       appTag: cmd.tag || config.app,
       builderImage: cmd.builder || `${DEFAULT_BUILDER_IMAGE}:${getNNMSVersion()}`,
-      runnerImage: cmd.runner || DEFAULT_RUNNER_IMAGE_TAG
+      runnerImage: cmd.runner || DEFAULT_RUNNER_IMAGE_TAG,
+      nodeExternals
     })
     console.log({id})
   }
@@ -56,10 +58,11 @@ export interface BuildImageOpts {
   appTag: string
   builderImage: string
   runnerImage: string
+  nodeExternals: string[]
 }
 
 export async function buildImage(
-  {context, appTag, builderImage, runnerImage}: BuildImageOpts
+  {context, appTag, builderImage, runnerImage, nodeExternals}: BuildImageOpts
 ): Promise<string> {
   const dockerFile = join(__dirname, '../assets/Dockerfile')
   await p(access)(dockerFile)
@@ -75,6 +78,7 @@ export async function buildImage(
       '--file', dockerFile,
       '--build-arg', `BUILDER_IMAGE=${builderImage}`,
       '--build-arg', `RUNNER_IMAGE=${runnerImage}`,
+      '--build-arg', `NODE_EXTERNALS="${nodeExternals.join(' ')}"`,
     ]
   )
   let imageId = ''
