@@ -3,7 +3,6 @@
 **/node_modules
 
 docs/*
-examples
 dist/*
 tmp/*
 Dockerfile

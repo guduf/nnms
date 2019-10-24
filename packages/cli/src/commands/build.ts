@@ -78,7 +78,7 @@ export async function buildImage(
       '--file', dockerFile,
       '--build-arg', `BUILDER_IMAGE=${builderImage}`,
       '--build-arg', `RUNNER_IMAGE=${runnerImage}`,
-      '--build-arg', `NODE_EXTERNALS="${nodeExternals.join(' ')}"`,
+      '--build-arg', `NODE_EXTERNALS=${nodeExternals.join(' ')}`,
     ]
   )
   let imageId = ''
