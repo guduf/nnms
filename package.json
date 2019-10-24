@@ -1,6 +1,6 @@
 {
   "name": "nnms-repo",
-  "version": "0.21.0",
+  "version": "0.22.0",
   "description": "N&M's - NodeJS framework for micro services",
   "scripts": {
     "dev": "node ./scripts/dev.js",
@@ -77,6 +77,7 @@
     "rollup-plugin-typescript2": "^0.22.0",
     "rxjs": "^6.5.2",
     "semver-regex": "^3.1.0",
+    "serialize-error": "^5.0.0",
     "shortid": "^2.2.15",
     "ts-jest": "^24.0",
     "typedi": "^0.8.0",

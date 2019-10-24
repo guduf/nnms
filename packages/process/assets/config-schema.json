@@ -49,5 +49,6 @@
       "description": "modules that should not be included in the bundle",
       "default": []
     }
-  }
+  },
+  "additionalProperties": true
 }

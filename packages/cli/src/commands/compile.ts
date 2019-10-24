@@ -9,7 +9,7 @@ import { promisify as p } from 'util'
 import { Argv } from 'yargs'
 
 import Command from '../command'
-import { loadConfig, Config } from '../shared'
+import { loadConfig, Config } from 'nnms-process'
 
 export const COMPILE_COMMAND: Command<{ path?: string }> = {
   schema: 'compile',

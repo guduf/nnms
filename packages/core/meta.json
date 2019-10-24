@@ -1,5 +1,14 @@
 {
   "$schema": "../metaschema.json",
   "name": "core",
-  "externals": ["ajv", "bson", "dotenv", "reflect-metadata", "rxjs", "shortid", "typedi"]
+  "externals": [
+    "ajv",
+    "bson",
+    "dotenv",
+    "reflect-metadata",
+    "rxjs",
+    "serialize-error",
+    "shortid",
+    "typedi"
+  ]
 }

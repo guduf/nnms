@@ -1,9 +1,9 @@
 import { Record as ImmutableRecord, Map, Stack, RecordOf } from 'immutable'
 import { map, shareReplay, share } from 'rxjs/operators'
 import { BehaviorSubject, Observable, Subscription } from 'rxjs'
+import { JsonObject } from 'type-fest'
 
 import { Log, LogMetricMutation, applyMetricMutation, LogMetricValue } from 'nnms'
-import { JsonObject } from 'type-fest'
 
 const LOG_RECORD_KEYS = ['id', 'code', 'level', 'data', 'date', 'tags'] as const
 

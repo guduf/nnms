@@ -1,6 +1,7 @@
 import Container from 'typedi'
 
 import { PREFIX, ApplicationContext, RESOURCE_CONTEXT_TOKEN, ResourceMeta } from './common'
+import { Crash } from './error'
 import { Event } from './event'
 import Environment from './environment'
 import { Logger, LogTags } from './log'
@@ -54,25 +55,29 @@ export function bootstrap(...mods: Function[]): Observable<Event> {
     logger
   }
   setTimeout(async () => {
-    ctx.logger.info('APPLICATION_BOOTSTRAP')
-    if (Container.has(ApplicationContext as any)) {
-      throw new Error('global container has another ApplicationContext')
+    try {
+      ctx.logger.info('APPLICATION_BOOTSTRAP')
+      if (Container.has(ApplicationContext as any)) {
+        throw new Error('global container has another ApplicationContext')
+      }
+      Container.set(RESOURCE_CONTEXT_TOKEN, ctx)
+      const modMetas = mods.reduce((acc, modType) => {
+        const modMeta = Reflect.getMetadata(`${PREFIX}:module`, modType)
+        if (!(modMeta instanceof ModuleMeta)) throw new Error('invalid module')
+        return acc.includes(modMeta) ? acc : [...acc, modMeta]
+      }, [] as ModuleMeta[])
+      const provMetas = extractProviderInjections(...modMetas)
+      await bootstrapProviders(...provMetas)
+      await Promise.all(modMetas.map(mod => mod.bootstrap()))
+      ctx.logger.info('APPLICATION_READY', {
+        providers: provMetas.map(({name}) => name),
+        modules: modMetas.reduce((acc, {name, plugins}) => (
+          {...acc, [name]: plugins.map(plugin => plugin.name)}
+        ), {})
+      })
+    } catch (err) {
+      events.next(Crash.create(err).toEvent())
     }
-    Container.set(RESOURCE_CONTEXT_TOKEN, ctx)
-    const modMetas = mods.reduce((acc, modType) => {
-      const modMeta = Reflect.getMetadata(`${PREFIX}:module`, modType)
-      if (!(modMeta instanceof ModuleMeta)) throw new Error('invalid module')
-      return acc.includes(modMeta) ? acc : [...acc, modMeta]
-    }, [] as ModuleMeta[])
-    const provMetas = extractProviderInjections(...modMetas)
-    await bootstrapProviders(...provMetas)
-    await Promise.all(modMetas.map(mod => mod.bootstrap()))
-    ctx.logger.info('APPLICATION_READY', {
-      providers: provMetas.map(({name}) => name),
-      modules: modMetas.reduce((acc, {name, plugins}) => (
-        {...acc, [name]: plugins.map(plugin => plugin.name)}
-      ), {})
-    })
   })
-  return events
+  return events.asObservable()
 }

@@ -27,14 +27,15 @@ jobs:
       - export CONTAINER_ID=$(docker run -d guduf/nnms:$NNMS_VERSION)
       - if [ -z ${CONTAINER_ID} ]; then travis_terminate 1; fi
       - docker cp $CONTAINER_ID:/opt/nnms/dist ./dist || travis_terminate 1
-      - git tag $NNMS_VERSION
-      - npm publish ./dist/nnms-$NNMS_VERSION.tgz || travis_terminate 1
-      - npm publish ./dist/nnms-cli-$NNMS_VERSION.tgz || travis_terminate 1
-      - npm publish ./dist/nnms-http-$NNMS_VERSION.tgz || travis_terminate 1
-      - npm publish ./dist/nnms-mongodb-$NNMS_VERSION.tgz || travis_terminate 1
-      - npm publish ./dist/nnms-nats-$NNMS_VERSION.tgz || travis_terminate 1
+      - git tag $NNMS_VERSION || travis_terminate 1
+      - npm publish ./dist/nnms-$NNMS_VERSION.tgz
+      - npm publish ./dist/nnms-process-$NNMS_VERSION.tgz
+      - npm publish ./dist/nnms-cli-$NNMS_VERSION.tgz
+      - npm publish ./dist/nnms-http-$NNMS_VERSION.tgz
+      - npm publish ./dist/nnms-mongodb-$NNMS_VERSION.tgz
+      - npm publish ./dist/nnms-nats-$NNMS_VERSION.tgz
       - docker push guduf/nnms:$NNMS_VERSION
-      - git push --tags || travis_terminate 1
+      - git push --tags
 env:
   global:
   - secure: RawXfmzHY21l8X6DLrxowk9C4ngWIaOZAcFBRhhzNGzt1hFb8ZHoVVyDrLEMHtKcXvfJEAo0xUBT+JiIhvR97BVMxF2KcUOZkzpVj0KPmfDAU3RIcrpG/YEv06bLgx+mrWZgovCoSsmJbK1Iy2VXU0SbHrIpIfpYRouRefKr0oYMWwbmaW2gIM42L6rU4iMYXhvcBkS8h7hk4COHysQ6HIhUBEKrW8X9mYmSFLLXy/yzxh9k/Lc76Ypj+7RLJmbtlSZIQpbkpbd1T0eMqGACDSg0VZiLu1OkmLXsMDazUaAC7nSAAYHEvlX2DGfs4bpO1nU3lAoD0EQmzNRTaYWD4DBa6P2NckY9rNJ6NJT9oVYARymwkvxHbg/ZGP92JiTIoFnUiUFKoOp6rd+3vpq2gscjRN+nlhXlO9vIQN8Mxn/EB+T+hVQTlpuhPWmp7IjLMbeQlzeBaMwXMZwHko8hrRTfRWiDef/P04AxD6TadeQSxOBvrhsDYulObpTNs/v8xZoIyorA8SjsmYhLoww9e6qAUUHlfsfJqZX28yOqyQx7mTqwGotJwTuE9uMLhNmoXwmJEBZ+mGaHCpeQWZ2fSjljqDtTiyozk+aSdji+/bpTGY0wLBbuTlF9DX7AlbYUU2i2ym9jgw7ebHypWPZnXS38AAdoi6TRve9gLD8z2QU=

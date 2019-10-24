@@ -8,7 +8,8 @@ import { merge } from 'rxjs'
 import { Argv } from 'yargs'
 
 import Command from '../command'
-import { loadConfig, getNNMSVersion } from '../shared'
+import { loadConfig } from 'nnms-process'
+import { getNNMSVersion } from 'src/shared'
 
 const DEFAULT_BUILDER_IMAGE = 'guduf/nnms'
 const DEFAULT_RUNNER_IMAGE_TAG = 'node:carbon-alpine'

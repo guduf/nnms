@@ -1,0 +1,6 @@
+{
+  "$schema": "../metaschema.json",
+  "name": "process",
+  "internals": ["core"],
+  "externals": ["rx", "ws"]
+}

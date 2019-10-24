@@ -12,11 +12,11 @@
     "nnms": "nnms"
   },
   "devDependencies": {
-    "nnms-cli": "^0.19.0",
+    "nnms-cli": "file:../../dist/nnms-cli-0.21.0.tgz",
     "typescript": "^3.5.0"
   },
   "dependencies": {
-    "nnms": "^0.19.0",
-    "nnms-http": "^0.19.0"
+    "nnms": "file:../../dist/nnms-0.21.0.tgz",
+    "nnms-http": "file:../../dist/http-0.21.0.tgz"
   }
 }

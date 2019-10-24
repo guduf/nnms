@@ -1,7 +1,7 @@
 import { Argv, showHelp } from 'yargs'
 
 import Command from '../command'
-import LogFormat from '../log_format'
+import { LogFormat } from 'nnms-process'
 import { LogStoreRemote } from '../log_store_remote'
 
 export const REMOTE_COMMAND: Command<{ url: string }> = {

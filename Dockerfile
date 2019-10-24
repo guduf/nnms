@@ -12,6 +12,8 @@ COPY    ./packages/mongodb ./packages/mongodb
 RUN     npm run build -- mongodb --install=save
 COPY    ./packages/nats ./packages/nats
 RUN     npm run build -- nats --install=save
+COPY    ./packages/process ./packages/process
+RUN     npm run build -- process --install=save
 COPY    ./packages/cli ./packages/cli
 RUN     npm run build -- cli --install=save
 WORKDIR /opt/app
