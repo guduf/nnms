@@ -2,5 +2,5 @@
   "$schema": "../metaschema.json",
   "name": "process",
   "internals": ["core"],
-  "externals": ["rx", "ws"]
+  "externals": ["ajv", "chalk", "glob", "js-yaml", "rx", "ws"]
 }

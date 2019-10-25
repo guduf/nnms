@@ -45,10 +45,7 @@ export class LogFormat {
     )
   }
 
-  private _getTagsPrefix(
-    tags: LogTags,
-    format = 'src' as  'full' | 'src'
-  ): string {
+  private _getTagsPrefix(tags: LogTags, format = 'src' as  'full' | 'src'): string {
     const text = (
       format === 'src' ?
         `${tags.src}:${tags[tags.src]}` :
@@ -84,7 +81,7 @@ export class LogFormat {
     return line
   }
 
-  _getDataLines(color: Chalk, data: LogData): string[] {
+  private _getDataLines(color: Chalk, data: LogData): string[] {
     if (!Object.keys(data).length) return []
     return this._deserializeYaml(data).split(/\n/g).map((line, i, lines) => (
       i === lines.length - 1 ? color('▲') : `${color('|')} ${line}`

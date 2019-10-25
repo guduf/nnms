@@ -34,6 +34,15 @@ export class Event {
     })
   }
 
+  static serialize(
+    type: EventInput['type'],
+    data?: EventInput['data'],
+    timestamp?: EventInput['timestamp'],
+    id?: EventInput['id']
+  ): Buffer {
+    return Event.create({type, data, id, timestamp}).serialize()
+  }
+
   static deserialize(buffer: Buffer): Event { return new Event(deserialize(buffer)) }
 
   private constructor(
@@ -43,7 +52,7 @@ export class Event {
     if (!EVENT_TYPE_PATTERN.test(_value.e)) throw new TypeError('type not matching EVENT_TYPE_PATTERN')
     if (!(_value.d instanceof Binary)) throw new TypeError('data not instance of Binary')
     if (_value.d.length() > EVENT_DATA_MAX_SIZE) throw new TypeError('data exceeds EVENT_DATA_MAX_SIZE')
-    if (!(_value.t > 0 && _value.t < 1000)) throw new TypeError('time is not between 0 and 1000 excluded')
+    if (!(_value.t >= 0 && _value.t < 1000)) throw new TypeError('time is not between 0 and 1000 excluded')
     if (_value.d.length() > EVENT_DATA_MAX_SIZE) throw new TypeError('data exceeds EVENT_DATA_MAX_SIZE')
   }
 

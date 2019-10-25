@@ -78,6 +78,8 @@ export class Log<T extends LogData = LogData> {
   get data(): T | undefined { return this._value.d as T | undefined }
   get metrics(): Record<string, LogMetricMutation> | undefined { return this._value.m }
 
+  serialize(): Buffer { return this.toEvent().serialize() }
+
   toEvent(): Event {
     return Event.create({
       type: 'LOG',

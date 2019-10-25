@@ -16,22 +16,27 @@ export class Crash {
     return new Crash(e.id, JSON.parse(e.data.toString()))
   }
 
-  static serialize(catched: Error): Buffer {
-    return Crash.create(catched).toEvent().serialize()
-  }
+  static serialize(catched: Error): Buffer { return Crash.create(catched).serialize() }
 
   private constructor(
     readonly id: ObjectId,
     private readonly _value: ErrorValue
   ) { }
 
-  get error(): Error {
-    return deserializeError(this._value.e)
-  }
+  get code(): string | null { return this._value.e.code || null }
 
-  get timestamp(): Date {
-    return this.id.getTimestamp()
+  get error(): Error { return deserializeError(this._value.e) }
+
+  get name(): string | null { return this._value.e.name || null }
+
+  get message(): string {
+    return this._value.e.message || this._value.e.name || this._value.e.code || 'no error message'
   }
+  get timestamp(): Date { return this.id.getTimestamp() }
+
+  get stack(): string | null { return this._value.e.stack || null }
+
+  serialize(): Buffer { return this.toEvent().serialize() }
 
   toEvent(): Event {
     return Event.create({

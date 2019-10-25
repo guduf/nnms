@@ -1,5 +1,5 @@
 import { connect, NatsError, REQ_TIMEOUT } from 'nats'
-import { ProviderRef, ProviderContext, ErrorWithCatch } from 'nnms'
+import { ProviderRef, ProviderContext } from 'nnms'
 import { Observable, merge, fromEvent, throwError, Subject, defer } from 'rxjs'
 import { mergeMap, first, map, retry } from 'rxjs/operators'
 
@@ -44,7 +44,8 @@ export class NatsProvider {
     const sub = new Subject<R>()
     this._client.request(subject, body, (res: R | NatsError) => {
       if (res instanceof NatsError) {
-        const err = new ErrorWithCatch(`Request failed '${subject}': ${res.message}`, res.chainedError)
+        // TODO handle nats error
+        const err = new Error(`Request failed '${subject}': ${res.message}`)
         this._ctx.logger.error('REQUEST_MANY', err)
         sub.error(err)
         return sub.complete()

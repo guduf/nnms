@@ -1,7 +1,7 @@
 import bodyParser from 'body-parser'
 import express, { Express, Handler, IRouterMatcher, Request, Response } from 'express'
 
-import { PluginRef, PluginContext, pluginMethodDecorator, ErrorWithCatch } from 'nnms'
+import { PluginRef, PluginContext, pluginMethodDecorator } from 'nnms'
 
 import { HttpProvider } from './provider'
 
@@ -110,12 +110,14 @@ export class HttpPlugin {
       'none': (_, __, next) => next()
     }
     if (methods.before) try { methods.before(app) } catch (catched) {
-      const err = new ErrorWithCatch('Failed to execute before http routes hook', catched)
+      // TODO log catched error
+      const err = new Error('Failed to execute before http routes hook')
       this._ctx.logger.error('BEFORE_HOOK', err)
     }
     methods.routes.forEach(method => this._registerRoute(routeMatchers, bodyParsers, method))
     if (methods.after) try { methods.after(app) } catch(catched) {
-      const err = new ErrorWithCatch('Failed to execute after http routes hook', catched)
+      // TODO log catched error
+      const err = new Error('Failed to execute after http routes hook')
       this._ctx.logger.error('AFTER_HOOK', err)
     }
     this.init = _http.startServer(this._ctx.moduleMeta.name, this._ctx.vars.HTTP_PORT, app)
