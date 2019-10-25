@@ -1,0 +1,14 @@
+{
+  "$schema": "../metaschema.json",
+  "name": "common",
+  "internals": ["core"],
+  "externals": [
+    "ajv-bsontype",
+    "ajv",
+    "body-parser",
+    "express",
+    "mongodb",
+    "reflect-metadata",
+    "typedi"
+  ]
+}

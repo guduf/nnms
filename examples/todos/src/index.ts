@@ -1,5 +1,5 @@
 import { ModuleRef, ModuleContext } from 'nnms'
-import { HttpRoute, HttpPlugin } from 'nnms-http'
+import { HttpRoute, HttpPlugin } from 'nnms-common'
 
 import TodoProvider, { Todo } from './todo'
 import { JsonArray } from 'type-fest'

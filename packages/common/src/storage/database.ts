@@ -1,20 +1,19 @@
+import Ajv, { Ajv as Validator, ErrorObject } from 'ajv'
+import applyBsonTypes from 'ajv-bsontype'
 import { connect, MongoClient, Collection, MongoError } from 'mongodb'
 import { ProviderRef, ProviderContext } from 'nnms'
 
-import { SCHEMA_METADATA_KEY, MongoDbSchemaMeta } from './mongodb_meta'
-import { buildBsonSchema } from './mongodb_meta'
-import Ajv, { Ajv as Validator, ErrorObject } from 'ajv'
-import applyBsonTypes from 'ajv-bsontype'
+import { buildBsonSchema, DOC_METADATA_KEY, DocSchemaMeta } from './meta'
 
-const MONGODB_VARS = {
+const DATABASE_VARS = {
   URL: 'mongodb://localhost:27017',
   DATABASE: 'test'
 }
 
-@ProviderRef('mongodb', MONGODB_VARS)
-export class MongoDbProvider {
+@ProviderRef('database', DATABASE_VARS)
+export class Database {
   constructor(
-    private readonly _ctx: ProviderContext<typeof MONGODB_VARS>
+    private readonly _ctx: ProviderContext<typeof DATABASE_VARS>
   ) {
     const validator = new Ajv()
     applyBsonTypes(validator)
@@ -28,7 +27,7 @@ export class MongoDbProvider {
   readonly init = this._init()
 
   async connect<T>(type: { new (): T }): Promise<Collection<T>> {
-    const meta = Reflect.getMetadata(SCHEMA_METADATA_KEY, type) as MongoDbSchemaMeta
+    const meta = Reflect.getMetadata(DOC_METADATA_KEY, type) as DocSchemaMeta
     if (!this._collections[meta.name]) try {
       this._collections[meta.name] = this._load(meta)
     } catch (err) {
@@ -38,7 +37,7 @@ export class MongoDbProvider {
   }
 
   async validate<T>(type: { new () : any }, data: T): Promise<ErrorObject[] | null> {
-    const meta = Reflect.getMetadata(SCHEMA_METADATA_KEY, type) as MongoDbSchemaMeta
+    const meta = Reflect.getMetadata(DOC_METADATA_KEY, type) as DocSchemaMeta
     if (!meta) throw new TypeError('cannot retrieve meta')
     if (!this._validator.getSchema(meta.name)) throw new TypeError('cannot retrieve schema name')
     try {
@@ -49,7 +48,7 @@ export class MongoDbProvider {
     return null
   }
 
-  private async _load(meta: MongoDbSchemaMeta): Promise<Collection> {
+  private async _load(meta: DocSchemaMeta): Promise<Collection> {
     await this.init
     this._ctx.logger.metrics('load collection', {
       collections: {$insert: [{name: meta.name, loaded: 'pending'}]}
@@ -91,5 +90,3 @@ export class MongoDbProvider {
     })
   }
 }
-
-export default MongoDbProvider

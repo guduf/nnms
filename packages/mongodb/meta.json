@@ -1,6 +1,0 @@
-{
-  "$schema": "../metaschema.json",
-  "name": "mongodb",
-  "internals": ["core"],
-  "externals": ["ajv", "ajv-bsontype", "mongodb", "reflect-metadata", "typedi"]
-}

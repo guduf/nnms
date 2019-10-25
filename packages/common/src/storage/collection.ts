@@ -1,26 +1,17 @@
 import { ErrorObject } from 'ajv'
 import { Collection as NativeCollection, FilterQuery, UpdateQuery } from 'mongodb'
+import Container from 'typedi'
 
-import MongoDbProvider from './mongodb_provider'
+import { Database } from './database'
 
-export interface MongoDbCollection<T> {
-  readonly native: Promise<NativeCollection<T>>
-  find(query: FilterQuery<T>): Promise<T[]>
-  insert(...data: T[]): Promise<void>
-  upsert(query: FilterQuery<T>, data: T): Promise<void>
-  update(query: FilterQuery<T>, data: UpdateQuery<T>): Promise<void>
-  remove(query: FilterQuery<T>): Promise<void>
-  validate(data: T): Promise<ErrorObject[] | null>
-}
-
-export class MongoDbCollectionImpl<T> implements MongoDbCollection<T> {
+export class MongoDbCollection<T> {
   readonly native: Promise<NativeCollection<T>>
 
   constructor(
-    private readonly _mongodb: MongoDbProvider,
+    private readonly _db: Database,
     private readonly type: { new(): T }
   ) {
-    this.native = this._mongodb.connect(type)
+    this.native = this._db.connect(type)
   }
 
   async find(query: FilterQuery<T>): Promise<T[]> {
@@ -55,6 +46,16 @@ export class MongoDbCollectionImpl<T> implements MongoDbCollection<T> {
   }
 
   validate(data: T): Promise<ErrorObject[] | null> {
-    return this._mongodb.validate(this.type, data)
+    return this._db.validate(this.type, data)
   }
 }
+
+export function Collection<T>(type: { new (): T }): ParameterDecorator {
+  return (target, _, index): void => {
+    Container.registerHandler({object: target, index, value: () => {
+      if (!Container.has(Database)) throw new Error('missing database provider')
+      return new MongoDbCollection(Container.get(Database), type)
+    }})
+  }
+}
+
