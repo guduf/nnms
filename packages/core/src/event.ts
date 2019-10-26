@@ -2,7 +2,7 @@ import { Binary, deserialize, serialize, ObjectId } from 'bson'
 
 const EVENT_DATA_MAX_SIZE = 10e6
 
-export const EVENT_TYPE_PATTERN = /^[A-Z]{3}$/
+export const EVENT_TYPE_PATTERN = /^[A-Z]{3,6}$/
 
 export type EventValue = Readonly<{
   e: string

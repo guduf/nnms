@@ -1,11 +1,19 @@
+import shortid from 'shortid'
 import { LogMetricMutation } from './log_metric'
 import { Log, LogData, LogTags, LogLevel } from './log'
 
 export class Logger {
+  readonly id: string
+  readonly tags: LogTags
+
   constructor(
-    readonly tags: LogTags,
+    tags: { src: string } & Record<string, string>,
     private readonly _consumer: (e: Log) => void
-  ) { }
+  ) {
+    this.id = shortid()
+    if (!tags.src) throw new TypeError('missing src tag')
+    this.tags = {...tags, logger: this.id}
+  }
 
   catch(
     level: LogLevel,

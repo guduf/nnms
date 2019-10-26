@@ -40,7 +40,7 @@ export class Crash {
 
   toEvent(): Event {
     return Event.create({
-      type: 'CRA',
+      type: 'CRASH',
       id: this.id,
       data: JSON.stringify(this._value)
     })

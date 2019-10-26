@@ -20,6 +20,7 @@ export const LOG_LEVEL_PROPS: { [level in LogLevel]: { color: string} } = {
 }
 
 export interface LogTags {
+  logger: string
   src: string
   [tag: string]: string
 }
@@ -77,6 +78,12 @@ export class Log<T extends LogData = LogData> {
   get tags(): LogTags { return this._value.t }
   get data(): T | undefined { return this._value.d as T | undefined }
   get metrics(): Record<string, LogMetricMutation> | undefined { return this._value.m }
+
+  removeMetrics(): Log {
+    const value = {...this._value}
+    delete this._value.m
+    return new Log(this.id, this.date, value)
+  }
 
   serialize(): Buffer { return this.toEvent().serialize() }
 

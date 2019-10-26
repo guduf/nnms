@@ -33,8 +33,8 @@ export async function mapModules({dist, root}: Config): Promise<ModuleMap> {
     const bootstraper = fork(join(__dirname, '../assets/mapper.js'), [], {cwd: root})
     setImmediate(() => bootstraper.send(filepath))
     const [result] = (
-      await fromEvent(bootstraper, 'message').pipe(first()).toPromise()
-    ) as [{ type: Buffer, data: any }]
+      await fromEvent<[{ type: Buffer, data: any }]>(bootstraper, 'message').pipe(first()).toPromise()
+    )
     const e = Event.deserialize(Buffer.from(result.data))
     if (e.type === 'CRA') {
       const crash = Crash.fromEvent(e)

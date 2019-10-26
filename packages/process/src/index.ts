@@ -1,8 +1,7 @@
 export * from './config'
+export * from './container'
+export * from './crash_format'
+export * from './forked_process'
 export * from './log_format'
-export * from './module_map'
-export * from './run'
-
-import { runProcess } from './run'
-
-if (process.mainModule && process.mainModule.filename === __filename) runProcess().catch(console.error)
+export * from './log_record'
+export * from './log_store'

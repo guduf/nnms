@@ -2,5 +2,6 @@
   "$schema": "../metaschema.json",
   "name": "process",
   "internals": ["core"],
-  "externals": ["ajv", "chalk", "glob", "js-yaml", "rx", "ws"]
+  "externals": ["ajv", "chalk", "glob", "js-yaml", "rx", "ws"],
+  "bin": ["nnms-container"]
 }

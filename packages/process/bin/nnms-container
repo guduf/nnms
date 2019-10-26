@@ -1,0 +1,5 @@
+#!/usr/bin/env node
+require('../bundles/nnms-process.cjs.js').Container.run().catch(err => {
+  console.error('unexpected error', err)
+  process.exit(1)
+})

@@ -4,7 +4,7 @@ import { PREFIX, ApplicationContext, RESOURCE_CONTEXT_TOKEN, ResourceMeta } from
 import { Crash } from './error'
 import { Event } from './event'
 import Environment from './environment'
-import { Logger, LogTags } from './log'
+import { Logger } from './log'
 import { ModuleMeta } from './module_ref'
 import { ProviderMeta } from './provider'
 import { Observable, Subject } from 'rxjs'
@@ -45,7 +45,7 @@ export async function bootstrapProviders(...metas: ProviderMeta[]): Promise<void
 /* Creates a application and bootstraps all resources. */
 export function bootstrap(...mods: Function[]): Observable<Event> {
   const env = new Environment()
-  const tags: LogTags = {src: 'app', app: 'my-app'}
+  const tags = {src: 'app', app: 'my-app'}
   const events = new Subject<Event>()
   const logger = new Logger(tags, log => events.next(log.toEvent()))
   const ctx: ApplicationContext =  {
