@@ -29,11 +29,9 @@ jobs:
       - docker cp $CONTAINER_ID:/opt/nnms/dist ./dist || travis_terminate 1
       - git tag $NNMS_VERSION || travis_terminate 1
       - npm publish ./dist/nnms-$NNMS_VERSION.tgz
+      - npm publish ./dist/nnms-common-$NNMS_VERSION.tgz
       - npm publish ./dist/nnms-process-$NNMS_VERSION.tgz
       - npm publish ./dist/nnms-cli-$NNMS_VERSION.tgz
-      - npm publish ./dist/nnms-http-$NNMS_VERSION.tgz
-      - npm publish ./dist/nnms-mongodb-$NNMS_VERSION.tgz
-      - npm publish ./dist/nnms-nats-$NNMS_VERSION.tgz
       - docker push guduf/nnms:$NNMS_VERSION
       - git push --tags
 env:
