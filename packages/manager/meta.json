@@ -1,6 +1,0 @@
-{
-  "$schema": "../metaschema.json",
-  "name": "manager",
-  "internals": ["core", "common"],
-  "externals": ["ajv", "chalk", "glob", "js-yaml", "rx", "ws"]
-}

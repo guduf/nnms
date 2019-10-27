@@ -2,7 +2,14 @@ import chalk, { Chalk } from 'chalk'
 import moment from 'moment'
 import { safeDump } from 'js-yaml'
 
-import { LogTags, LogLevel, LogData, LOG_LEVEL_PROPS, Log } from 'nnms'
+import { LogTags, LogLevel, LogData, LogRecord } from 'nnms'
+
+export const LOG_LEVEL_PROPS: { [level in LogLevel]: { color: string} } = {
+  DBG: {color: 'white'},
+  ERR: {color: 'red'},
+  INF: {color: 'green'},
+  WAR: {color: 'yellow'}
+}
 
 export interface LogFormatConfig {
   printData?: boolean
@@ -18,7 +25,7 @@ export class LogFormat {
     private readonly _cfg: LogFormatConfig = {}
   ) { }
 
-  render(e: Log): string {
+  render(e: LogRecord): string {
     if (!e) return chalk.underline('INVALID_LOG')
     const color = chalk.keyword(LOG_LEVEL_PROPS[e.level].color)
     const message = (e.data || {message: null}).message

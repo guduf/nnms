@@ -1,6 +1,7 @@
 import BsonSchema, { BsonType, BSON_TYPES, reflectBsonType } from './bson'
 
 import 'reflect-metadata'
+import { JSONSchema4TypeName } from 'json-schema'
 
 export const PROPS_META_KEY = 'nnms:storage:props'
 
@@ -49,12 +50,14 @@ export function DocSchema(name: string): ClassDecorator {
 }
 
 export interface DocPropOpts {
+  type?: JSONSchema4TypeName
   bsonType?: BsonType
   required?: boolean
   items?: BsonSchema
   properties?: BsonSchema['properties']
   unique?: boolean
   enum?: any[]
+  pattern?: string
 }
 
 export function getPropBsonType(
@@ -84,7 +87,8 @@ export function DocProp(
       ...(typeof a2 === 'object' ? a2 : typeof a2 === 'boolean' ? {required: a2} : {})
     } as Partial<DocPropOpts>
     if (typeof propKey === 'symbol') return
-    const bsonType = meta.bsonType || reflectBsonType(target, propKey)
+    const bsonType = meta.bsonType || meta.type || reflectBsonType(target, propKey)
+    delete meta.type
     if (!bsonType) throw new Error(
       `invalid bson type for property '${propKey}' of class ${target}`
     )

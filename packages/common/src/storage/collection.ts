@@ -59,3 +59,5 @@ export function Collection<T>(type: { new (): T }): ParameterDecorator {
   }
 }
 
+export type Collection<T> = MongoDbCollection<T>
+

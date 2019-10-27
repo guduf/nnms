@@ -38,7 +38,7 @@ export class LogServer extends WebSocketServer {
   }
 }
 
-export function logSocket(url: string): Observable<Log> {
+export function LogSocket(url: string): Observable<Log> {
   return new Observable(observer => {
     const ws = new WebSocket(url)
     const eachEvent = (e: Event) => {

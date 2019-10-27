@@ -1,4 +1,4 @@
-const { Crash, Event, getResourceMeta } = require(process.cwd() + '/node_modules/nnms')
+const { Crash, Event, getResourceMeta } = require('nnms')
 
 if (typeof process.send !== 'function') {
   console.error('process.send is not a function')

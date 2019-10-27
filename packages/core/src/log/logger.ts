@@ -1,6 +1,7 @@
 import shortid from 'shortid'
 import { LogMetricMutation } from './log_metric'
-import { Log, LogData, LogTags, LogLevel } from './log'
+import { Log, LogData } from './log'
+import { LogTags, LogLevel } from './log_record'
 
 export class Logger {
   readonly id: string

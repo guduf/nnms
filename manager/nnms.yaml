@@ -1,0 +1,5 @@
+build: ./dist
+env:
+  mongodb:
+    default:
+      database: nnms-examples-todos

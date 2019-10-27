@@ -1,7 +1,7 @@
 {
-  "name": "nnms-examples-todos",
-  "version": "0.16.0",
-  "description": "Basic example of N&M's",
+  "name": "nnms-manager",
+  "version": "$NNMS_VERSION",
+  "description": "library to manage N&M's process",
   "license": "MIT",
   "repository": {
     "type": "git",

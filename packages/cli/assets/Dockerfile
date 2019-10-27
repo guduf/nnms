@@ -16,4 +16,4 @@ COPY    --from=builder /opt/nnms/dist /opt/nnms/dist
 COPY    --from=builder /opt/app/package*.json /opt/app/LICENSE* /opt/app/nnms.aot.json ./
 COPY    --from=builder /opt/app/dist ./dist
 RUN     npm install $NODE_EXTERNALS
-CMD     ./node_modules/bin/nnms-container
+CMD     ./node_modules/.bin/nnms-container

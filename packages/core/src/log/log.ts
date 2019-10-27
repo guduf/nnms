@@ -1,29 +1,14 @@
 import Ajv, { ValidateFunction } from 'ajv'
 import { ObjectId } from 'bson'
-import { JSONSchema4 as JsonSchema } from 'json-schema'
 import { distinctUntilChanged, filter, scan, shareReplay, startWith } from 'rxjs/operators'
 import { OperatorFunction } from 'rxjs'
-import { JsonObject } from 'type-fest'
+import { JsonObject, JsonValue } from 'type-fest'
 
 import { Event } from '../event'
 import { applyMetricMutation, LogMetricMutation, LogMetricValue, LOG_METRIC_MUTATION_SCHEMA } from './log_metric'
+import { LogTags, LogLevel, LOG_RECORD_SCHEMA, LogRecord } from './log_record'
 
-export const LOG_LEVELS = ['DBG', 'ERR', 'INF', 'WAR'] as const
 
-export type LogLevel = typeof LOG_LEVELS[number]
-
-export const LOG_LEVEL_PROPS: { [level in LogLevel]: { color: string} } = {
-  DBG: {color: 'white'},
-  ERR: {color: 'red'},
-  INF: {color: 'green'},
-  WAR: {color: 'yellow'}
-}
-
-export interface LogTags {
-  logger: string
-  src: string
-  [tag: string]: string
-}
 
 export type LogData = JsonObject & { msg?: string }
 
@@ -33,6 +18,19 @@ export interface LogValue {
   t: LogTags
   d?: LogData
   m?: Record<string, LogMetricMutation>
+}
+
+const LOG_SCHEMA = {
+  ...LOG_RECORD_SCHEMA,
+  properties: {
+    ...LOG_RECORD_SCHEMA.properties,
+    metrics: {
+      type: 'object',
+      patternProperties: {'^[\\w+]{2,32}$': LOG_METRIC_MUTATION_SCHEMA},
+      additionalProperties: false,
+      minProperties: 1
+    }
+  }
 }
 
 export class Log<T extends LogData = LogData> {
@@ -96,6 +94,17 @@ export class Log<T extends LogData = LogData> {
     })
   }
 
+  toRecord(): LogRecord & JsonValue {
+    return ({
+      id: this.id,
+      date: this.date,
+      level: this.level,
+      code: this.code,
+      tags: this.tags,
+      ...(this.data ? {data: this.data} : {})
+    } as LogRecord & JsonValue)
+  }
+
   toJson(): JsonObject {
     return {
       id: this.id.toHexString(),
@@ -109,30 +118,7 @@ export class Log<T extends LogData = LogData> {
   }
 }
 
-const LOG_SCHEMA: JsonSchema = {
-  type: 'object',
-  required: ['code', 'level', 'tags'],
-  properties: {
-    level: {type: 'string', enum: [...LOG_LEVELS]},
-    code: {type: 'string', pattern: '^\\*?[\\w-]{2,32}$'},
-    data: {type: 'object', minProperties: 1},
-    timestamp: {type: 'string', format: 'date-time'},
-    metrics: {
-      type: 'object',
-      patternProperties: {'^[\\w+]{2,32}$': LOG_METRIC_MUTATION_SCHEMA},
-      additionalProperties: false,
-      minProperties: 1
-    },
-    tags: {
-      properties: {src: {type: 'string', pattern: '^[\\w-]{2,6}$'}},
-      patternProperties: {'^[\\w-]{2,128}$': {type: 'string', minimum: 2, maximum: 128}},
-      minProperties: 2,
-      maxProperties: 64,
-      additionalProperties: false
-    }
-  },
-  additionalProperties: false
-}
+
 export function matchTags(target: LogTags, test: Partial<LogTags>, extraTags = false): boolean {
   const result = !Object.keys(test).find(tag => target[tag] !== test[tag])
   if (!result || !extraTags) return result

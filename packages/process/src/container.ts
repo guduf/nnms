@@ -27,7 +27,7 @@ export class Container {
   }
 
   static async run(): Promise<void> {
-    process.on('SIGINT', () => {console.log('SININT'), Container._exit()})
+    process.on('SIGINT', () => Container._exit())
     if (this._instance) throw new Error('instance already running')
     let cfg: Config
     try {
