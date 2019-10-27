@@ -12,13 +12,13 @@
     "nnms": "nnms"
   },
   "devDependencies": {
-    "nnms-cli": "file:../../dist/nnms-cli-0.22.0.tgz",
+    "nnms-cli": "0.21.0",
     "typescript": "^3.5.0"
   },
-  "dependencies": {
-    "nnms": "file:../../dist/nnms-0.22.0.tgz",
-    "nnms-common": "file:../../dist/nnms-common-0.22.0.tgz",
-    "nnms-http": "file:../../dist/http-0.21.0.tgz",
-    "nnms-process": "file:../../dist/nnms-process-0.22.0.tgz"
+  "optionalDependencies": {
+    "nnms": "0.21.0",
+    "nnms-common": "0.21.0",
+    "nnms-http": "0.21.0",
+    "nnms-process": "0.21.0"
   }
 }

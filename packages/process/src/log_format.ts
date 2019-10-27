@@ -2,7 +2,7 @@ import chalk, { Chalk } from 'chalk'
 import moment from 'moment'
 import { safeDump } from 'js-yaml'
 
-import { Log, LogTags, LogLevel, LogData, LOG_LEVEL_PROPS } from 'nnms'
+import { LogTags, LogLevel, LogData, LOG_LEVEL_PROPS, Log } from 'nnms'
 
 export interface LogFormatConfig {
   printData?: boolean

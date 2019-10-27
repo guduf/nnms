@@ -22,30 +22,32 @@ export interface ModuleInfo extends ResourceInfo {
   plugins: ResourceInfo[]
 }
 
-export type ModuleMap = Record<string, ModuleInfo>
+export interface FactoryConfig {
+  modules: Record<string, ModuleInfo>
+}
 
-export async function mapModules({dist, root}: Config): Promise<ModuleMap> {
+export async function runFactory({dist, root}: Config): Promise<FactoryConfig> {
   const crashFormat = new CrashFormat()
   const filepaths = await p(glob)(`${dist}/*.js`)
   if (!filepaths) throw new Error('❗️ no file matching pattern')
-  let map: ModuleMap = {}
+  let modules: Record<string, ModuleInfo> = {}
   for (const filepath of filepaths) {
-    const bootstraper = fork(join(__dirname, '../assets/mapper.js'), [], {cwd: root})
+    const bootstraper = fork(join(__dirname, '../assets/factory.js'), [], {cwd: root})
     setImmediate(() => bootstraper.send(filepath))
     const [result] = (
       await fromEvent<[{ type: Buffer, data: any }]>(bootstraper, 'message').pipe(first()).toPromise()
     )
     const e = Event.deserialize(Buffer.from(result.data))
-    if (e.type === 'CRA') {
+    if (e.type === 'CRASH') {
       const crash = Crash.fromEvent(e)
       console.error(crashFormat.render(crash))
-      console.error(`️️❗️ cannot load map for file '${filepath}'`)
+      console.error(`️️❗️ cannot load factory of file '${filepath}'`)
       continue
     }
     const resultMap = JSON.parse(e.data.toString())
     if (!Object.keys(result).length) continue
-    map = {...map, ...resultMap}
+    modules = {...modules, ...resultMap}
   }
-  if (!Object.keys(map).length) throw new Error('no module found')
-  return map
+  if (!Object.keys(modules).length) throw new Error('no module found')
+  return {modules}
 }

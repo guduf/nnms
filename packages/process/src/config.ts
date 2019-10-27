@@ -1,5 +1,4 @@
 import { safeLoad as loadYaml } from 'js-yaml'
-import { JsonObject } from 'type-fest'
 
 import { LogFormatConfig } from './log_format'
 import { join, dirname } from 'path'
@@ -9,23 +8,25 @@ import Ajv from 'ajv'
 
 export interface Config {
   app: string
-  env: JsonObject
-  logFormat: LogFormatConfig
-  sources: string[]
   dist: string
-  tsConfig: string
-  remotePort: number
   root: string
+  container: {
+    logFormat: LogFormatConfig | null
+    logServer: { host?: string, port?: number } | null
+  }
+  sources: string[]
+  tsConfig: string
   externals: string[]
 }
 const DEFAULT_CONFIG: Config = {
   app: '',
-  env: {},
-  logFormat: {},
+  container: {
+    logFormat: {},
+    logServer: {}
+  },
   sources: ['./src/index.ts'],
   dist: './dist',
   tsConfig: './tsconfig.json',
-  remotePort: 6390,
   root: '.',
   externals: []
 }
@@ -33,33 +34,34 @@ const DEFAULT_CONFIG: Config = {
 export async function loadConfig(configPath = ''): Promise<Config> {
   if (!configPath.startsWith('/')) configPath = join(process.cwd(), configPath)
   const isDirectory = await p(lstat)(configPath).then(stat => stat.isDirectory()).catch(() => false)
-  if (isDirectory) {
-    let yamlPath = join(configPath, './nnms.yaml')
-    if (await p(stat)(join(yamlPath)).then(() => true).catch(() => false)) configPath = yamlPath
-    else {
-      yamlPath = join(configPath, './nnms.yml')
-      if (await p(stat)(join(yamlPath)).then(() => true).catch(() => false)) configPath = yamlPath
-      else {
-        configPath = join(configPath, './nnms.json')
-        await p(stat)(configPath)
-      }
+  if (isDirectory) for (const suffix of ['aot.json', 'json', 'yaml', 'yml', null]) {
+    if (!suffix) throw new Error('cannot find any suffix in config directory')
+    if (await p(stat)(join(configPath, `./nnms.${suffix}`)).then(() => true).catch(() => false)) {
+      configPath = join(configPath, `./nnms.${suffix}`)
+      break
     }
   }
   console.log(`⚙️  load config '${configPath}'`)
-  const body = await p(readFile)(configPath, 'utf8')
-  if (!body) throw new Error(`failed to read config at path '${configPath}'`)
-  let config = null as Partial<Config> | null
+  let body = ''
   try {
-    config = /\.ya?ml/.test(configPath) ? await loadYaml(body) : JSON.parse(body)
+    body = await p(readFile)(configPath, 'utf8')
+  } catch (err) {
+    throw new Error(`cannot read config: ${err.message}`)
+  }
+  if (!body) throw new Error(`failed to read config at path '${configPath}'`)
+  let cfg = null as Partial<Config> | null
+  try {
+    cfg = /\.ya?ml/.test(configPath) ? await loadYaml(body) : JSON.parse(body)
   } catch (err) {
     console.error(err)
     throw new Error(`failed to parse config at path '${configPath}'`)
   }
-  if (!config) throw new Error('invalid config')
+  if (!cfg) throw new Error('invalid config')
+  if (/\.aot\.json/.test(configPath)) return cfg as Config
   const root = (
-    config.root && config.root.startsWith('/') ?
-      config.root :
-      join(dirname(configPath), config.root || DEFAULT_CONFIG.root)
+    cfg.root && cfg.root.startsWith('/') ?
+      cfg.root :
+      join(dirname(configPath), cfg.root || DEFAULT_CONFIG.root)
   )
   const pathBuilder = (filepath: string): string => {
     filepath = filepath.startsWith('/') ? filepath : join(root, filepath)
@@ -67,17 +69,18 @@ export async function loadConfig(configPath = ''): Promise<Config> {
   }
   const npmConfig = require(join(dirname(configPath), './package.json'))
   const computed: Config = {
-    root,
     app: npmConfig.name,
-    env: DEFAULT_CONFIG.env,
-    logFormat: DEFAULT_CONFIG.logFormat,
+    dist: pathBuilder(cfg.dist || DEFAULT_CONFIG.dist),
+    root,
+    container: {
+      ...DEFAULT_CONFIG.container,
+      ...(cfg.container || {})
+    },
     sources: (
-      (config.sources || DEFAULT_CONFIG.sources).map(src => pathBuilder(src))
+      (cfg.sources || DEFAULT_CONFIG.sources).map(src => pathBuilder(src))
     ),
-    dist: pathBuilder(config.dist || DEFAULT_CONFIG.dist),
-    tsConfig: pathBuilder(config.tsConfig || DEFAULT_CONFIG.tsConfig),
-    remotePort: DEFAULT_CONFIG.remotePort,
-    externals: config.externals || []
+    tsConfig: pathBuilder(cfg.tsConfig || DEFAULT_CONFIG.tsConfig),
+    externals: cfg.externals || DEFAULT_CONFIG.externals
   }
   Object.freeze(computed)
   const schema = await p(readFile)(join(__dirname, '../assets/config-schema.json'))

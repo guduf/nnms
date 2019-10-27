@@ -24,7 +24,7 @@ export class Logger {
     this.log({level, code, data, metrics: undefined})
   }
 
-  extend(tags: LogTags): Logger {
+  extend(tags: Omit<LogTags, 'logger'>): Logger {
     if (tags.src === this.tags.src) throw new Error(
       `logger cannot extend the same src '${tags.src}'`
     )

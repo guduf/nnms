@@ -29,7 +29,7 @@ export class ForkedProcess {
     return new Observable(observer => {
       console.log(`🚀  fork process with modules in ${paths.map(k => `'${k}'`).join(' ')} on dir '${this._cfg.root}'`)
       const runner = fork(
-        join(__dirname, '../assets/forked_process.js'),
+        join(__dirname, '../assets/process.js'),
         paths,
         {cwd: this._cfg.root}
       )

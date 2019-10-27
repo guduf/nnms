@@ -1,13 +1,12 @@
 {
   "$schema": "../metaschema.json",
   "name": "cli",
-  "internals": ["core"],
+  "internals": ["core", "process"],
   "externals": [
     "ajv",
     "chalk",
     "glob",
     "history",
-    "immutable",
     "ink-select-input",
     "ink-table",
     "ink",

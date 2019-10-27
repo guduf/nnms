@@ -2,7 +2,7 @@ import { writeFile } from 'fs'
 import { promisify as p } from 'util'
 
 import Command from '../command'
-import { loadConfig, Config, mapModules } from 'nnms-process'
+import { loadConfig, Config, runFactory } from 'nnms-process'
 import { compile } from './compile'
 import { link } from './link'
 
@@ -30,8 +30,7 @@ export const PACK_COMMAND: Command<{ path?: string, skipLink?: boolean }> = {
 export async function pack(config: Config, skipLink?: boolean): Promise<void> {
   if (!skipLink) await link(`${process.env['NNMS_PATH'] || '/opt/nnms'}/dist`, 'save')
   await compile(config, true)
-  console.log(`✏️  write '${config.dist}/nnms.pack.json'`)
-  const dist = await mapModules(config)
-  const packedConfig = {...config, dist}
-  await p(writeFile)(`${config.dist}/nnms.pack.json`, JSON.stringify(packedConfig, null, 2))
+  console.log(`✏️  write 'nnms.aot.json'`)
+  const packedConfig = {...config, $aot: await runFactory(config)}
+  await p(writeFile)(`nnms.aot.json`, JSON.stringify(packedConfig, null, 2))
 }

@@ -4,7 +4,6 @@ import Command from './command'
 import { COMPILE_COMMAND } from './commands/compile'
 import { LINK_COMMAND } from './commands/link'
 import { PACK_COMMAND } from './commands/pack'
-import { REMOTE_COMMAND } from './commands/remote'
 import { START_COMMAND } from './commands/start'
 
 const COMMANDS: Command<any>[] = [
@@ -12,8 +11,7 @@ const COMMANDS: Command<any>[] = [
   COMPILE_COMMAND,
   LINK_COMMAND,
   PACK_COMMAND,
-  START_COMMAND,
-  REMOTE_COMMAND
+  START_COMMAND
 ]
 
 export default function run(): void {

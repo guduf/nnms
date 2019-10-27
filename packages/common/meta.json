@@ -6,6 +6,7 @@
     "ajv-bsontype",
     "ajv",
     "body-parser",
+    "bson",
     "express",
     "mongodb",
     "reflect-metadata",

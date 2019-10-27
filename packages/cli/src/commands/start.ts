@@ -3,7 +3,7 @@ import { Argv } from 'yargs'
 import { Log, bootstrap, Crash } from 'nnms'
 
 import Command from '../command'
-import { LogFormat, loadConfig, mapModules } from 'nnms-process'
+import { LogFormat, loadConfig, runFactory } from 'nnms-process'
 
 export const START_COMMAND: Command<{ path?: string }> = {
   schema: 'start [options]',
@@ -19,7 +19,7 @@ export const START_COMMAND: Command<{ path?: string }> = {
   cmd: async cmd => {
     const format = new LogFormat()
     const cfg = await loadConfig(cmd.path)
-    const moduleMap = await mapModules(cfg)
+    const {modules: moduleMap} = await runFactory(cfg)
     const mods = Object.keys(moduleMap).map(key => {
       const [filepath, exportKey] = moduleMap[key].path.split('#')
       return require(filepath)[exportKey]
@@ -27,7 +27,7 @@ export const START_COMMAND: Command<{ path?: string }> = {
     const events = bootstrap(...mods)
     events.subscribe(e => {
       if (e.type === 'LOG') console.log(format.render(Log.fromEvent(e)))
-      if (e.type === 'CRA') console.error('CRASH:', Crash.fromEvent(e).toJson())
+      if (e.type === 'CRASH') console.error(Crash.fromEvent(e).toJson())
     })
   }
 }

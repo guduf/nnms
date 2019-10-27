@@ -15,7 +15,10 @@ process.on('message', filepath => {
     const modMeta = Reflect.getMetadata('nnms:module', source[exportKey])
     if (!modMeta) return acc
     if (modMeta && !(modMeta instanceof ModuleMeta)) {
-      process.send(Crash.serialize(new Error('module meta is not a instance of ModuleMeta')))
+      const proto = Object.getPrototypeOf(modMeta)
+      process.send(Crash.serialize(
+        new Error(`module meta is not a instance of ModuleMeta\n  expected: ${ModuleMeta.filepath}:${ModuleMeta.name}\n  found: ${proto.filepath}:${proto.name}`)
+      ))
       process.exit(1)
     }
     return {...acc, [modMeta.name]: {...modMeta, path: `${filepath}#${exportKey}`, }}

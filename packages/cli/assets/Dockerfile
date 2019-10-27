@@ -11,13 +11,9 @@ FROM    ${RUNNER_IMAGE}
 ARG     NODE_EXTERNALS
 WORKDIR /opt/app
 ENV     NODE_ENV production
-COPY    --from=builder \
-  /opt/app/package.json \
-  /opt/app/LICENSE* \
-  /opt/nnms/node_modules/nnms-cli/assets/nnms-prod \
-  ./
+COPY    --from=builder /opt/nnms/package*.json /opt/nnms/*.md /opt/nnms/
 COPY    --from=builder /opt/nnms/dist /opt/nnms/dist
-COPY    --from=builder /opt/app/dist /opt/app/dist
+COPY    --from=builder /opt/app/package*.json /opt/app/LICENSE* /opt/app/nnms.aot.json ./
+COPY    --from=builder /opt/app/dist ./dist
 RUN     npm install $NODE_EXTERNALS
-RUN     chmod +x nnms-prod
-CMD     ./nnms-prod
+CMD     ./node_modules/bin/nnms-container

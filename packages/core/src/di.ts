@@ -29,10 +29,12 @@ export function pluginParamDecorator(
   }
 }
 
+export type ResourceMetaType<TVars extends Record<string, string>, TOpts extends ResourceOpts<TVars> = ResourceOpts<TVars>> = { new (ref: Function, opts: TOpts): ResourceMeta<TVars> }
+
 /* Builds a decorator function for a specific kind and meta type. */
 export function buildResourceDecorator<TVars extends Record<string, string>, TOpts extends ResourceOpts<TVars> = ResourceOpts<TVars>>(
   kind: ResourceKind,
-  metaType: { new (ref: Function, opts: TOpts): ResourceMeta<TVars> }
+  metaType: ResourceMetaType<TVars, TOpts>
 ): (opts: TOpts) => ClassDecorator {
   return opts => {
     let providers = opts.providers || []
@@ -82,3 +84,16 @@ export const PluginRef = (name: string, vars: Record<string, string>, ...provide
 export const ModuleRef = (name: string, vars: Record<string, string>, ...pluginsAndProviders: Function[]) => (
   buildResourceDecorator('module', ModuleMeta)({name, vars, pluginsAndProviders})
 )
+
+export function getResourceMeta<T extends typeof ModuleMeta | typeof ProviderMeta | typeof PluginMeta>(
+  meta: T,
+  pluginName?: T extends typeof PluginMeta ? string : never
+): T extends { new (): infer X } ? X : never {
+  if (meta === PluginMeta && !pluginName) throw new Error('missing plugin name')
+  const name = meta === ModuleMeta ? 'module' : meta === ProviderMeta ? 'provider' : `plugin:${pluginName}`
+  const prefix = `${PREFIX}:${name}`
+  if (modMeta && !(modMeta instanceof ModuleMeta)) {
+    const proto = Object.getPrototypeOf(modMeta)
+    throw new Error(`module meta is not a instance of ModuleMeta\n  expected: ${ModuleMeta.filepath}:${ModuleMeta.name}\n  found: ${proto.filepath}:${proto.name}`)
+  }
+}
