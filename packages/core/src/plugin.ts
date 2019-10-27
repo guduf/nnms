@@ -38,11 +38,13 @@ export class PluginMeta<TVars extends Record<string, string> = {}> extends Resou
       ...acc,
       {prop, meta: methodMetas[prop], func: (moduleInstance as any)[prop].bind(moduleInstance)}
     ], [] as { prop: string, meta: unknown, func: (...args: any[]) => Promise<unknown> }[])
+    const plugTags = {src: 'plug', plug: `${modName}+${this.name}`}
     return {
       kind: 'plugin',
       name: `${modName}+${this.name}`,
       meta: this,
-      logger: modCtx.logger.extend({src: 'plug', plug: `${modName}+${this.name}`}),
+      crash: (err, tags) => modCtx.crash(err, {...plugTags, ...tags}),
+      logger: modCtx.logger.extend(plugTags),
       vars: modCtx.vars,
       moduleMeta: modCtx.meta,
       moduleMethods,

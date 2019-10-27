@@ -3,6 +3,7 @@ import { Collection, Database } from 'nnms-common'
 import { LogSocket } from 'nnms-process'
 
 import { LogRecord } from './schemas/log_record'
+import { MongoError } from 'mongodb'
 
 const LOG_REMOTE_VARS = {
   URL: 'ws://localhost:6390'
@@ -23,7 +24,19 @@ export class LogRemote {
     const logSocket = LogSocket(url)
     logSocket.subscribe(async (log: Log) => {
       if (log.level !== 'DBG') {
-        await this._logs.insert(log.toRecord() as LogRecord)
+        try {
+          await this._logs.insert(log.toRecord() as LogRecord)
+        } catch (err) {
+          if (err instanceof MongoError && err.code === 11000) {
+            this._ctx.logger.warn('INSERT_LOG', {
+              message: 'duplicate entry',
+              id: log.id.toHexString(),
+              url
+            })
+            return
+          }
+          return this._ctx.crash(err)
+        }
         this._ctx.logger.info('INSERT_LOG', {id: log.id.toHexString()})
       }
     })

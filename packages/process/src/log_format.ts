@@ -2,7 +2,7 @@ import chalk, { Chalk } from 'chalk'
 import moment from 'moment'
 import { safeDump } from 'js-yaml'
 
-import { LogTags, LogLevel, LogData, LogRecord } from 'nnms'
+import { LogTags, LogLevel, LogData, LogRecord, Crash } from 'nnms'
 
 export const LOG_LEVEL_PROPS: { [level in LogLevel]: { color: string} } = {
   DBG: {color: 'white'},
@@ -11,7 +11,14 @@ export const LOG_LEVEL_PROPS: { [level in LogLevel]: { color: string} } = {
   WAR: {color: 'yellow'}
 }
 
+export interface CrashFormatConfig {
+  border?: string
+  color?: string
+  hideStack?: boolean
+}
+
 export interface LogFormatConfig {
+  crash?: CrashFormatConfig
   printData?: boolean
   printDay?: boolean
   tags?: 'all' | 'src'
@@ -25,7 +32,30 @@ export class LogFormat {
     private readonly _cfg: LogFormatConfig = {}
   ) { }
 
-  render(e: LogRecord): string {
+  renderCrash(e: Crash): string {
+    const cfg = this._cfg.crash || {} as CrashFormatConfig
+    if (!(e instanceof Crash)) return chalk.underline('INVALID_CRASH')
+    const color = chalk.keyword(cfg.color || 'red')
+    const [msgHeader, ...msgLines] = e.message.split('\n')
+    const headerLine = [
+      this._getTimePrefix(moment(e.timestamp)),
+      color('CRASH'),
+      ...(e.tags ? [this._getTagsPrefix(e.tags as LogTags)] : []),
+      ...(e.code ? [color(this._getCode(e.code))] : []),
+      ...(e.name ? [color(e.name)] : []),
+      ...(![e.name, e.code].includes(msgHeader)? [color(msgHeader)] : [])
+    ].join(' ')
+    const stack = cfg.hideStack ? null : e.stack || null
+    if (!msgLines.length && !stack) return `${color(cfg.border || '►')} ${headerLine}\n`
+    const msgStack = msgLines.length ? msgLines.map(line => color(line)).join('\n') + '\n\n' : ''
+    return [
+      `${color('▼')} ${headerLine}`,
+      ...this._getStackLines(color, msgStack + stack || ''),
+      ''
+    ].join('\n')
+  }
+
+  renderLog(e: LogRecord): string {
     if (!e) return chalk.underline('INVALID_LOG')
     const color = chalk.keyword(LOG_LEVEL_PROPS[e.level].color)
     const message = (e.data || {message: null}).message
@@ -44,6 +74,16 @@ export class LogFormat {
     const dataLine = this._getDataLine(data, dataSpace)
     if (dataLine) return `${color('►')} ${headerLine}${dataLine}\n`
     return [`${color('▼')} ${headerLine}`, ...this._getDataLines(color, data), ''].join('\n')
+  }
+
+  private _getStackLines(color: Chalk, stack: string): string[] {
+    const border = this._cfg.crash && this._cfg.crash.border || ''
+    if (!stack) return []
+    return stack.split(/\n/g).map((line, i, lines) => (
+      i === lines.length - 1 ?
+        color(border || '▲') :
+        `${color(border || '|')} ${line}`
+    ))
   }
 
   private _getTimePrefix(moment: moment.Moment): string {

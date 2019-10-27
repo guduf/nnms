@@ -8,7 +8,6 @@
     "reflect-metadata",
     "rxjs",
     "serialize-error",
-    "shortid",
     "typedi"
   ]
 }

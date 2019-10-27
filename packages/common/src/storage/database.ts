@@ -71,7 +71,9 @@ export class Database {
     this._ctx.logger.info('LOAD_COLLECTION', {collection: meta.name}, {
       collections: {$index: 'name', $upsert: [{name: meta.name, loaded: true}]}
     })
-    return db.collection(meta.name)
+    const collection = db.collection(meta.name)
+    if (meta.indexes) await collection.createIndexes(meta.indexes)
+    return collection
   }
 
   private async _init(): Promise<void> {

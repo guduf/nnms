@@ -3,7 +3,6 @@ import { runFactory, FactoryConfig } from './run_factory'
 import { ForkedProcess } from './run_process'
 import { LogFormat } from './log_format'
 import { LogServer } from './log_server'
-import { CrashFormat } from './crash_format'
 import { Crash, Log } from 'nnms'
 import { mergeMap } from 'rxjs/operators'
 import { merge, Subscription, OperatorFunction, EMPTY } from 'rxjs'
@@ -11,12 +10,12 @@ import { Server as WsServer } from 'ws'
 
 export class Container {
   private static _instance: Container
+  private static _format = new LogFormat()
 
   private static _exit(catched?: Error | Crash | null): void {
     const crash = catched ? catched instanceof Crash ? catched : Crash.create(catched) : null
     if (crash) {
-      const crashFormat = new CrashFormat()
-      console.error(crashFormat.render(crash))
+      console.error(Container._format.renderCrash(crash))
     }
     if (this._instance) try {
       if (this._instance._logServer) this._instance._logServer.close()
@@ -36,6 +35,7 @@ export class Container {
       console.error(`❗️ ${err.message}`)
       return this._exit(err)
     }
+    if (cfg.container.logFormat) Container._format = new LogFormat(cfg.container.logFormat)
     let factory = (cfg as Config & { $aot?: FactoryConfig }).$aot
     if (!factory) try { factory = await runFactory(cfg) } catch (err) {
       console.error(`❗️ ${err.message}`)
@@ -70,9 +70,8 @@ export class Container {
   private readonly _subscr: Subscription
 
   private _handleCrash(): OperatorFunction<Crash, never> {
-    const crashFormat = new CrashFormat()
     return crashObs => crashObs.pipe(mergeMap(crash => {
-      console.error(crashFormat.render(crash))
+      console.error(Container._format.renderCrash(crash))
       Container._exit(crash)
       return EMPTY
     }))
@@ -80,9 +79,8 @@ export class Container {
 
   private _handleLog(): OperatorFunction<Log, never> {
     if (this._cfg.container.logFormat === null) return () => EMPTY
-    const logFormat = new LogFormat(this._cfg.container.logFormat)
     return logObs => logObs.pipe(mergeMap(log => {
-      console.log(logFormat.render(log))
+      console.log(Container._format.renderLog(log))
       return EMPTY
     }))
   }

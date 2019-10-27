@@ -38,12 +38,14 @@ export class ProviderMeta<TVars extends Record<string, string> = {}> extends Res
   }
 
   buildContext(): ProviderContext {
-    const {env, logger} = getContainerContext()
+    const {crash, env, logger} = getContainerContext()
+    const provTags = {src: 'prov', prov: this.name}
     return {
       name: this.name,
       kind: 'provider',
       meta: this,
-      logger: logger.extend({src: 'prov', prov: this.name}),
+      crash: (err, tags) => crash(err, {...provTags, ...tags}),
+      logger: logger.extend(provTags),
       vars: env.extract(this.vars, this.name.toUpperCase())
     }
   }

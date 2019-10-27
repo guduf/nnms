@@ -2,6 +2,7 @@ import BsonSchema, { BsonType, BSON_TYPES, reflectBsonType } from './bson'
 
 import 'reflect-metadata'
 import { JSONSchema4TypeName } from 'json-schema'
+import { IndexSpecification } from 'mongodb'
 
 export const PROPS_META_KEY = 'nnms:storage:props'
 
@@ -16,6 +17,7 @@ export const DOC_METADATA_KEY = 'nnms:storage:doc'
 export interface DocSchemaMeta {
   name: string
   props: Record<string, DocPropMeta>
+  indexes?: IndexSpecification[]
 }
 
 export function buildBsonSchema(meta: DocSchemaMeta): Partial<BsonSchema> {
@@ -38,13 +40,16 @@ export function reflectDocSchema(type: any): Partial<BsonSchema> {
   return buildBsonSchema(meta)
 }
 
+export interface DocOptions {
+  indexes?: DocSchemaMeta['indexes']
+}
 
-export function DocSchema(name: string): ClassDecorator {
+export function DocSchema(name: string, {indexes}: DocOptions = {}): ClassDecorator {
   return target => {
     const props = (
       Reflect.getMetadata(PROPS_META_KEY, target.prototype) as Record<string, DocPropMeta> || {}
     )
-    const meta = {name, props}
+    const meta = {name, indexes, props}
     Reflect.defineMetadata(DOC_METADATA_KEY, meta, target)
   }
 }

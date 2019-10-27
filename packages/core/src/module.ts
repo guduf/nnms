@@ -78,13 +78,15 @@ export class ModuleMeta<TVars extends Record<string, string> = {}> extends Resou
   }
 
   buildContext(): ModuleContext<TVars> {
-    const {env, logger} = getContainerContext()
+    const {crash, env, logger} = getContainerContext()
+    const modTags = {src: 'mod', mod: this.name}
     return {
       kind: 'module',
       name: this.name,
       meta: this,
-      logger: logger.extend({src: 'mod', mod: this.name}),
-      vars: env.extract(this.vars, this.name.toUpperCase())
+      logger: logger.extend(modTags),
+      vars: env.extract(this.vars, this.name.toUpperCase()),
+      crash: (err, tags) => crash(err, {...modTags, ...tags})
     }
 }
 

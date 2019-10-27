@@ -9,7 +9,7 @@ import  { promisify as p } from 'util'
 import { Event, Crash } from 'nnms'
 
 import { Config } from './config'
-import { CrashFormat } from './crash_format'
+import { LogFormat } from './log_format'
 
 export interface ResourceInfo {
   name: string
@@ -27,7 +27,7 @@ export interface FactoryConfig {
 }
 
 export async function runFactory({dist, root}: Config): Promise<FactoryConfig> {
-  const crashFormat = new CrashFormat()
+  const format = new LogFormat()
   const filepaths = await p(glob)(`${dist}/*.js`)
   if (!filepaths) throw new Error('❗️ no file matching pattern')
   let modules: Record<string, ModuleInfo> = {}
@@ -40,7 +40,7 @@ export async function runFactory({dist, root}: Config): Promise<FactoryConfig> {
     const e = Event.deserialize(Buffer.from(result.data))
     if (e.type === 'CRASH') {
       const crash = Crash.fromEvent(e)
-      console.error(crashFormat.render(crash))
+      console.error(format.renderCrash(crash))
       console.error(`️️❗️ cannot load factory of file '${filepath}'`)
       continue
     }

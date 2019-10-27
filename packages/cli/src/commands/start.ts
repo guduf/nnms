@@ -26,8 +26,11 @@ export const START_COMMAND: Command<{ path?: string }> = {
     })
     const events = bootstrap(...mods)
     events.subscribe(e => {
-      if (e.type === 'LOG') console.log(format.render(Log.fromEvent(e)))
-      if (e.type === 'CRASH') console.error(Crash.fromEvent(e).toJson())
+      if (e.type === 'LOG') console.log(format.renderLog(Log.fromEvent(e)))
+      if (e.type === 'CRASH') {
+        console.error(format.renderCrash(Crash.fromEvent(e)))
+        process.exit(1)
+      }
     })
   }
 }

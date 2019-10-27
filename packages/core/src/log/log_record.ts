@@ -6,7 +6,6 @@ export const LOG_RECORD_LEVELS = ['DBG', 'ERR', 'INF', 'WAR'] as const
 export type LogLevel = typeof LOG_RECORD_LEVELS[number]
 
 export interface LogTags {
-  logger: string
   src: string
   [tag: string]: string
 }
@@ -29,9 +28,8 @@ export const LOG_RECORD_SCHEMA = {
     date: {type: 'string', pattern: '/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$/'},
     tags: {
       type: 'object',
-      required: ['logger', 'src'] as string[],
+      required: ['src'] as string[],
       properties: {
-        logger: {type: 'string', pattern: '^[\\w-_]{7,14}$'},
         src: {type: 'string', pattern: '^[\\w-]{2,6}$'}
       },
       patternProperties: {'^[\\w-]{2,128}$': {type: 'string', minimum: 2, maximum: 128}},

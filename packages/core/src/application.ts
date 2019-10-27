@@ -52,7 +52,8 @@ export function bootstrap(...mods: Function[]): Observable<Event> {
     kind: 'application',
     name: 'my-app',
     env,
-    logger
+    logger,
+    crash: err => events.next(Crash.create(err).toEvent())
   }
   setTimeout(async () => {
     try {

@@ -11,9 +11,9 @@ export const RESOURCE_CONTEXT_TOKEN = new Token<ResourceContext>('RESOURCE_CONTE
 
 const NAME_REGEX = /^[\w-]{2,32}$/
 
-/** Represents common options shared across resources. */
+/** represents common options shared across resources */
 export interface ResourceOpts<TVars extends Record<string, string> = {}> {
-  /** The unique identifier for the resource. */
+  /** unique identifier for the resource */
   name: string
 
   /**
@@ -29,12 +29,12 @@ export interface ResourceOpts<TVars extends Record<string, string> = {}> {
   vars?: TVars
 }
 
-/** Represents common properties shared across resource meta. */
+/** represents common properties shared across resource meta */
 export abstract class ResourceMeta<TVars extends Record<string, string> = {}> {
   static readonly __location = __dirname || resolve()
 
   constructor(
-    /** The class object of the resource*/
+    /** class object of the resource*/
     readonly type: Function,
     {name, providers, vars}: ResourceOpts<TVars>
   ) {
@@ -49,63 +49,66 @@ export abstract class ResourceMeta<TVars extends Record<string, string> = {}> {
     })
   }
 
-  /** The unique identifier for the resource. */
+  /** unique identifier for the resource */
   readonly name: string
 
-  /** The environment variable template of the resource. */
+  /** environment variable template of the resource */
   readonly vars: TVars
 
-  /** The array of providers explicitly required by the resource. */
+  /** array of providers explicitly required by the resource */
   readonly providers: ResourceMeta[]
 
-  /** Creates the resource context. */
+  /** creates the resource context */
   abstract buildContext(container?: ContainerInstance): ResourceContext
 }
 
-/** Represents all kind of resources. */
+/** represents all kind of resources */
 export type ResourceKind = 'module' | 'plugin' | 'provider'
 
-/** Represents common properties shared accross application and resource contexts. */
+/** represents common properties shared accross application and resource contexts */
 export abstract class CommonContext {
-  /** The identifier for context kind. */
+  /** identifier for context kind */
   abstract readonly kind: 'application' | ResourceKind
 
-  /** The specific logger created for the resource. */
+  /** specific logger created for the resource */
   readonly logger: Logger
 
-  /** The unique identifier of the context. */
+  /** unique identifier of the context */
   readonly name: string
+
+  /** crash emitter to exit process */
+  readonly crash: (err: Error, tags?: Record<string, string>) => void
 
   protected constructor() {
     throw new Error('context cannot be injected without handler')
   }
 }
 
-/** Represents properties for application contexts. */
+/** represents properties for application contexts */
 export abstract class ApplicationContext extends CommonContext {
-  /** The identifier for application context kind. */
+  /** identifier for application context kind */
   readonly kind: 'application'
 
-  /** The global environment of the application. */
+  /** global environment of the application */
   readonly env: Environment
 }
 
-/** Represents properties for shared accross resource contexts. */
+/** represents properties for shared accross resource contexts */
 export abstract class ResourceContext<TVars extends Record<string, string> = {}> extends CommonContext {
-  /** The identifier for resource context kind. */
+  /** identifier for resource context kind */
   abstract readonly kind: ResourceKind
 
-  /** The retrieved meta object of the resource */
+  /** retrieved meta object of the resource */
   readonly meta: ResourceMeta<TVars>
 
-  /** The environment variables template compiled for the resource. */
+  /** environment variables template compiled for the resource */
   readonly vars: { readonly [P in keyof TVars]: string }
 }
 
-/** Returns the application context. */
+/** returns the application context */
 export function getContainerContext(): ApplicationContext
 
-/** Returns the resource context for a module scoped container. */
+/** returns the resource context for a module scoped container */
 export function getContainerContext(modContainer: ContainerInstance): ResourceContext
 
 export function getContainerContext(modContainer?: ContainerInstance): ApplicationContext | ResourceContext {
@@ -115,7 +118,7 @@ export function getContainerContext(modContainer?: ContainerInstance): Applicati
   return ctx
 }
 
-/** Scans the instance prototype to get method metas for a plugin. */
+/** scans the instance prototype to get method metas for a plugin */
 export function getMethodPluginMetas<T>(
   pluginName: string,
   instance: {}
