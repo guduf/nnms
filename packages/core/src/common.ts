@@ -2,6 +2,7 @@
 import { Container, ContainerInstance, Token } from 'typedi'
 import { Logger } from './log'
 import Environment from './environment'
+import { resolve } from 'path'
 
 export const PREFIX = 'nnms'
 export const PREFIX_UPPER = PREFIX.toUpperCase()
@@ -30,6 +31,8 @@ export interface ResourceOpts<TVars extends Record<string, string> = {}> {
 
 /** Represents common properties shared across resource meta. */
 export abstract class ResourceMeta<TVars extends Record<string, string> = {}> {
+  static readonly __location = __dirname || resolve()
+
   constructor(
     /** The class object of the resource*/
     readonly type: Function,
@@ -40,8 +43,8 @@ export abstract class ResourceMeta<TVars extends Record<string, string> = {}> {
     this.name = name
     this.vars = typeof vars === 'object' && vars ? vars : {} as TVars
     this.providers = (providers || []).map(type => {
-      const providerMeta = Reflect.getMetadata(`${PREFIX}:provider`, type) as ResourceMeta
-      if (!(providerMeta instanceof ResourceMeta)) throw new Error('invalid provider')
+      const providerMeta = getResourceMeta('provider', type)
+      if (!providerMeta) throw new Error('missing provider meta')
       return providerMeta
     })
   }
@@ -123,4 +126,21 @@ export function getMethodPluginMetas<T>(
     const meta = Reflect.getMetadata(`${PREFIX}:plugin:${pluginName}`, proto, prop)
     return {...acc, ...(meta ? {[prop]: meta} : {})}
   }, {} as { [prop: string]: T })
+}
+
+
+export function getResourceMeta<K extends 'module' | 'provider' | 'plugin'>(
+  type: K,
+  target: Function
+): ResourceMeta | null {
+  const meta = Reflect.getMetadata(`${PREFIX}:${type}`, target) as ResourceMeta
+  if (meta && !(meta instanceof ResourceMeta)) {
+    const foundCtor = ((meta as any).constructor || {}) as any
+    throw new Error([
+      `${type} meta is not a instance of ResourceMeta`,
+      ...(ResourceMeta.__location ? [`  expected: ${ResourceMeta.__location}`] : []),
+      ...(foundCtor.__location ? [`  found: ${foundCtor.__location}`] : [])
+    ].join('\n'))
+  }
+  return meta || null
 }

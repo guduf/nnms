@@ -1,6 +1,6 @@
 import 'reflect-metadata'
 import { Container, ContainerInstance } from 'typedi'
-import { PREFIX, ResourceMeta, ResourceOpts, getContainerContext, ResourceContext, ResourceKind } from './common'
+import { PREFIX, ResourceMeta, ResourceOpts, getContainerContext, ResourceContext, ResourceKind, getResourceMeta } from './common'
 import { ProviderMeta } from './provider'
 import { ModuleMeta, } from './module_ref'
 import { PluginMeta } from './plugin'
@@ -53,7 +53,7 @@ export function buildResourceDecorator<TVars extends Record<string, string>, TOp
               meta.buildContext(container)
           )
         }
-        const paramMeta = Reflect.getMetadata(`${PREFIX}:provider`, paramType)
+        const paramMeta = getResourceMeta('provider', paramType)
         if (paramMeta instanceof ProviderMeta) {
           if (!providers.includes(paramType)) providers = [...providers, paramType]
           return () => Container.get(paramMeta.type)
@@ -84,16 +84,3 @@ export const PluginRef = (name: string, vars: Record<string, string>, ...provide
 export const ModuleRef = (name: string, vars: Record<string, string>, ...pluginsAndProviders: Function[]) => (
   buildResourceDecorator('module', ModuleMeta)({name, vars, pluginsAndProviders})
 )
-
-export function getResourceMeta<T extends typeof ModuleMeta | typeof ProviderMeta | typeof PluginMeta>(
-  meta: T,
-  pluginName?: T extends typeof PluginMeta ? string : never
-): T extends { new (): infer X } ? X : never {
-  if (meta === PluginMeta && !pluginName) throw new Error('missing plugin name')
-  const name = meta === ModuleMeta ? 'module' : meta === ProviderMeta ? 'provider' : `plugin:${pluginName}`
-  const prefix = `${PREFIX}:${name}`
-  if (modMeta && !(modMeta instanceof ModuleMeta)) {
-    const proto = Object.getPrototypeOf(modMeta)
-    throw new Error(`module meta is not a instance of ModuleMeta\n  expected: ${ModuleMeta.filepath}:${ModuleMeta.name}\n  found: ${proto.filepath}:${proto.name}`)
-  }
-}

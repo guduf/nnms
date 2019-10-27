@@ -1,6 +1,6 @@
 import Container from 'typedi'
 
-import { PREFIX, ApplicationContext, RESOURCE_CONTEXT_TOKEN, ResourceMeta } from './common'
+import { ApplicationContext, getResourceMeta, RESOURCE_CONTEXT_TOKEN, ResourceMeta } from './common'
 import { Crash } from './error'
 import { Event } from './event'
 import Environment from './environment'
@@ -62,7 +62,7 @@ export function bootstrap(...mods: Function[]): Observable<Event> {
       }
       Container.set(RESOURCE_CONTEXT_TOKEN, ctx)
       const modMetas = mods.reduce((acc, modType) => {
-        const modMeta = Reflect.getMetadata(`${PREFIX}:module`, modType)
+        const modMeta = getResourceMeta('module', modType)
         if (!(modMeta instanceof ModuleMeta)) throw new Error('invalid module')
         return acc.includes(modMeta) ? acc : [...acc, modMeta]
       }, [] as ModuleMeta[])

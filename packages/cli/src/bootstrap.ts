@@ -1,6 +1,6 @@
 import 'reflect-metadata'
 import path from 'path'
-import { bootstrap, ModuleMeta, PREFIX, Event } from 'nnms'
+import { bootstrap, getResourceMeta, ModuleMeta, Event } from 'nnms'
 import { Observable } from 'rxjs'
 
 export function bootstrapFile(
@@ -15,7 +15,7 @@ export function bootstrapFile(
     process.exit(1)
   }
   const mods = Object.keys(index).reduce((acc, key) => {
-    let modMeta = Reflect.getMetadata(`${PREFIX}:module`, index[key])
+    let modMeta = getResourceMeta('module', index[key])
     if (!modMeta) return acc
     if (!(modMeta instanceof ModuleMeta)) {
       console.error(`reflected meta of key '${key}' is not a instance of ModuleMeta`)

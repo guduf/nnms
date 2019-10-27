@@ -1,4 +1,4 @@
-import { PREFIX, getContainerContext, ResourceMeta, ResourceOpts, ResourceContext, RESOURCE_CONTEXT_TOKEN } from './common'
+import { getContainerContext, ResourceMeta, ResourceOpts, ResourceContext, RESOURCE_CONTEXT_TOKEN, getResourceMeta } from './common'
 import Environment from './environment'
 import { PluginMeta } from './plugin'
 import Container from 'typedi'
@@ -25,7 +25,7 @@ export class ModuleMeta<TVars extends Record<string, string> = {}> extends Resou
 
   constructor(type: Function, opts: ModuleOpts<TVars>) {
     const {plugins, providers, vars} = (opts.pluginsAndProviders || []).reduce((acc, type) => {
-      const pluginMeta = Reflect.getMetadata(`${PREFIX}:plugin`, type) as PluginMeta<TVars>
+      const pluginMeta = getResourceMeta('plugin', type) as PluginMeta<TVars>
       if (pluginMeta instanceof PluginMeta) {
         const nextVars = Object.keys(pluginMeta.vars).reduce((acc, key) => ({
           ...acc,
@@ -33,7 +33,7 @@ export class ModuleMeta<TVars extends Record<string, string> = {}> extends Resou
         }), acc.vars as TVars)
         return {providers: acc.providers, plugins: [...acc.plugins, pluginMeta], vars: nextVars}
       }
-      const providerMeta = Reflect.getMetadata(`${PREFIX}:provider`, type) as ProviderMeta
+      const providerMeta = getResourceMeta('provider', type) as ProviderMeta
       if (providerMeta instanceof ProviderMeta) {
         return {providers: [...acc.providers, type], plugins: acc.plugins, vars: acc.vars}
       }

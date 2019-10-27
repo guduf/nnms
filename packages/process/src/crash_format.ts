@@ -21,8 +21,8 @@ export class CrashFormat {
     const headerLine = [
       this._getTimePrefix(moment(e.timestamp)),
       color('CRASH'),
-      ...(e.code ? [] : [color(this._getCode(e.code!))]),
-      ...(e.name ? [] : [color(e.name!)]),
+      ...(e.code ? [color(this._getCode(e.code))] : []),
+      ...(e.name ? [color(e.name)] : []),
       ...(![e.name, e.code].includes(msgHeader)? [color(msgHeader)] : [])
     ].join(' ')
     const stack = this._cfg.printStack === false ? null : e.stack || null
