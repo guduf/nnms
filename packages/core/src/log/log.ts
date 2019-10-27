@@ -15,7 +15,7 @@ export type LogLevel = typeof LOG_LEVELS[number]
 export const LOG_LEVEL_PROPS: { [level in LogLevel]: { color: string} } = {
   DBG: {color: 'white'},
   ERR: {color: 'red'},
-  INF: {color: 'cyan'},
+  INF: {color: 'green'},
   WAR: {color: 'yellow'}
 }
 

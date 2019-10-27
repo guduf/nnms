@@ -68,7 +68,7 @@
     "react": "^16.8.6",
     "react-router": "^5.0.1",
     "reflect-metadata": "^0.1.13",
-    "rimraf": "^2.6.0",
+    "rimraf": "^2.7.1",
     "rollup": "^1.17.0",
     "rollup-plugin-commonjs": "^10.1.0",
     "rollup-plugin-json": "^4.0.0",

@@ -3,6 +3,7 @@ import { BUILD_COMMAND } from './commands/build'
 import Command from './command'
 import { COMPILE_COMMAND } from './commands/compile'
 import { LINK_COMMAND } from './commands/link'
+import { LOG_REMOTE_COMMAND } from './commands/log_remote'
 import { PACK_COMMAND } from './commands/pack'
 import { START_COMMAND } from './commands/start'
 
@@ -10,6 +11,7 @@ const COMMANDS: Command<any>[] = [
   BUILD_COMMAND,
   COMPILE_COMMAND,
   LINK_COMMAND,
+  LOG_REMOTE_COMMAND,
   PACK_COMMAND,
   START_COMMAND
 ]

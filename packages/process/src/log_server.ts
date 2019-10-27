@@ -1,9 +1,9 @@
 import WebSocket, { Server as WebSocketServer } from 'ws'
 import { Config } from './config'
 import { Observable } from 'rxjs'
-import { Log } from 'nnms'
+import { Log, Event, EventValue } from 'nnms'
 import { scan, shareReplay, first } from 'rxjs/operators'
-import { serialize } from 'bson'
+import { serialize, deserialize, Binary } from 'bson'
 
 const LOG_MEMORY_LENGTH = 1000
 
@@ -41,9 +41,23 @@ export class LogServer extends WebSocketServer {
 export function logSocket(url: string): Observable<Log> {
   return new Observable(observer => {
     const ws = new WebSocket(url)
+    const eachEvent = (e: Event) => {
+      observer.next(Log.fromEvent(e))
+    }
     ws.on('message', msg => {
-      console.log(msg)
-      observer.next('LOG HERE' as never)
+      try {
+        const val = deserialize(msg as Buffer) as EventValue | { [key: number]: Binary }
+        if (+Object.keys(val)[0] === 0) {
+          Object.values((val as { [key: number]: Binary })).forEach(binary => (
+            eachEvent(Event.deserialize(binary.buffer))
+          ))
+        } else {
+          eachEvent(Event.fromValue(val as EventValue))
+        }
+      } catch (err) {
+        console.error('❗️ cannot deserialize message')
+        return
+      }
     })
     return () => ws.close(0)
   })

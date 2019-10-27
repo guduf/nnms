@@ -45,6 +45,8 @@ export class Event {
 
   static deserialize(buffer: Buffer): Event { return new Event(deserialize(buffer)) }
 
+  static fromValue(value: EventValue): Event { return new Event(value) }
+
   private constructor(
     private readonly _value: EventValue
   ) {
