@@ -1,5 +1,3 @@
-import { JSONSchema4 as JSONSchema } from 'json-schema'
-
 /** Represents a metric value */
 export type LogMetricValue = Record<string, boolean | null | number | string>
 
@@ -15,13 +13,13 @@ export interface LogMetricMutation<
   $upsert?: T[]
 }
 
-const LOG_METRIC_VALUE_SCHEMA: JSONSchema = {
+export const LOG_METRIC_VALUE_SCHEMA = {
   type: 'object',
   additionalProperties: {type: ['boolean', 'null', 'number', 'string']},
   minProperties: 1
-}
+} as const
 
-export const LOG_METRIC_MUTATION_SCHEMA: JSONSchema = {
+export const LOG_METRIC_MUTATION_SCHEMA = {
   type: 'object',
   properties: {
     $index: {type: 'string'},
@@ -31,8 +29,7 @@ export const LOG_METRIC_MUTATION_SCHEMA: JSONSchema = {
     $upsert: {type: 'array', items: LOG_METRIC_VALUE_SCHEMA, minItems: 1}
   },
   minProperties: 1
-}
-
+} as const
 
 export function applyMetricMutation(
   metrics: LogMetricValue[],

@@ -53,7 +53,7 @@ export function bootstrap(...mods: Function[]): Observable<Event> {
     name: 'my-app',
     env,
     logger,
-    crash: err => events.next(Crash.create(err).toEvent())
+    crash: err => events.next(Crash.create(err, tags).toEvent())
   }
   setTimeout(async () => {
     try {
@@ -77,7 +77,7 @@ export function bootstrap(...mods: Function[]): Observable<Event> {
         ), {})
       })
     } catch (err) {
-      events.next(Crash.create(err).toEvent())
+      events.next(Crash.create(err, tags).toEvent())
     }
   })
   return events.asObservable()

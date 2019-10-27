@@ -5,11 +5,11 @@ import { LogLevel, LOG_RECORD_SCHEMA, LogRecord as ILogRecord, LogTags, LogData 
 
 const {data, level, code, tags} = LOG_RECORD_SCHEMA.properties
 
-@DocSchema('logRecord', {
+@DocSchema('logRecords', {
   indexes: [{key: {'id': 1}, unique: true}]
 })
 export class LogRecord implements ILogRecord {
-  @DocProp({unique: true}, true)
+  @DocProp(true)
   id: ObjectId
 
   @DocProp(level, true)
