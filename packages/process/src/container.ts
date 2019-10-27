@@ -10,18 +10,36 @@ import { merge, Subscription, OperatorFunction, EMPTY } from 'rxjs'
 import { Server as WsServer } from 'ws'
 
 export class Container {
+  private static _instance: Container
+
+  private static _exit(catched?: Error | Crash | null): void {
+    const crash = catched ? catched instanceof Crash ? catched : Crash.create(catched) : null
+    if (crash) {
+      const crashFormat = new CrashFormat()
+      console.error(crashFormat.render(crash))
+    }
+    if (this._instance) try {
+      if (this._instance._logServer) this._instance._logServer.close()
+      this._instance._subscr.unsubscribe()
+      this._instance._fork.interrupt()
+    } catch (err) { }
+    process.exit(crash ? 1 : 0)
+  }
+
   static async run(): Promise<void> {
+    process.on('SIGINT', () => {console.log('SININT'), Container._exit()})
+    if (this._instance) throw new Error('instance already running')
     let cfg: Config
     try {
       cfg = await loadConfig(process.env['NNMS_CONFIG_PATH'])
     } catch (err) {
       console.error(`❗️ ${err.message}`)
-      return process.exit(1)
+      return this._exit(err)
     }
     let factory = (cfg as Config & { $aot?: FactoryConfig }).$aot
     if (!factory) try { factory = await runFactory(cfg) } catch (err) {
       console.error(`❗️ ${err.message}`)
-      return process.exit(1)
+      return this._exit(err)
     }
     const moduleMap  = factory.modules
     let fork: ForkedProcess
@@ -31,9 +49,9 @@ export class Container {
       fork = new ForkedProcess(cfg, modulePaths)
     } catch (err) {
       console.error(`❗️ ${err.message}`)
-      return process.exit(1)
+      return this._exit(err)
     }
-    new Container(cfg, fork)
+    this._instance = new Container(cfg, fork)
   }
 
   private constructor(
@@ -51,18 +69,11 @@ export class Container {
   private readonly _logServer?: WsServer
   private readonly _subscr: Subscription
 
-  kill(code = 1): void {
-    if (this._logServer) this._logServer.close()
-    this._fork.interrupt()
-    this._subscr.unsubscribe()
-    process.exit(code)
-  }
-
   private _handleCrash(): OperatorFunction<Crash, never> {
     const crashFormat = new CrashFormat()
     return crashObs => crashObs.pipe(mergeMap(crash => {
       console.error(crashFormat.render(crash))
-      this.kill(1)
+      Container._exit(crash)
       return EMPTY
     }))
   }
