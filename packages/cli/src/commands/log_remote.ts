@@ -1,4 +1,4 @@
-import { logSocket, LogFormat } from 'nnms-process'
+import { LogSocket, LogFormat } from 'nnms-process'
 
 import Command from '../command'
 
@@ -10,6 +10,6 @@ export const LOG_REMOTE_COMMAND: Command<{ url?: string }> = {
   ),
   cmd: cmd => {
     const format = new LogFormat()
-    logSocket(cmd.url || '').subscribe(e => console.log(format.render(e)))
+    LogSocket(cmd.url || '').subscribe(e => console.log(format.render(e)))
   }
 }

@@ -1,7 +1,7 @@
 import Ajv, { Ajv as Validator, ErrorObject } from 'ajv'
 import applyBsonTypes from 'ajv-bsontype'
 import { connect, MongoClient, Collection, MongoError } from 'mongodb'
-import { ProviderRef, ProviderContext } from 'nnms'
+import { Provider, ProviderContext } from 'nnms'
 
 import { buildBsonSchema, DOC_METADATA_KEY, DocSchemaMeta } from './meta'
 
@@ -10,7 +10,7 @@ const DATABASE_VARS = {
   DATABASE: 'test'
 }
 
-@ProviderRef('database', DATABASE_VARS)
+@Provider('database', DATABASE_VARS)
 export class Database {
   constructor(
     private readonly _ctx: ProviderContext<typeof DATABASE_VARS>

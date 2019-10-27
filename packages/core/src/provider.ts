@@ -1,4 +1,4 @@
-import { getContainerContext, ResourceMeta, ResourceContext } from './common'
+import { getContainerContext, ResourceMeta, ResourceContext } from './resource'
 import Container from 'typedi';
 import { LogMetricValue } from './log'
 

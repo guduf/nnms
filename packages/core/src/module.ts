@@ -1,4 +1,4 @@
-import { getContainerContext, ResourceMeta, ResourceOpts, ResourceContext, RESOURCE_CONTEXT_TOKEN, getResourceMeta } from './common'
+import { getContainerContext, ResourceMeta, ResourceOpts, ResourceContext, RESOURCE_CONTEXT_TOKEN, getResourceMeta } from './resource'
 import Environment from './environment'
 import { PluginMeta } from './plugin'
 import Container from 'typedi'

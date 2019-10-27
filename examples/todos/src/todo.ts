@@ -1,4 +1,4 @@
-import { ProviderRef } from 'nnms'
+import { Provider } from 'nnms'
 
 export interface Todo {
   id: string
@@ -11,7 +11,7 @@ const TODOS: { [id: string]: Todo} = {
   'k2alg4i1bonb': {id: 'k2alg4i1bonb', text: 'Write the documentation', completed: false}
 }
 
-@ProviderRef('todo', {})
+@Provider('todo', {})
 export default class TodoProvider {
   readonly _todos: Map<string, Todo>
 

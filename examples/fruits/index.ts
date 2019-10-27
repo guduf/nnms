@@ -1,4 +1,4 @@
-import { ModuleRef, ModuleContext } from 'nnms'
+import { Module, ModuleContext } from 'nnms'
 import { HttpPlugin, HttpRoute } from 'nnms-http'
 import { EventbusHandler, EventbusPlugin, EventbusProxy } from 'nnms-nats'
 import { BehaviorSubject, timer } from 'rxjs'
@@ -25,7 +25,7 @@ interface StockMetric extends JsonObject {
   count: number
 }
 
-@ModuleRef('stock', {}, MongoDbProvider, EventbusPlugin)
+@Module('stock', {}, MongoDbProvider, EventbusPlugin)
 export class StockModule {
   constructor(
     private readonly _ctx: ModuleContext,
@@ -70,7 +70,7 @@ export class StockModule {
 
 
 
-@ModuleRef('delivery', {HTTP_PORT: '8082'}, HttpPlugin)
+@Module('delivery', {HTTP_PORT: '8082'}, HttpPlugin)
 export class DeliveryModule {
   readonly init = this._init()
 

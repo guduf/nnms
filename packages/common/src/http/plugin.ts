@@ -1,7 +1,7 @@
 import bodyParser from 'body-parser'
 import express, { Express, Handler, IRouterMatcher, Request, Response } from 'express'
 
-import { PluginRef, PluginContext, pluginMethodDecorator } from 'nnms'
+import { Plugin, PluginContext, pluginMethodDecorator } from 'nnms'
 
 import { HttpProvider } from './provider'
 
@@ -67,7 +67,7 @@ export function AfterHttpRoutes() {
   return pluginMethodDecorator('http', meta)
 }
 
-@PluginRef('http', HTTP_PLUGIN_VARS)
+@Plugin('http', HTTP_PLUGIN_VARS)
 export class HttpPlugin {
   readonly init: Promise<void>
 

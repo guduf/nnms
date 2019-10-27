@@ -37,12 +37,12 @@ To start a N&M's project, you need to declare at least one module, then bootstra
 
 ```typescript
   // index.ts
-  import { ModuleRef } from 'nnms'
+  import { Module } from 'nnms'
   import { HttpPlugin } from 'nnms-http'
 
   const WEB_VARS = {LOCALE: '', HTTP_PORT: '8080'}
 
-  @ModuleRef('web', WEB_VARS, HttpPlugin)
+  @Module('web', WEB_VARS, HttpPlugin)
   class WebModule {
     constructor(
       private readonly _ctx: ModuleContext
@@ -58,7 +58,7 @@ To start a N&M's project, you need to declare at least one module, then bootstra
 
 ```
 
-The first step is to declare a class decorated with `ModuleRef`.
+The first step is to declare a class decorated with `Module`.
 
 
 It is required to set a unique name (`'web'`) for the module as the first argument.

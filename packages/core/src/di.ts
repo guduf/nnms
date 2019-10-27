@@ -1,8 +1,8 @@
 import 'reflect-metadata'
 import { Container, ContainerInstance } from 'typedi'
-import { PREFIX, ResourceMeta, ResourceOpts, getContainerContext, ResourceContext, ResourceKind, getResourceMeta } from './common'
+import { PREFIX, ResourceMeta, ResourceOpts, getContainerContext, ResourceContext, ResourceKind, getResourceMeta } from './resource'
 import { ProviderMeta } from './provider'
-import { ModuleMeta, } from './module_ref'
+import { ModuleMeta, } from './module'
 import { PluginMeta } from './plugin'
 
 /* Decorates a module method for a specific plugin. */
@@ -71,16 +71,16 @@ export function buildResourceDecorator<TVars extends Record<string, string>, TOp
 }
 
 /** Decorates a class with provider meta. */
-export const ProviderRef = (name: string, vars: Record<string, string>, ...providers: Function[]) => (
+export const Provider = (name: string, vars: Record<string, string>, ...providers: Function[]) => (
   buildResourceDecorator('provider', ProviderMeta)({name, vars, providers})
 )
 
 /** Decorates a class with plugin meta. */
-export const PluginRef = (name: string, vars: Record<string, string>, ...providers: Function[]) => (
+export const Plugin = (name: string, vars: Record<string, string>, ...providers: Function[]) => (
   buildResourceDecorator('plugin', PluginMeta)({name, vars, providers})
 )
 
 /** Decorates a class with module meta. */
-export const ModuleRef = (name: string, vars: Record<string, string>, ...pluginsAndProviders: Function[]) => (
+export const Module = (name: string, vars: Record<string, string>, ...pluginsAndProviders: Function[]) => (
   buildResourceDecorator('module', ModuleMeta)({name, vars, pluginsAndProviders})
 )

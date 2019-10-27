@@ -1,11 +1,11 @@
 import Container from 'typedi'
 
-import { ApplicationContext, getResourceMeta, RESOURCE_CONTEXT_TOKEN, ResourceMeta } from './common'
+import { ApplicationContext, getResourceMeta, RESOURCE_CONTEXT_TOKEN, ResourceMeta } from './resource'
 import { Crash } from './error'
 import { Event } from './event'
 import Environment from './environment'
 import { Logger } from './log'
-import { ModuleMeta } from './module_ref'
+import { ModuleMeta } from './module'
 import { ProviderMeta } from './provider'
 import { Observable, Subject } from 'rxjs'
 

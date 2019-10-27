@@ -1,4 +1,4 @@
-import { ModuleRef, ModuleContext } from 'nnms'
+import { Module, ModuleContext } from 'nnms'
 import { HttpRoute, HttpPlugin } from 'nnms-common'
 
 import TodoProvider, { Todo } from './todo'
@@ -8,7 +8,7 @@ export const API_VARS = {
   HTTP_PORT: '8080'
 }
 
-@ModuleRef('api', API_VARS, HttpPlugin)
+@Module('api', API_VARS, HttpPlugin)
 export class ApiModule {
   constructor(
     private readonly _ctx: ModuleContext<typeof API_VARS>,

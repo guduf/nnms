@@ -1,5 +1,5 @@
-import { ModuleMeta, ModuleContext } from './module_ref'
-import { ResourceContext, ResourceMeta, PREFIX, getMethodPluginMetas, getContainerContext } from './common'
+import { ModuleMeta, ModuleContext } from './module'
+import { ResourceContext, ResourceMeta, PREFIX, getMethodPluginMetas, getContainerContext } from './resource'
 import Container, { ContainerInstance } from 'typedi'
 import { LogMetricValue } from './log'
 

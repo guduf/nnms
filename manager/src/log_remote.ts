@@ -1,4 +1,4 @@
-import { ModuleContext, ModuleRef, Log } from 'nnms'
+import { ModuleContext, Module, Log } from 'nnms'
 import { Collection, Database } from 'nnms-common'
 import { LogSocket } from 'nnms-process'
 
@@ -8,7 +8,7 @@ const LOG_REMOTE_VARS = {
   URL: 'ws://localhost:6390'
 }
 
-@ModuleRef('log-remote', LOG_REMOTE_VARS, Database)
+@Module('log-remote', LOG_REMOTE_VARS, Database)
 export class LogRemote {
 
   constructor(
