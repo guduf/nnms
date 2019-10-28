@@ -55,29 +55,34 @@ export class LogRemote {
   ) {
     for (const name in metrics) {
       const mutations = metrics[name]
+      // TODO - add projection
       const [previous] = await this._logMetrics.find({name, tags})
       const values = applyMetricMutation(previous ? previous.values : [], mutations)
       try {
-        if (!previous) await this._logMetrics.insert({
-          name,
-          values,
-          tags,
-          mutations: [{id, ...mutations}]
-        })
-        else await this._logMetrics.update({name, tags}, {
-          $set: {values: values},
-          $push: {mutations: {id, ...mutations}}
-        })
-        this._ctx.logger.info('UPSERT_METRIC', {name, id: id.toHexString()})
-      } catch (err) {
-        if (err instanceof MongoError && err.code === 11000) {
-          this._ctx.logger.warn('UPSERT_METRIC', {
-            message: 'duplicate entry',
+        if (!previous) {
+          await this._logMetrics.insert({
             name,
-            id: id.toHexString()
+            values,
+            tags,
+            mutations: [{id, ...mutations}]
           })
-          return
+        } else {
+          const duplicate = previous.mutations.find(mut => mut.id.equals(id))
+          if (duplicate) {
+            this._ctx.logger.warn('INSERT_METRIC', {
+              message: 'duplicate entry',
+              id: id.toHexString(),
+              name
+            })
+            return
+          }
+          await this._logMetrics.update({name, tags}, {
+            $set: {values: values},
+            $push: {mutations: {id, ...mutations}}
+          })
+          this._ctx.logger.info('UPSERT_METRIC', {name, id: id.toHexString()})
         }
+      } catch (err) {
         this._ctx.crash(err)
       }
     }

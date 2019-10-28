@@ -3,8 +3,12 @@
     "target": "ES2015",
     "outDir": "./dist",
     "module": "commonjs",
-    "strict": true,
     "jsx": "react",
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "~shared/*": ["./src/shared/*"]
+    },
     "strictPropertyInitialization": false,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
@@ -15,10 +19,9 @@
     "sourceMap": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "skipLibCheck": true,
-    "baseUrl": ".",
-    "paths": {
-      "~shared/*": ["./src/shared/*"]
-    }
-  }
+    "skipLibCheck": true
+  },
+  "files": [
+    "./src/client/index.tsx"
+  ]
 }
