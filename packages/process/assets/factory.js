@@ -1,6 +1,5 @@
 const { statSync } = require('fs')
 const { join } = require('path')
-const { Crash, Event, getResourceMeta } = require(process.cwd() + '/node_module/nnms')
 
 if (typeof process.send !== 'function') {
   console.error('process.send is not a function')

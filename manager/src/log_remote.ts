@@ -70,6 +70,14 @@ export class LogRemote {
         })
         this._ctx.logger.info('UPSERT_METRIC', {name, id: id.toHexString()})
       } catch (err) {
+        if (err instanceof MongoError && err.code === 11000) {
+          this._ctx.logger.warn('UPSERT_METRIC', {
+            message: 'duplicate entry',
+            name,
+            id: id.toHexString()
+          })
+          return
+        }
         this._ctx.crash(err)
       }
     }
