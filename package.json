@@ -1,6 +1,6 @@
 {
   "name": "nnms-repo",
-  "version": "0.24.1",
+  "version": "0.25.0",
   "description": "N&M's - NodeJS framework for micro services",
   "scripts": {
     "dev": "node ./scripts/dev.js",
