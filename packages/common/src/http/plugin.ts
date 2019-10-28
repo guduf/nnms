@@ -148,7 +148,7 @@ export class HttpPlugin {
     this._ctx.logger.info(
       'REGISTER_ROUTE',
       {path: meta.path, method: meta.method,reqType: meta.reqType, resType: meta.resType},
-      {routes: {$insert: [{method: meta.method, path: meta.path}]}}
+      {routes: {insert: [{method: meta.method, path: meta.path}]}}
     )
   }
 }

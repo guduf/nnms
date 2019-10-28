@@ -51,7 +51,7 @@ export class Database {
   private async _load(meta: DocSchemaMeta): Promise<Collection> {
     await this.init
     this._ctx.logger.metrics('load collection', {
-      collections: {$insert: [{name: meta.name, loaded: 'pending'}]}
+      collections: {insert: [{name: meta.name, loaded: 'pending'}]}
     })
     const schema = buildBsonSchema(meta)
     this._validator.addSchema({$async: true, ...schema}, meta.name)
@@ -69,7 +69,7 @@ export class Database {
       await db.createCollection(meta.name, {validator: {$jsonSchema: schema}})
     }
     this._ctx.logger.info('LOAD_COLLECTION', {collection: meta.name}, {
-      collections: {$index: 'name', $upsert: [{name: meta.name, loaded: true}]}
+      collections: {index: 'name', upsert: [{name: meta.name, loaded: true}]}
     })
     const collection = db.collection(meta.name)
     if (meta.indexes) await collection.createIndexes(meta.indexes)
@@ -77,7 +77,7 @@ export class Database {
   }
 
   private async _init(): Promise<void> {
-    this._ctx.logger.metrics({client: {$insert: [{url: this._ctx.vars.URL, status: 'pending'}]}})
+    this._ctx.logger.metrics({client: {insert: [{url: this._ctx.vars.URL, status: 'pending'}]}})
     try {
       this._client = await connect(this._ctx.vars.URL, {
         useNewUrlParser: true,
@@ -88,7 +88,7 @@ export class Database {
       throw err
     }
     this._ctx.logger.info(`CLIENT_LISTENING`, {url: this._ctx.vars.URL}, {
-      client: {$index: 'url', $patch: [{url: this._ctx.vars.URL, status: 'opened'}]}
+      client: {index: 'url', patch: [{url: this._ctx.vars.URL, status: 'opened'}]}
     })
   }
 }

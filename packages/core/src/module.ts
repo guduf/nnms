@@ -51,7 +51,7 @@ export class ModuleMeta<TVars extends Record<string, string> = {}> extends Resou
     const {logger} = getContainerContext()
     logger.metrics(`bootstrap module '${this.name}'`, {
       modules: {
-        $insert: [{
+        insert: [{
           name: this.name,
           status: 'bootstrap',
           plugins: this.plugins.map(pluginMeta => pluginMeta.name).join(',')
@@ -70,8 +70,8 @@ export class ModuleMeta<TVars extends Record<string, string> = {}> extends Resou
     }
     logger.info('MODULE_READY', {mod: this.name}, {
       modules: {
-        $index: 'name',
-        $patch: [{name: this.name, status: 'ready'} as Partial<ModuleMetric>]
+        index: 'name',
+        patch: [{name: this.name, status: 'ready'} as Partial<ModuleMetric>]
       }
     })
     await Promise.all(this.plugins.map(pluginMeta => pluginMeta.bootstrap(this)))

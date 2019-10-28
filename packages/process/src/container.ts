@@ -3,7 +3,7 @@ import { runFactory, FactoryConfig } from './run_factory'
 import { ForkedProcess } from './run_process'
 import { LogFormat } from './log_format'
 import { LogServer } from './log_server'
-import { Crash, Log } from 'nnms'
+import { Crash, Log, LogTags } from 'nnms'
 import { mergeMap } from 'rxjs/operators'
 import { merge, Subscription, OperatorFunction, EMPTY } from 'rxjs'
 import { Server as WsServer } from 'ws'
@@ -12,8 +12,8 @@ export class Container {
   private static _instance: Container
   private static _format = new LogFormat()
 
-  private static _exit(catched?: Error | Crash | null): void {
-    const crash = catched ? catched instanceof Crash ? catched : Crash.create(catched) : null
+  private static _exit(catched?: Error | Crash | null, tags?: LogTags): void {
+    const crash = catched ? catched instanceof Crash ? catched : Crash.create(catched, tags || {src: 'unknown'}) : null
     if (crash) {
       console.error(Container._format.renderCrash(crash))
     }

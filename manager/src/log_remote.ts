@@ -25,10 +25,13 @@ export class LogRemote {
 
   connect(url: string): void {
     const logSocket = LogSocket(url)
-    logSocket.subscribe(async (log: Log) => {
-      if (log.level !== 'DBG') this._handleLog(log)
-      if (log.metrics) this._handleMetrics(log as Log & { metrics: Record<string, LogMetricMutation> })
-    })
+    logSocket.subscribe(
+      (log: Log) => {
+        if (log.level !== 'DBG') this._handleLog(log)
+        if (log.metrics) this._handleMetrics(log as Log & { metrics: Record<string, LogMetricMutation> })
+      },
+      err => this._ctx.logger.error('CONNECT_LOG_SERVER', err)
+    )
   }
 
   private async _handleLog(log: Log): Promise<void> {

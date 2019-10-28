@@ -44,6 +44,13 @@ export function LogSocket(url: string): Observable<Log> {
     const eachEvent = (e: Event) => {
       observer.next(Log.fromEvent(e))
     }
+    ws.on('error', err => {
+      observer.error(err)
+      observer.complete()
+    })
+    ws.on('close', () => {
+      observer.complete()
+    })
     ws.on('message', msg => {
       try {
         const val = deserialize(msg as Buffer) as EventValue | { [key: number]: Binary }

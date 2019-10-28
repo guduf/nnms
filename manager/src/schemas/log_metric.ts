@@ -18,7 +18,6 @@ const MUTATION_SCHEMA = {
   },
   minProperties: 2
 }
-
 @DocSchema('logMetrics', {
   indexes: [
     {key: {name: 1, 'mutations.id': 1}, unique: true},
