@@ -54,7 +54,7 @@ export class Log<T extends LogData = LogData> {
       throw new TypeError('invalid log')
     }
     const date = new Date()
-    const id = ObjectId.createFromTime(date.getTime() / 1e3)
+    const id = new ObjectId(Math.floor(date.getTime() / 1e3))
     const value = {
       l: input.level,
       c: input.code,

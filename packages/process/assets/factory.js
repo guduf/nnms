@@ -1,10 +1,22 @@
-const { Crash, Event, getResourceMeta } = require('nnms')
+const { statSync } = require('fs')
+const { join } = require('path')
+const { Crash, Event, getResourceMeta } = require(process.cwd() + '/node_module/nnms')
 
 if (typeof process.send !== 'function') {
   console.error('process.send is not a function')
   process.exit(1)
 }
 process.on('message', filepath => {
+  let nnms
+  try {
+    const cwdPath = join(process.cwd(), './node_modules/nnms')
+    const stat = statSync(cwdPath)
+    if (!stat.isDirectory()) throw new Error('not directory')
+    nmms = require(cwdPath)
+  } catch (err) {
+    nnms = require('nnms')
+  }
+  const { Crash, Event, getResourceMeta } = nnms
   try {
     source = require(filepath)
     const map = Object.keys(source).reduce((acc, exportKey) => {

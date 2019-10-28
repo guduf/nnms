@@ -1,4 +1,13 @@
-const {bootstrap, Crash} = require('nnms')
+let nnms
+try {
+  const cwdPath = join(process.cwd(), './node_modules/nnms')
+  const stat = statSync(cwdPath)
+  if (!stat.isDirectory()) throw new Error('not directory')
+  nmms = require(cwdPath)
+} catch (err) {
+  nnms = require('nnms')
+}
+const {bootstrap, Crash} = nnms
 const mods = process.argv.slice(2).map(path => {
   const [filepath, exportKey] = path.split('#')
   return require(filepath)[exportKey]

@@ -21,13 +21,14 @@ export interface EventInput {
 export class Event {
   static create(input: EventInput): Event {
     const date = input.timestamp || new Date()
+    const id = input.id || new ObjectId(Math.floor(date.getTime() / 1e3))
     const data = (
       Buffer.isBuffer(input.data) ?
         input.data :
         Buffer.from(input.data && typeof input.data === 'string' ? input.data : '')
     )
     return new Event({
-      i: input.id || new ObjectId(),
+      i: id,
       e: input.type,
       d: new Binary(data),
       t: date.getMilliseconds()
