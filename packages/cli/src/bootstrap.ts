@@ -6,7 +6,7 @@ import { Observable } from 'rxjs'
 export function bootstrapFile(
   filePath: string,
   opts = {} as { appName?: string, moduleNames?: string[] }
-): Observable<Event> {
+): { outputs:  Observable<Event>, nextInput: (e: Event) => void } {
   let index = {} as { [key: string]: Function }
   try {
     index = require(filePath.match(/^\.?\.\//) ? path.join(process.cwd(), filePath) : filePath)

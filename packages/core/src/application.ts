@@ -43,17 +43,20 @@ export async function bootstrapProviders(...metas: ProviderMeta[]): Promise<void
 }
 
 /* Creates a application and bootstraps all resources. */
-export function bootstrap(...mods: Function[]): Observable<Event> {
+export function bootstrap(...mods: Function[]): { outputs: Observable<Event>, nextInput: (e: Event) => void } {
   const env = new Environment()
   const tags = {src: 'app', app: 'my-app'}
-  const events = new Subject<Event>()
-  const logger = new Logger(tags, log => events.next(log.toEvent()))
+  const inputs = new Subject<Event>()
+  const outputs = new Subject<Event>()
+  const logger = new Logger(tags, log => outputs.next(log.toEvent()))
   const ctx: ApplicationContext =  {
     kind: 'application',
     name: 'my-app',
     env,
     logger,
-    crash: err => events.next(Crash.create(err, tags).toEvent())
+    crash: err => outputs.next(Crash.create(err, tags).toEvent()),
+    inputs: inputs.asObservable(),
+    nextOutput: e => outputs.next(e)
   }
   setTimeout(async () => {
     try {
@@ -77,8 +80,8 @@ export function bootstrap(...mods: Function[]): Observable<Event> {
         ), {})
       })
     } catch (err) {
-      events.next(Crash.create(err, tags).toEvent())
+      outputs.next(Crash.create(err, tags).toEvent())
     }
   })
-  return events.asObservable()
+  return {outputs: outputs.asObservable(), nextInput: e => inputs.next(e)}
 }

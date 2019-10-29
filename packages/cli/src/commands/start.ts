@@ -24,8 +24,8 @@ export const START_COMMAND: Command<{ path?: string }> = {
       const [filepath, exportKey] = moduleMap[key].path.split('#')
       return require(filepath)[exportKey]
     })
-    const events = bootstrap(...mods)
-    events.subscribe(e => {
+    const {outputs} = bootstrap(...mods)
+    outputs.subscribe(e => {
       if (e.type === 'LOG') console.log(format.renderLog(Log.fromEvent(e)))
       if (e.type === 'CRASH') {
         console.error(format.renderCrash(Crash.fromEvent(e)))

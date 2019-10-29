@@ -1,8 +1,10 @@
 
 import { Container, ContainerInstance, Token } from 'typedi'
 import { Logger } from './log'
+import { Event } from './event'
 import Environment from './environment'
 import { resolve } from 'path'
+import { Observable } from 'rxjs'
 
 export const PREFIX = 'nnms'
 export const PREFIX_UPPER = PREFIX.toUpperCase()
@@ -91,6 +93,11 @@ export abstract class ApplicationContext extends CommonContext {
 
   /** global environment of the application */
   readonly env: Environment
+
+  /** generic output emmiter */
+  readonly nextOutput: (e: Event) => void
+
+  readonly inputs: Observable<Event>
 }
 
 /** represents properties for shared accross resource contexts */
