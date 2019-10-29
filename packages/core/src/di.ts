@@ -4,6 +4,7 @@ import { PREFIX, ResourceMeta, ResourceOpts, getContainerContext, ResourceContex
 import { ProviderMeta } from './provider'
 import { ModuleMeta, } from './module'
 import { PluginMeta } from './plugin'
+import { MethodOpts } from './method'
 
 /* Decorates a module method for a specific plugin. */
 export function pluginMethodDecorator(
@@ -67,6 +68,26 @@ export function buildResourceDecorator<TVars extends Record<string, string>, TOp
       const meta = new metaType(type, {...opts, providers})
       Reflect.defineMetadata(`${PREFIX}:${kind}`, meta, type)
     }
+  }
+}
+
+/** Decorates a resource method. */
+export function Method(opts: MethodOpts = {}): MethodDecorator {
+  return (proto, key) => {
+    const methods = Reflect.getMetadata(`${PREFIX}:methods`, proto) || {}
+    const previous = methods[key] || {}
+    for (key in opts) if (['name', 'argTypes', 'returnTypes'].includes(key) && previous[key]) {
+      if (previous[key] !== opts[key as keyof MethodOpts]) throw new Error(`${key} already setted`)
+    }
+    let extras = {...methods.extra}
+    if (opts.extras) for (const key in opts.extras)  {
+      if (extras[key] && extras[key] !== opts.extras[key]) {
+        throw new Error(`extras.${key} already setted`)
+      }
+      extras[key] = opts.extras[key]
+    }
+    methods[key] = {...methods[key], ...opts, extras}
+    Reflect.defineMetadata(`${PREFIX}:methods`, opts, proto)
   }
 }
 

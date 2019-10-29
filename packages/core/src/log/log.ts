@@ -1,9 +1,9 @@
 import Ajv, { ValidateFunction } from 'ajv'
-import { ObjectId } from 'bson'
 import { distinctUntilChanged, filter, scan, shareReplay, startWith } from 'rxjs/operators'
 import { OperatorFunction } from 'rxjs'
 import { JsonObject, JsonValue } from 'type-fest'
 
+import { ObjectId } from '../bson'
 import { Event } from '../event'
 import { applyMetricMutation, LogMetricMutation, LogMetricValue, LOG_METRIC_MUTATION_SCHEMA } from './log_metric'
 import { LogTags, LogLevel, LOG_RECORD_SCHEMA, LogRecord } from './log_record'

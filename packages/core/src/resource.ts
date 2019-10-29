@@ -1,10 +1,11 @@
-
+import { resolve } from 'path'
+import { Observable } from 'rxjs'
 import { Container, ContainerInstance, Token } from 'typedi'
+
 import { Logger } from './log'
 import { Event } from './event'
 import Environment from './environment'
-import { resolve } from 'path'
-import { Observable } from 'rxjs'
+import { MethodMeta } from './method'
 
 export const PREFIX = 'nnms'
 export const PREFIX_UPPER = PREFIX.toUpperCase()
@@ -49,6 +50,10 @@ export abstract class ResourceMeta<TVars extends Record<string, string> = {}> {
       if (!providerMeta) throw new Error('missing provider meta')
       return providerMeta
     })
+    const protoMeta = Reflect.getMetadata(`${PREFIX}:methods`, type.prototype) || {}
+    this.methods = Object.keys(protoMeta).reduce((acc, key) => (
+      {...acc, [key]: new MethodMeta(type.prototype, key, protoMeta[key])}
+    ), {})
   }
 
   /** unique identifier for the resource */
@@ -59,6 +64,8 @@ export abstract class ResourceMeta<TVars extends Record<string, string> = {}> {
 
   /** array of providers explicitly required by the resource */
   readonly providers: ResourceMeta[]
+
+  readonly methods: Record<string, MethodMeta>
 
   /** creates the resource context */
   abstract buildContext(container?: ContainerInstance): ResourceContext

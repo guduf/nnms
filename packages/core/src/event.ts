@@ -1,4 +1,4 @@
-import { Binary, deserialize, serialize, ObjectId } from 'bson'
+import { Binary, deserialize, serialize, ObjectId } from './bson'
 
 const EVENT_DATA_MAX_SIZE = 10e6
 

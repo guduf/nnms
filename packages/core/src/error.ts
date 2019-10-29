@@ -1,6 +1,6 @@
 import { serializeError, deserializeError, ErrorObject } from 'serialize-error'
 import { Event } from './event'
-import { ObjectId } from 'bson'
+import { ObjectId } from './bson'
 import { JsonObject } from 'type-fest'
 import { LogTags } from './log'
 
