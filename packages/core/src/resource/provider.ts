@@ -1,6 +1,7 @@
+import Container from 'typedi'
+
+import { LogMetricValue } from '../log'
 import { getContainerContext, ResourceMeta, ResourceContext } from './resource'
-import Container from 'typedi';
-import { LogMetricValue } from './log'
 
 export interface ProviderMetric extends LogMetricValue {
   name: string,

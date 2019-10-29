@@ -1,32 +1,35 @@
 export * from 'bson'
 
 import { JSONSchema4 } from 'json-schema'
-import { Decimal128, Double, ObjectId, Timestamp } from 'bson'
+import { Decimal128, Double, ObjectId, Timestamp, Binary } from 'bson'
 
-export const BSON_TYPES = [
-  'double',
-  'string',
-  'object',
-  'array',
-  'binData',
-  'objectId',
-  'bool',
-  'date',
-  'null',
-  'int',
-  'timestamp',
-  'long',
-  'decimal',
-] as const
+export const BSON_TYPES = {
+  'string': String,
+  'object': Object,
+  'array': Array,
+  'binData': Binary,
+  'decimal': Decimal128,
+  'double': Double,
+  'objectId': ObjectId,
+  'bool': Boolean,
+  'date': Date,
+  'null': null,
+  'int': Number,
+  'timestamp': Timestamp
+} as const
 
-export type BsonTypeName = typeof BSON_TYPES[number]
+export type BsonTypeName = keyof (typeof BSON_TYPES)
 
-export type BsonObject =  {[key: string]: BsonValue }
+export type BsonType = typeof BSON_TYPES[BsonTypeName]
+
+export type BsonObject =  { [key: string]: BsonValue }
+
 export interface BsonArray extends Array<BsonValue> {}
+
 export type BsonValue = string | number | boolean | Buffer | Date | null | BsonObject | BsonArray
 
 export interface BsonSchema extends JSONSchema4 {
-  bsonType: BsonTypeName | [BsonTypeName]
+  bsonType?: BsonTypeName | [BsonTypeName]
   type?: never
   additionalItems?: boolean | BsonSchema
   items?: BsonSchema | BsonSchema[]
@@ -41,23 +44,10 @@ export interface BsonSchema extends JSONSchema4 {
   not?: BsonSchema
 }
 
-export function reflectBsonType(target: Object, propKey: string): BsonTypeName | null {
-  const propType = Reflect.getMetadata('design:type', target, propKey)
-  switch (propType) {
-    case Array: return 'array'
-    case Boolean: return 'bool'
-    case Buffer: return 'binData'
-    case Date: return 'date'
-    case Decimal128: return 'decimal'
-    case Double: return 'double'
-    case Number: return 'int'
-    case ObjectId: return 'objectId'
-    case String: return 'string'
-    case Timestamp: return 'timestamp'
-    default: {
-      return null
-    }
-  }
+export function reflectBsonType(type: any): BsonTypeName | null {
+  return Object.keys(BSON_TYPES).reduce((acc, key) => (
+    acc || BSON_TYPES[key as BsonTypeName] !== type ? acc : key as BsonTypeName
+  ), null as BsonTypeName | null)
 }
 
 export default BsonSchema

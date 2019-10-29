@@ -1,10 +1,8 @@
 import 'reflect-metadata'
 import { Container, ContainerInstance } from 'typedi'
 import { PREFIX, ResourceMeta, ResourceOpts, getContainerContext, ResourceContext, ResourceKind, getResourceMeta } from './resource'
-import { ProviderMeta } from './provider'
-import { ModuleMeta, } from './module'
-import { PluginMeta } from './plugin'
-import { MethodOpts } from './method'
+import { ProviderMeta,  ModuleMeta, PluginMeta, MethodOpts, MethodArgs } from './resource'
+import { BsonValue } from './bson'
 
 /* Decorates a module method for a specific plugin. */
 export function pluginMethodDecorator(
@@ -72,7 +70,9 @@ export function buildResourceDecorator<TVars extends Record<string, string>, TOp
 }
 
 /** Decorates a resource method. */
-export function Method(opts: MethodOpts = {}): MethodDecorator {
+export function Method<TArgs extends MethodArgs = [], TReturn extends BsonValue = {}>(
+  opts: MethodOpts<TArgs, TReturn> = {}
+): MethodDecorator {
   return (proto, key) => {
     const methods = Reflect.getMetadata(`${PREFIX}:methods`, proto) || {}
     const previous = methods[key] || {}
@@ -89,6 +89,10 @@ export function Method(opts: MethodOpts = {}): MethodDecorator {
     methods[key] = {...methods[key], ...opts, extras}
     Reflect.defineMetadata(`${PREFIX}:methods`, opts, proto)
   }
+}
+
+export function Return(returnType: BsonValue): MethodDecorator {
+  return Method({returnType})
 }
 
 /** Decorates a class with provider meta. */

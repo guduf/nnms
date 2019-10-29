@@ -75,22 +75,26 @@ export class HttpPlugin {
     private readonly _ctx: PluginContext<typeof HTTP_PLUGIN_VARS>,
     _http: HttpProvider
   ) {
-    const methods = this._ctx.moduleMethods.reduce((acc, method) => ({
-      before: (
-        method.meta instanceof HttpHookMeta && method.meta.kind === 'before' ? method.func : acc.before
-      ),
-      routes: [
-        ...acc.routes,
-        ...(
-          method.meta instanceof HttpRouteMeta ?
-            [method as { func: (req: Request) => any, meta: HttpRouteMeta  }] :
-            []
+    const methods = Object.keys(this._ctx.moduleMeta.methods).reduce((acc, key) => {
+      const {extras: {'http': httpExtra}, func} = this._ctx.moduleMeta.methods[key]
+      if (!httpExtra) return acc
+      return {
+        before: (
+          httpExtra instanceof HttpHookMeta && httpExtra.kind === 'before' ? func : acc.before
+        ),
+        routes: [
+          ...acc.routes,
+          ...(
+            httpExtra instanceof HttpRouteMeta ?
+              [{func, meta: httpExtra}] :
+              []
+          )
+        ],
+        after: (
+          httpExtra instanceof HttpHookMeta && httpExtra.kind === 'after' ? func : acc.after
         )
-      ],
-      after: (
-        method.meta instanceof HttpHookMeta && method.meta.kind === 'after' ? method.func : acc.after
-      )
-    }), {
+      }
+    }, {
       before: null as Function | null,
       after: null as Function | null,
       routes: [] as { func: (req: Request) => any, meta: HttpRouteMeta }[]

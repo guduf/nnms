@@ -2,9 +2,9 @@ import { resolve } from 'path'
 import { Observable } from 'rxjs'
 import { Container, ContainerInstance, Token } from 'typedi'
 
-import { Logger } from './log'
-import { Event } from './event'
-import Environment from './environment'
+import { Event } from '../event'
+import Environment from '../environment'
+import { Logger } from '../log'
 import { MethodMeta } from './method'
 
 export const PREFIX = 'nnms'
@@ -131,20 +131,6 @@ export function getContainerContext(modContainer?: ContainerInstance): Applicati
   const ctx = container.get(RESOURCE_CONTEXT_TOKEN)
   return ctx
 }
-
-/** scans the instance prototype to get method metas for a plugin */
-export function getMethodPluginMetas<T>(
-  pluginName: string,
-  instance: {}
-): { [prop: string]: T } {
-  const proto = Object.getPrototypeOf(instance)
-  return Object.getOwnPropertyNames(proto).reduce((acc, prop) => {
-    if (prop === 'constructor') return acc
-    const meta = Reflect.getMetadata(`${PREFIX}:plugin:${pluginName}`, proto, prop)
-    return {...acc, ...(meta ? {[prop]: meta} : {})}
-  }, {} as { [prop: string]: T })
-}
-
 
 export function getResourceMeta<K extends 'module' | 'provider' | 'plugin'>(
   type: K,

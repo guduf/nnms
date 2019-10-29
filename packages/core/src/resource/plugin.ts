@@ -1,7 +1,8 @@
-import { ModuleMeta, ModuleContext } from './module'
-import { ResourceContext, ResourceMeta, PREFIX, getMethodPluginMetas, getContainerContext } from './resource'
 import Container, { ContainerInstance } from 'typedi'
-import { LogMetricValue } from './log'
+
+import { LogMetricValue } from '../log'
+import { ModuleMeta, ModuleContext } from './module'
+import { ResourceContext, ResourceMeta, PREFIX, getContainerContext } from './resource'
 
 export interface PluginMetric extends LogMetricValue {
   name: string,
@@ -14,7 +15,6 @@ export abstract class PluginContext<TVars extends Record<string, string> = {}, T
   readonly meta: PluginMeta<TVars>
   readonly moduleMeta: ModuleMeta
   readonly moduleInstance: T
-  readonly moduleMethods: { prop: string, meta: unknown, func: (...args: any[]) => Promise<unknown> }[]
   readonly moduleParams: { meta: unknown, type: any, index: number }[]
 }
 
@@ -33,11 +33,6 @@ export class PluginMeta<TVars extends Record<string, string> = {}> extends Resou
       type: paramType,
       index
     }))
-    const methodMetas = getMethodPluginMetas(this.name, moduleInstance as any)
-    const moduleMethods = Object.keys(methodMetas).reduce((acc, prop) => [
-      ...acc,
-      {prop, meta: methodMetas[prop], func: (moduleInstance as any)[prop].bind(moduleInstance)}
-    ], [] as { prop: string, meta: unknown, func: (...args: any[]) => Promise<unknown> }[])
     const plugTags = {src: 'plug', plug: `${modName}+${this.name}`}
     return {
       kind: 'plugin',
@@ -47,7 +42,6 @@ export class PluginMeta<TVars extends Record<string, string> = {}> extends Resou
       logger: modCtx.logger.extend(plugTags),
       vars: modCtx.vars,
       moduleMeta: modCtx.meta,
-      moduleMethods,
       moduleInstance,
       moduleParams
     }

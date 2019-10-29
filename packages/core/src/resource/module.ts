@@ -1,9 +1,11 @@
-import { getContainerContext, ResourceMeta, ResourceOpts, ResourceContext, RESOURCE_CONTEXT_TOKEN, getResourceMeta } from './resource'
-import Environment from './environment'
-import { PluginMeta } from './plugin'
 import Container from 'typedi'
+
+import Environment from '../environment'
+import { LogMetricValue } from '../log'
+
+import { PluginMeta } from './plugin'
 import { ProviderMeta } from './provider'
-import { LogMetricValue } from './log'
+import { getContainerContext, ResourceMeta, ResourceOpts, ResourceContext, RESOURCE_CONTEXT_TOKEN, getResourceMeta } from './resource'
 
 export interface ModuleMetric extends LogMetricValue {
   name: string,
