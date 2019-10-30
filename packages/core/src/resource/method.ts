@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs'
 
 import { BsonSchema, reflectBsonType } from '../bson'
-import { SchemaInput, Validator, reflectSchema } from '../schema'
+import { SchemaInput, reflectSchema, buildSchema } from '../schema'
 
 export type MethodArgInputs = [] | [SchemaInput] | [SchemaInput, SchemaInput] | [SchemaInput, SchemaInput, SchemaInput] | [SchemaInput, SchemaInput, SchemaInput, SchemaInput]
 export type MethodArgs = [] | [BsonSchema] | [BsonSchema, BsonSchema] | [BsonSchema, BsonSchema, BsonSchema] | [BsonSchema, BsonSchema, BsonSchema, BsonSchema]
@@ -49,7 +49,7 @@ export class MethodMeta<TReturnKind extends MethodKind = 'void'> {
       }) as MethodArgs
     }
     if (opt.length !== reflectedArgs.length) throw new Error('argument length mismatch')
-    return (opt as SchemaInput[]).map(input => Validator.buildSchema(input)) as MethodArgs
+    return (opt as SchemaInput[]).map(input => buildSchema(input)) as MethodArgs
   }
 
   readonly name: string
@@ -74,7 +74,7 @@ export class MethodMeta<TReturnKind extends MethodKind = 'void'> {
     this.argSchemas = MethodMeta.buildArgSchemas(opts.argTypes || [])
     if (this.kind !== 'void') {
       this.returnSchema = (
-        Validator.buildSchema(opts.returnType || {})
+        buildSchema(opts.returnType || {})
       ) as TReturnKind extends 'void' ? never : BsonSchema
     }
     this.extras = opts.extras || {}

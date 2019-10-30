@@ -4,6 +4,7 @@
   "externals": [
     "ajv",
     "bson",
+    "camelcase",
     "dotenv",
     "reflect-metadata",
     "rxjs",

@@ -1,11 +1,11 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "baseUrl": "./",
-    "outDir": "../../tmp/packages/core"
+    "baseUrl": "./"
   },
-  "files": [
-    "src/index.ts"
+  "include": [
+    "src/index.ts",
+    "typings/*"
   ],
   "exclude": [
     "src/test",

@@ -2,7 +2,7 @@ import 'reflect-metadata'
 import { Container, ContainerInstance } from 'typedi'
 import { PREFIX, ResourceMeta, ResourceOpts, getContainerContext, ResourceContext, ResourceKind, getResourceMeta, MethodKind } from './resource'
 import { ProviderMeta,  ModuleMeta, PluginMeta, MethodOpts } from './resource'
-import { SchemaInput, Validator } from './schema'
+import { buildSchema, SchemaInput } from './schema'
 
 /* Decorates a module method for a specific plugin. */
 export function pluginMethodDecorator(
@@ -91,7 +91,7 @@ export function Method<TReturnKind extends MethodKind>(
 }
 
 export function Return(input: SchemaInput): MethodDecorator {
-  return Method({returnType: Validator.buildSchema(input)})
+  return Method({returnType: buildSchema(input)})
 }
 
 /** Decorates a class with provider meta. */

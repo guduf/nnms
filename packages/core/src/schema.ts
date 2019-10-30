@@ -1,3 +1,5 @@
+import camelCase from 'camelcase'
+
 import { BsonSchema, BsonTypeName, BSON_TYPES } from './bson'
 import { Validator } from './validator'
 
@@ -53,54 +55,40 @@ export function Prop(
   }
 }
 
-export class SchemaMeta {
-  constructor(
-    readonly type: Function,
-    input: SchemaInput
-  ) {
-    let schema = buildSchema(input, true)
-    const schemaType = schema.bsonType || schema.type
-    if (schemaType === 'object') {
-      const propsOpts = Reflect.getMetadataKeys(type.prototype).reduce((acc, key) => {
-        if (typeof key !== 'string') return acc
-        const splited = key.split(':')
-        if (splited.slice(0, -1).join(':') !== `${SCHEMA_METADATA_KEY}:prop`) return acc
-        const opts = Reflect.getMetadata(type.prototype, key) as SchemaPropOpts
-        return {...acc, [opts.name]: opts}
-      }, {} as Record<string, SchemaPropOpts>)
-      const {required, properties} = Object.keys(propsOpts).reduce((acc, key) => {
-        const propOpts = propsOpts[key] as SchemaPropOpts
-        if (acc.properties[key]) throw new TypeError(`property '${key}' is already setted`)
-        const properties = {...acc.properties, [key]: buildSchema(propOpts.schema, true)}
-        const required = [
-          ...acc.required,
-          ...(propOpts.required && !acc.required.includes(key) ? [key] : [])
-        ]
-        return {required, properties}
-      }, {required: schema.required || [], properties: schema.properties || {}})
-      this.schema = {...schema, required, properties}
-      const errors = Validator.validateSchema(this.schema)
-      if (errors) {
-        console.error(errors)
-        throw new TypeError('invalid schema')
-      }
-      if (!this.schema.)
-    }
-  }
-
-  readonly schema: BsonSchema
+export function decorateSchema(target: Function | Symbol, schema: BsonSchema & { id: string }): void {
+  Validator.addSchema(schema)
+  Reflect.defineMetadata(SCHEMA_METADATA_KEY, {$ref: schema.id.slice(1)}, target)
 }
 
-export function reflectSchema(type: Function): SchemaMeta | null {
-  const meta = Reflect.getMetadata(SCHEMA_METADATA_KEY, type)
-  if (!meta) return null
-  if (!(meta instanceof SchemaMeta)) throw new Error('invalid schema meta')
-  return meta
+export function reflectSchema(target: Function | Symbol): BsonSchema | null {
+  return (Reflect.getMetadata(SCHEMA_METADATA_KEY, target) || null) as BsonSchema | null
 }
 
-export function Schema(input?: SchemaInput): ClassDecorator {
+export function Schema(schema: BsonSchema & { id: string, type?: 'object' }): ClassDecorator {
   return target => {
-    const meta = new SchemaMeta(target, input || {})
-    Reflect.defineMetadata(SCHEMA_METADATA_KEY, meta, target)
+    const propsOpts = Reflect.getMetadataKeys(target.prototype).reduce((acc, key) => {
+      if (typeof key !== 'string') return acc
+      const splited = key.split(':')
+      if (splited.slice(0, -1).join(':') !== `${SCHEMA_METADATA_KEY}:prop`) return acc
+      const opts = Reflect.getMetadata(target.prototype, key) as SchemaPropOpts
+      return {...acc, [opts.name]: opts}
+    }, {} as Record<string, SchemaPropOpts>)
+    const {required, properties} = Object.keys(propsOpts).reduce((acc, key) => {
+      const propOpts = propsOpts[key] as SchemaPropOpts
+      if (acc.properties[key]) throw new TypeError(`property '${key}' is already setted`)
+      const properties = {...acc.properties, [key]: buildSchema(propOpts.schema, true)}
+      const required = [
+        ...acc.required,
+        ...(propOpts.required && !acc.required.includes(key) ? [key] : [])
+      ]
+      return {required, properties}
+    }, {required: schema.required || [], properties: schema.properties || {}})
+    decorateSchema(target, {
+      id: `/${camelCase(target.name)}`,
+      ...schema,
+      bsonType: 'object' as const,
+      required,
+      properties
+    })
   }
 }
