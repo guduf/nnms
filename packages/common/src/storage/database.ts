@@ -1,9 +1,9 @@
 import Ajv, { Ajv as Validator, ErrorObject } from 'ajv'
 import applyBsonTypes from 'ajv-bsontype'
 import { connect, MongoClient, Collection, MongoError } from 'mongodb'
-import { Provider, ProviderContext } from 'nnms'
+import { Provider, ProviderContext, Validator } from 'nnms'
 
-import { buildBsonSchema, DOC_METADATA_KEY, DocSchemaMeta } from './meta'
+import { DOC_METADATA_KEY, reflectDocMeta } from './meta'
 
 const DATABASE_VARS = {
   URL: 'mongodb://localhost:27017',
@@ -26,8 +26,10 @@ export class Database {
 
   readonly init = this._init()
 
-  async connect<T>(type: { new (): T }): Promise<Collection<T>> {
-    const meta = Reflect.getMetadata(DOC_METADATA_KEY, type) as DocSchemaMeta
+  async connect<T>(target: { new (): T }): Promise<Collection<T>> {
+    const meta = reflectDocMeta(target)
+    if (!meta) throw new Error('cannot reflect doc meta')
+
     if (!this._collections[meta.name]) try {
       this._collections[meta.name] = this._load(meta)
     } catch (err) {
@@ -53,7 +55,7 @@ export class Database {
     this._ctx.logger.metrics('load collection', {
       collections: {insert: [{name: meta.name, loaded: 'pending'}]}
     })
-    const schema = buildBsonSchema(meta)
+    const schema = Validator.buildBsonSchema(meta)
     this._validator.addSchema({$async: true, ...schema}, meta.name)
     const db = this._client.db(this._ctx.vars.DATABASE)
     try {

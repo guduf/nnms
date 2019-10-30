@@ -5,8 +5,7 @@ import { Crash } from './error'
 import { Event } from './event'
 import Environment from './environment'
 import { Logger } from './log'
-import { ModuleMeta } from './module'
-import { ProviderMeta } from './provider'
+import { ModuleMeta, ProviderMeta } from './resource'
 import { Observable, Subject } from 'rxjs'
 
 /** Browses resource metas recursively to extract all providers that must be bootstraped. */
