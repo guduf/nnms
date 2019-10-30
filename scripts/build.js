@@ -48,7 +48,6 @@ async function build(scan, pkgName, options) {
 
     const pkgFullName = `${basename}${pkgName === 'core' ? '' : `-${pkgName}`}`
     const tsConfigPath = path.join(process.cwd(), `packages/${pkgName}/tsconfig.json`)
-    console.log({tsConfigPath})
 
     function buildTypescriptPlugin(declarationDir) {
       return rollupTypescript({

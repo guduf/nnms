@@ -3,6 +3,7 @@
   "name": "core",
   "externals": [
     "ajv",
+    "ajv-bsontype",
     "bson",
     "camelcase",
     "dotenv",
