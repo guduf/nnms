@@ -1,3 +1,4 @@
+export * from './method'
 export * from './module'
 export * from './plugin'
 export * from './provider'

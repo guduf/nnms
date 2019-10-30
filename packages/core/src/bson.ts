@@ -29,8 +29,7 @@ export interface BsonArray extends Array<BsonValue> {}
 export type BsonValue = string | number | boolean | Buffer | Date | null | BsonObject | BsonArray
 
 export interface BsonSchema extends JSONSchema4 {
-  bsonType?: BsonTypeName | [BsonTypeName]
-  type?: never
+  bsonType?: BsonTypeName | BsonTypeName[]
   additionalItems?: boolean | BsonSchema
   items?: BsonSchema | BsonSchema[]
   additionalProperties?: boolean | BsonSchema
