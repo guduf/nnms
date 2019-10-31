@@ -3,12 +3,11 @@
   "name": "common",
   "internals": ["core"],
   "externals": [
-    "ajv-bsontype",
-    "ajv",
     "body-parser",
-    "bson",
+    "camelcase",
     "express",
     "mongodb",
+    "pluralize",
     "reflect-metadata",
     "typedi"
   ]

@@ -1,4 +1,4 @@
-import Ajv from 'ajv'
+import Ajv, { ErrorObject } from 'ajv'
 import applyBsonTypes from 'ajv-bsontype'
 import BsonSchema, { BSON_TYPES, BsonTypeName } from './bson'
 
@@ -14,10 +14,19 @@ const BSON_SCHEMA_METASCHEMA = {
 
 const SCHEMA_ID_REGEX = /^\/[a-z][a-zA-Z0-9]{1,63}$/
 
+export type SchemaRef = BsonSchema & { id: string }
+
 export class Validator {
   private static _ajv: Ajv.Ajv
 
-  static addSchema(schema: BsonSchema & { id: string }) {
+  private static _init(): void {
+    this._ajv = new Ajv(AJV_OPTIONS)
+    applyBsonTypes(this._ajv)
+    this._ajv.addSchema(BSON_SCHEMA_METASCHEMA, 'bsonSchema')
+  }
+
+  static addSchema(schema: SchemaRef) {
+    if (!this._ajv) this._init()
     if (!SCHEMA_ID_REGEX.test(schema.id)) throw new Error(`invalschema.id id '${schema.id}'`)
     if (!schema.bsonType && schema.type) {
       schema = {...schema, bsonType: schema.type as BsonTypeName}
@@ -32,12 +41,17 @@ export class Validator {
     this._ajv.addSchema(schema)
   }
 
-  static validate(schemaKeyRef: object | string, data: any): Ajv.ErrorObject[] | null {
-    if (this._ajv) {
-      this._ajv = new Ajv(AJV_OPTIONS)
-      applyBsonTypes(this._ajv)
-      this._ajv.addSchema(BSON_SCHEMA_METASCHEMA, 'bsonSchema')
+  static compile(schema: BsonSchema): (data: any) => Ajv.ErrorObject[] | null {
+    if (!this._ajv) this._init()
+    const validator = this._ajv.compile(schema)
+    return data => {
+      const valid = validator(data)
+      return valid ? null : (validator.errors as ErrorObject[])
     }
+  }
+
+  static validate(schemaKeyRef: object | string, data: any): Ajv.ErrorObject[] | null {    if (!this._ajv) this._init()
+    if (!this._ajv) this._init()
     this._ajv.validate(schemaKeyRef, data) as boolean
     return this._ajv.errors || null
   }

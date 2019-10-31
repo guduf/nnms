@@ -3,15 +3,20 @@ import { Collection as NativeCollection, FilterQuery, UpdateQuery } from 'mongod
 import Container from 'typedi'
 
 import { Database } from './database'
+import { reflectSchema, Validator } from 'nnms'
 
 export class MongoDbCollection<T> {
   readonly native: Promise<NativeCollection<T>>
+  readonly validate: (data: T) => ErrorObject[] | null
 
   constructor(
     private readonly _db: Database,
-    private readonly type: { new(): T }
+    readonly target: { new(): T }
   ) {
-    this.native = this._db.connect(type)
+    const schema = reflectSchema(target)
+    if (!schema) throw new Error('invalid schema')
+    this.validate = Validator.compile(schema)
+    this.native = this._db.connect(target)
   }
 
   async find(query: FilterQuery<T>): Promise<T[]> {
@@ -43,10 +48,6 @@ export class MongoDbCollection<T> {
   async remove(query: FilterQuery<T>): Promise<void> {
     const native = await this.native
     await native.remove(query)
-  }
-
-  validate(data: T): Promise<ErrorObject[] | null> {
-    return this._db.validate(this.type, data)
   }
 }
 

@@ -86,7 +86,7 @@ export class HttpPlugin {
           ...acc.routes,
           ...(
             httpExtra instanceof HttpRouteMeta ?
-              [{func, meta: httpExtra}] :
+              [{func: func as (req: Request) => any, meta: httpExtra}] :
               []
           )
         ],

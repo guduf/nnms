@@ -34,6 +34,7 @@ const LOG_SCHEMA = {
 }
 
 export class Log<T extends LogData = LogData> {
+  // TODO - remove for global validator
   private static _validator: ValidateFunction
 
   static fromEvent<T extends LogData = LogData>(e: Event): Log<T> {

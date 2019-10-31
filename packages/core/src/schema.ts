@@ -1,7 +1,7 @@
 import camelCase from 'camelcase'
 
 import { BsonSchema, BsonTypeName, BSON_TYPES } from './bson'
-import { Validator } from './validator'
+import { SchemaRef, Validator } from './validator'
 
 export const SCHEMA_METADATA_KEY = 'nnms:schema'
 
@@ -18,7 +18,7 @@ export function buildSchema(schema: SchemaInput, skipValidate = false): BsonSche
     return reflected.schema
   }
   if (typeof schema === 'string') {
-    if (Object.keys(BSON_TYPES).includes(schema)) throw new Error('invaliid bson type')
+    if (Object.keys(BSON_TYPES).includes(schema)) throw new Error('invalid bson type')
     return {bsonType: schema}
   }
   const errors = skipValidate ? null : Validator.validateSchema(schema)
@@ -55,40 +55,45 @@ export function Prop(
   }
 }
 
-export function decorateSchema(target: Function | Symbol, schema: BsonSchema & { id: string }): void {
+export function decorateSchema(target: Function | Symbol, schema: SchemaRef): SchemaRef {
   Validator.addSchema(schema)
   Reflect.defineMetadata(SCHEMA_METADATA_KEY, {$ref: schema.id.slice(1)}, target)
+  return schema
 }
 
 export function reflectSchema(target: Function | Symbol): BsonSchema | null {
   return (Reflect.getMetadata(SCHEMA_METADATA_KEY, target) || null) as BsonSchema | null
 }
 
-export function Schema(schema: BsonSchema & { id: string, type?: 'object' }): ClassDecorator {
-  return target => {
-    const propsOpts = Reflect.getMetadataKeys(target.prototype).reduce((acc, key) => {
-      if (typeof key !== 'string') return acc
-      const splited = key.split(':')
-      if (splited.slice(0, -1).join(':') !== `${SCHEMA_METADATA_KEY}:prop`) return acc
-      const opts = Reflect.getMetadata(target.prototype, key) as SchemaPropOpts
-      return {...acc, [opts.name]: opts}
-    }, {} as Record<string, SchemaPropOpts>)
-    const {required, properties} = Object.keys(propsOpts).reduce((acc, key) => {
-      const propOpts = propsOpts[key] as SchemaPropOpts
-      if (acc.properties[key]) throw new TypeError(`property '${key}' is already setted`)
-      const properties = {...acc.properties, [key]: buildSchema(propOpts.schema, true)}
-      const required = [
-        ...acc.required,
-        ...(propOpts.required && !acc.required.includes(key) ? [key] : [])
-      ]
-      return {required, properties}
-    }, {required: schema.required || [], properties: schema.properties || {}})
-    decorateSchema(target, {
-      id: `/${camelCase(target.name)}`,
-      ...schema,
-      bsonType: 'object' as const,
-      required,
-      properties
-    })
-  }
+export type ObjectRefSchema = Partial<SchemaRef> & { bsonType?: 'object', type?: 'object' }
+
+export function decorateObjectSchema(target: Function, schema: ObjectRefSchema): SchemaRef {
+  const propsOpts = Reflect.getMetadataKeys(target.prototype).reduce((acc, key) => {
+    if (typeof key !== 'string') return acc
+    const splited = key.split(':')
+    if (splited.slice(0, -1).join(':') !== `${SCHEMA_METADATA_KEY}:prop`) return acc
+    const opts = Reflect.getMetadata(target.prototype, key) as SchemaPropOpts
+    return {...acc, [opts.name]: opts}
+  }, {} as Record<string, SchemaPropOpts>)
+  const {required, properties} = Object.keys(propsOpts).reduce((acc, key) => {
+    const propOpts = propsOpts[key] as SchemaPropOpts
+    if (acc.properties[key]) throw new TypeError(`property '${key}' is already setted`)
+    const properties = {...acc.properties, [key]: buildSchema(propOpts.schema, true)}
+    const required = [
+      ...acc.required,
+      ...(propOpts.required && !acc.required.includes(key) ? [key] : [])
+    ]
+    return {required, properties}
+  }, {required: schema.required || [], properties: schema.properties || {}})
+  return decorateSchema(target, {
+    ...schema,
+    id: schema.id || `/${camelCase(target.name)}`,
+    bsonType: 'object' as const,
+    required,
+    properties
+  })
+}
+
+export function Schema(schema: ObjectRefSchema): ClassDecorator {
+  return target => { decorateObjectSchema(target, schema) }
 }
