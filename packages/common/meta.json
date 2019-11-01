@@ -8,7 +8,6 @@
     "express",
     "mongodb",
     "pluralize",
-    "reflect-metadata",
-    "typedi"
+    "reflect-metadata"
   ]
 }

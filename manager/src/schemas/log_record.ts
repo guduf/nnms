@@ -1,20 +1,17 @@
 import { ObjectId } from 'bson'
 
-import { Prop } from 'nnms'
+import nnms, { Prop } from 'nnms'
 import { Doc } from 'nnms-common'
-import { LogLevel, LOG_RECORD_SCHEMA, LogRecord as ILogRecord, LogTags, LogData } from 'nnms'
 
-const {data, level, code, tags} = LOG_RECORD_SCHEMA.properties
+const {data, level, code, tags} = nnms.LOG_RECORD_SCHEMA.properties
 
-@Doc({
-  indexes: [{key: {'id': 1}, unique: true}]
-})
-export class LogRecord implements ILogRecord {
+@Doc({indexes: [{key: {'id': 1}, unique: true}]})
+export class LogRecord implements nnms.LogRecord {
   @Prop(true)
   id: ObjectId
 
   @Prop(level, true)
-  level: LogLevel
+  level: nnms.LogLevel
 
   @Prop(code, true)
   code: string
@@ -23,8 +20,8 @@ export class LogRecord implements ILogRecord {
   date: Date
 
   @Prop(tags, true)
-  tags: LogTags
+  tags: nnms.LogTags
 
   @Prop(data)
-  data: LogData
+  data: nnms.LogData
 }

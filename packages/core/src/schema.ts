@@ -61,8 +61,8 @@ export function decorateSchema(target: Function | Symbol, schema: SchemaRef): Sc
   return schema
 }
 
-export function reflectSchema(target: Function | Symbol): BsonSchema | null {
-  return (Reflect.getMetadata(SCHEMA_METADATA_KEY, target) || null) as BsonSchema | null
+export function reflectSchema(target: Function | Symbol): SchemaRef | null {
+  return (Reflect.getMetadata(SCHEMA_METADATA_KEY, target) || null) as SchemaRef | null
 }
 
 export type ObjectRefSchema = Partial<SchemaRef> & { bsonType?: 'object', type?: 'object' }

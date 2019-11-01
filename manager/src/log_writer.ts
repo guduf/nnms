@@ -10,9 +10,8 @@ const LOG_REMOTE_VARS = {
   URL: 'ws://localhost:6390'
 }
 
-@Module('log-remote', LOG_REMOTE_VARS, Database)
-export class LogRemote {
-
+@Module('logWriter', LOG_REMOTE_VARS, Database)
+export class LogWriter {
   constructor(
     private readonly _ctx: ModuleContext<typeof LOG_REMOTE_VARS>,
     @Collection(LogRecord)

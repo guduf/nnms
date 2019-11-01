@@ -1,2 +1,2 @@
 export { Api } from './api'
-export { LogRemote } from './log_remote'
+export { LogWriter } from './log_writer'

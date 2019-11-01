@@ -1,13 +1,12 @@
-import { ErrorObject } from 'ajv'
 import { Collection as NativeCollection, FilterQuery, UpdateQuery } from 'mongodb'
-import Container from 'typedi'
+
+import { decorateParameter, reflectSchema, Validator, injectProvider, ValidatorError } from 'nnms'
 
 import { Database } from './database'
-import { reflectSchema, Validator } from 'nnms'
 
 export class MongoDbCollection<T> {
   readonly native: Promise<NativeCollection<T>>
-  readonly validate: (data: T) => ErrorObject[] | null
+  readonly validate: (data: T) => ValidatorError[] | null
 
   constructor(
     private readonly _db: Database,
@@ -52,12 +51,10 @@ export class MongoDbCollection<T> {
 }
 
 export function Collection<T>(type: { new (): T }): ParameterDecorator {
-  return (target, _, index): void => {
-    Container.registerHandler({object: target, index, value: () => {
-      if (!Container.has(Database)) throw new Error('missing database provider')
-      return new MongoDbCollection(Container.get(Database), type)
-    }})
-  }
+  return decorateParameter(() => {
+    const database = injectProvider(Database)
+    return new MongoDbCollection(database, type)
+  })
 }
 
 export type Collection<T> = MongoDbCollection<T>

@@ -1,6 +1,10 @@
-import Ajv, { ErrorObject } from 'ajv'
+
+import Ajv from 'ajv'
 import applyBsonTypes from 'ajv-bsontype'
 import BsonSchema, { BSON_TYPES, BsonTypeName } from './bson'
+
+export type ValidatorError = Ajv.ErrorObject
+export type ValidateFunction = (data: any) => ValidatorError[] | null
 
 const AJV_OPTIONS: Ajv.Options = {}
 
@@ -41,22 +45,22 @@ export class Validator {
     this._ajv.addSchema(schema)
   }
 
-  static compile(schema: BsonSchema): (data: any) => Ajv.ErrorObject[] | null {
+  static compile(schema: BsonSchema): ValidateFunction {
     if (!this._ajv) this._init()
     const validator = this._ajv.compile(schema)
     return data => {
       const valid = validator(data)
-      return valid ? null : (validator.errors as ErrorObject[])
+      return valid ? null : (validator.errors as ValidatorError[])
     }
   }
 
-  static validate(schemaKeyRef: object | string, data: any): Ajv.ErrorObject[] | null {    if (!this._ajv) this._init()
+  static validate(schemaKeyRef: object | string, data: any): ValidatorError[] | null {
     if (!this._ajv) this._init()
     this._ajv.validate(schemaKeyRef, data) as boolean
     return this._ajv.errors || null
   }
 
-  static validateSchema(data: any): Ajv.ErrorObject[] | null {
+  static validateSchema(data: any): ValidatorError[] | null {
     return this.validate(BSON_SCHEMA_METASCHEMA.$id, data)
   }
 }

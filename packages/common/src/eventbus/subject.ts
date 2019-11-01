@@ -1,7 +1,7 @@
-import { InteropObservable, Observable, Subject } from 'rxjs'
+import { InteropObservable, Observable } from 'rxjs'
 
-import { BsonValue } from 'nnms'
-import Container from 'typedi'
+import { BsonValue, decorateParameter, injectProvider, reflectSchema } from 'nnms'
+
 import { Eventbus } from './eventbus'
 
 export interface BusSubject<T extends BsonValue = BsonValue> extends InteropObservable<T> {
@@ -11,11 +11,12 @@ export interface BusSubject<T extends BsonValue = BsonValue> extends InteropObse
   complete: () => void
 }
 
-export function BusSubject<T extends BsonValue>(target: Function): ParameterDecorator {
-  return (target, _, index): void => {
-    Container.registerHandler({object: target, index, value: () => {
-      if (!Container.has(Eventbus)) throw new Error('missing eventbus provider')
-      return Container.get(Eventbus).
-    }})
-  }
+export function BusSubject<T extends BsonValue>(
+  target: Function,
+  id?: string
+): ParameterDecorator {
+  const schema = reflectSchema(target)
+  if (!schema) throw new Error('cannot reflect target schema')
+  const subId = id || schema.id.slice(1)
+  return decorateParameter(() => injectProvider(Eventbus).getSubject(subId, schema))
 }

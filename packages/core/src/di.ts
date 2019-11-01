@@ -108,3 +108,26 @@ export const Plugin = (name: string, vars: Record<string, string>, ...providers:
 export const Module = (name: string, vars: Record<string, string>, ...pluginsAndProviders: Function[]) => (
   buildResourceDecorator('module', ModuleMeta)({name, vars, pluginsAndProviders})
 )
+
+export function injectProvider<T extends Function>(
+  target: T
+): T extends { new (...args: any[]): infer X } ? X : unknown {
+  const meta = getResourceMeta('provider', target)
+  if (!meta) throw new Error('target is not decorated with provider meta')
+  if (!Container.has(target)) throw new Error(`missing provider '${meta.name}'`)
+  return Container.get(target)
+}
+
+export function decorateParameter<T>(
+  registrer: (target: Function, key: string) => T | void
+): ParameterDecorator {
+  return (target, key, index): void => {
+    if (typeof key === 'symbol') throw new Error('key must be string')
+    Container.registerHandler({
+      object:
+      target,
+      index,
+      value: () => registrer(target as Function, key)
+    })
+  }
+}

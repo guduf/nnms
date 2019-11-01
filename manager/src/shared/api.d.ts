@@ -1,5 +1,4 @@
-import { ObjectId } from 'bson'
-import { ErrorObject } from 'serialize-error';
+import { ObjectId, ValidatorError } from 'nnms'
 
 export interface ApiRequest {
   id: ObjectId
@@ -11,7 +10,7 @@ export interface ApiRequest {
 export interface ApiFailureResponse {
   reqId: ObjectId
   data?: never
-  error: ErrorObject
+  error: ValidatorError
 }
 
 export interface ApiSuccessResponse<T = {}> {
