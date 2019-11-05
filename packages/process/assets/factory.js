@@ -2,7 +2,7 @@ const { existsSync } = require('fs')
 const { join } = require('path')
 
 const cwdPath = join(process.cwd(), './node_modules/nnms/bundles/nnms.cjs.js')
-const { Crash, Event, getResourceMeta } = require(existsSync(cwdPath) ? cwdPath : nnms)
+const { Crash, Event, getResourceMeta } = require(existsSync(cwdPath) ? cwdPath : 'nnms')
 
 process.on('message', filepath => {
   try {

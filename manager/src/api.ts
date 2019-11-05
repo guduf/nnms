@@ -1,8 +1,9 @@
-import { Module, ModuleContext } from 'nnms'
+import { Module, ModuleContext, Topic } from 'nnms'
 import { Server as WebSocketServer } from 'ws'
-import { fromEvent, merge } from 'rxjs'
-import { first, tap } from 'rxjs/operators'
+import { fromEvent, merge, Observable } from 'rxjs'
+import { first, tap, share } from 'rxjs/operators'
 import WebSocket from 'ws'
+import { LogRecord } from './schemas/log_record'
 
 export const API_VARS = {
   PORT: '9063'
@@ -11,10 +12,16 @@ export const API_VARS = {
 @Module('api', API_VARS)
 export class Api {
   init = this._init()
+  logs: Observable<LogRecord>
 
   constructor(
-    private _ctx: ModuleContext<typeof API_VARS>
-  ) { }
+    private _ctx: ModuleContext<typeof API_VARS>,
+    @Topic(LogRecord)
+    logTopic: Topic<LogRecord>
+  ) {
+    this.logs = logTopic.pipe(share())
+    this.logs.subscribe()
+  }
 
   private _handleConnection(ws: WebSocket): void {
     this._ctx.logger.info('HANDLE_CONNECTION', {url: ws.url})

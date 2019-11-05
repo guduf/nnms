@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs'
 
-import { BsonSchema, reflectBsonType } from '../bson'
-import { SchemaInput, reflectSchema, buildSchema } from '../schema'
+import { BsonSchema, reflectBsonType, SchemaInput, reflectSchema, buildSchema } from '../schema'
+import { definePropMeta, reflectMethodTypes } from '../di'
 
 export type MethodArgInputs = [] | [SchemaInput] | [SchemaInput, SchemaInput] | [SchemaInput, SchemaInput, SchemaInput] | [SchemaInput, SchemaInput, SchemaInput, SchemaInput]
 export type MethodArgs = [] | [BsonSchema] | [BsonSchema, BsonSchema] | [BsonSchema, BsonSchema, BsonSchema] | [BsonSchema, BsonSchema, BsonSchema, BsonSchema]
@@ -21,7 +21,6 @@ export interface MethodOpts<TReturnKind extends MethodKind = 'void'> {
   returnType?: TReturnKind extends 'void' ? never : SchemaInput
   argTypes?: MethodArgInputs
   name?: string
-  extras?: Record<string, unknown>
 }
 
 export class MethodMeta<TReturnKind extends MethodKind = 'void'> {
@@ -56,7 +55,6 @@ export class MethodMeta<TReturnKind extends MethodKind = 'void'> {
   readonly argSchemas: MethodArgs
   readonly kind: MethodKind
   readonly returnSchema: TReturnKind extends 'void' ? never : BsonSchema
-  readonly extras: Record<string, unknown>
   readonly func: Function
 
   constructor(
@@ -64,10 +62,7 @@ export class MethodMeta<TReturnKind extends MethodKind = 'void'> {
     key: string,
     opts = {} as MethodOpts<TReturnKind>
   ) {
-    const reflected  = {
-      argTypes: Reflect.getMetadata('design:paramtypes', proto, key),
-      returnType: Reflect.getMetadata('design:returntype', proto, key)
-    }
+    const reflected  = reflectMethodTypes(proto, key)
     this.kind = MethodMeta.buildKind(reflected.returnType, opts.returnKind)
     this.func = proto[key]
     this.name = opts.name || proto[key].name || key
@@ -77,7 +72,11 @@ export class MethodMeta<TReturnKind extends MethodKind = 'void'> {
         buildSchema(opts.returnType || {})
       ) as TReturnKind extends 'void' ? never : BsonSchema
     }
-    this.extras = opts.extras || {}
     console.log(this)
   }
 }
+
+export const Method = (
+  definePropMeta((_, __, opts) => ({method: opts}))
+) as <TReturnKind extends MethodKind>(opts: MethodOpts<TReturnKind>) => MethodDecorator
+

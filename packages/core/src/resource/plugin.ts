@@ -1,8 +1,10 @@
 import Container, { ContainerInstance } from 'typedi'
 
+import { injectContext } from '../di'
 import { LogMetricValue } from '../log'
 import { ModuleMeta, ModuleContext } from './module'
-import { ResourceContext, ResourceMeta, PREFIX, getContainerContext } from './resource'
+import { ResourceContext, ResourceMeta } from './resource'
+import { defineResourceMeta } from './resource_di'
 
 export interface PluginMetric extends LogMetricValue {
   name: string,
@@ -15,7 +17,6 @@ export abstract class PluginContext<TVars extends Record<string, string> = {}, T
   readonly meta: PluginMeta<TVars>
   readonly moduleMeta: ModuleMeta
   readonly moduleInstance: T
-  readonly moduleParams: { meta: unknown, type: any, index: number }[]
 }
 
 export class PluginMeta<TVars extends Record<string, string> = {}> extends ResourceMeta<TVars> {
@@ -24,15 +25,10 @@ export class PluginMeta<TVars extends Record<string, string> = {}> extends Resou
   }
 
   buildContext<T>(container: ContainerInstance): PluginContext<TVars, T> {
-    const modCtx = getContainerContext(container) as ModuleContext<TVars>
-    const {name: modName, type: modType} = modCtx.meta
+    const modCtx = injectContext(container) as ModuleContext<TVars>
+    const {name: modName, target: modType} = modCtx.meta
     const moduleInstance = Container.of(modCtx.meta).get(modType) as T
-    const paramTypes = Reflect.getMetadata('design:paramtypes', modType) as any[] || []
-    const moduleParams = paramTypes.map((paramType, index) => ({
-      meta: Reflect.getMetadata(`${PREFIX}:plugin:${this.name}`, modType, `constructor[${index}]`) || null,
-      type: paramType,
-      index
-    }))
+
     const plugTags = {src: 'plug', plug: `${modName}+${this.name}`}
     return {
       kind: 'plugin',
@@ -42,17 +38,16 @@ export class PluginMeta<TVars extends Record<string, string> = {}> extends Resou
       logger: modCtx.logger.extend(plugTags),
       vars: modCtx.vars,
       moduleMeta: modCtx.meta,
-      moduleInstance,
-      moduleParams
+      moduleInstance
     }
   }
 
   async bootstrap(modMeta: ResourceMeta): Promise<void> {
-    const {logger} = getContainerContext()
+    const {logger} = injectContext()
     const container = Container.of(modMeta)
     try {
-      const plugin = container.get(this.type) as { init?: Promise<void> }
-      if (!(plugin instanceof this.type)) throw new Error('invalid plugin instance')
+      const plugin = container.get(this.target) as { init?: Promise<void> }
+      if (!(plugin instanceof this.target)) throw new Error('invalid plugin instance')
       if (plugin.init instanceof Promise) await plugin.init
       logger.info('PLUGIN_READY', {mod: modMeta.name, plug: this.name}, {
         plugins: {insert: [{name: `${modMeta.name}+${this.name}`, plugin: this.name, module: modMeta.name} as PluginMetric]}
@@ -63,3 +58,8 @@ export class PluginMeta<TVars extends Record<string, string> = {}> extends Resou
     }
   }
 }
+
+/** Decorates a class with plugin meta. */
+export const Plugin = (name: string, vars: Record<string, string>, ...providers: Function[]) => (
+  defineResourceMeta('plugin', PluginMeta)({name, vars, providers})
+)

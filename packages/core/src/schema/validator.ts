@@ -1,6 +1,7 @@
 
 import Ajv from 'ajv'
 import applyBsonTypes from 'ajv-bsontype'
+
 import BsonSchema, { BSON_TYPES, BsonTypeName } from './bson'
 
 export type ValidatorError = Ajv.ErrorObject

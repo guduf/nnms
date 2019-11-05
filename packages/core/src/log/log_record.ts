@@ -1,6 +1,6 @@
 import { JsonObject } from 'type-fest'
 
-import { ObjectId } from '../bson'
+import { ObjectId } from '../schema'
 
 export const LOG_RECORD_LEVELS = ['DBG', 'ERR', 'INF', 'WAR'] as const
 

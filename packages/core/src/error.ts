@@ -1,7 +1,8 @@
 import { serializeError, deserializeError, ErrorObject } from 'serialize-error'
-import { Event } from './event'
-import { ObjectId } from './bson'
 import { JsonObject } from 'type-fest'
+
+import { Event } from './event'
+import { ObjectId } from './schema'
 import { LogTags } from './log'
 
 export interface ErrorValue {

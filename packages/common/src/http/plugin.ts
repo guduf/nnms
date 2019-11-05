@@ -1,7 +1,7 @@
 import bodyParser from 'body-parser'
 import express, { Express, Handler, IRouterMatcher, Request, Response } from 'express'
 
-import { Plugin, PluginContext, pluginMethodDecorator } from 'nnms'
+import { definePropMeta, Plugin, PluginContext, getPropsMeta } from 'nnms'
 
 import { HttpProvider } from './provider'
 
@@ -44,28 +44,20 @@ export class HttpRouteMeta implements HandlerOpts {
   }
 }
 
-export function HttpRoute(
-  arg: string | Partial<HandlerOpts> | Handler = {},
-  ...middlewares: Handler[]
-) {
-  const opts = typeof arg === 'object' ? typeof arg === 'string' ? {path: arg} : arg : {}
-  const meta = new HttpRouteMeta(opts, middlewares)
-  return pluginMethodDecorator('http', meta)
-}
-
 export class HttpHookMeta {
   constructor(readonly kind: 'before' | 'after') { }
 }
 
-export function BeforeHttpRoutes() {
-  const meta = new HttpHookMeta('before')
-  return pluginMethodDecorator('http', meta)
-}
+export const HttpRoute = definePropMeta<
+  [string | Partial<HandlerOpts> | Handler, ...Handler[]]
+>((_, __, arg, ...middlewares) => {
+  const opts = typeof arg === 'object' ? typeof arg === 'string' ? {path: arg} : arg : {}
+  return {http: new HttpRouteMeta(opts, middlewares)}
+})
 
-export function AfterHttpRoutes() {
-  const meta = new HttpHookMeta('after')
-  return pluginMethodDecorator('http', meta)
-}
+export const BeforeHttpRoutes = definePropMeta(() => ({http: new HttpHookMeta('before')}))
+
+export const AfterHttpRoutes = definePropMeta(() => ({http: new HttpHookMeta('after')}))
 
 @Plugin('http', HTTP_PLUGIN_VARS)
 export class HttpPlugin {
@@ -75,23 +67,25 @@ export class HttpPlugin {
     private readonly _ctx: PluginContext<typeof HTTP_PLUGIN_VARS>,
     _http: HttpProvider
   ) {
-    const methods = Object.keys(this._ctx.moduleMeta.methods).reduce((acc, key) => {
-      const {extras: {'http': httpExtra}, func} = this._ctx.moduleMeta.methods[key]
-      if (!httpExtra) return acc
+    const proto = this._ctx.moduleMeta.target.prototype as Record<string, Function>
+    const propsMeta = getPropsMeta(proto, 'http')
+    const methods = Object.keys(propsMeta).reduce((acc, key) => {
+      const func = proto[key]
+      const meta = propsMeta[key]
       return {
         before: (
-          httpExtra instanceof HttpHookMeta && httpExtra.kind === 'before' ? func : acc.before
+          meta instanceof HttpHookMeta && meta.kind === 'before' ? func : acc.before
         ),
         routes: [
           ...acc.routes,
           ...(
-            httpExtra instanceof HttpRouteMeta ?
-              [{func: func as (req: Request) => any, meta: httpExtra}] :
+            meta instanceof HttpRouteMeta ?
+              [{func: func as (req: Request) => any, meta: meta}] :
               []
           )
         ],
         after: (
-          httpExtra instanceof HttpHookMeta && httpExtra.kind === 'after' ? func : acc.after
+          meta instanceof HttpHookMeta && meta.kind === 'after' ? func : acc.after
         )
       }
     }, {

@@ -1,11 +1,12 @@
 import Container from 'typedi'
 
 import Environment from '../environment'
+import { injectContext, CONTAINER_CONTEXT_TOKEN } from '../di'
 import { LogMetricValue } from '../log'
-
 import { PluginMeta } from './plugin'
 import { ProviderMeta } from './provider'
-import { getContainerContext, ResourceMeta, ResourceOpts, ResourceContext, RESOURCE_CONTEXT_TOKEN, getResourceMeta } from './resource'
+import { defineResourceMeta } from './resource_di'
+import { ResourceMeta, ResourceOpts, ResourceContext, getResourceMeta } from './resource'
 
 export interface ModuleMetric extends LogMetricValue {
   name: string,
@@ -50,7 +51,7 @@ export class ModuleMeta<TVars extends Record<string, string> = {}> extends Resou
   }
 
   async bootstrap(): Promise<void> {
-    const {logger} = getContainerContext()
+    const {logger} = injectContext()
     logger.metrics(`bootstrap module '${this.name}'`, {
       modules: {
         insert: [{
@@ -61,10 +62,10 @@ export class ModuleMeta<TVars extends Record<string, string> = {}> extends Resou
       }
     })
     const container = Container.of(this)
-    container.set(RESOURCE_CONTEXT_TOKEN, this.buildContext())
+    container.set(CONTAINER_CONTEXT_TOKEN, this.buildContext())
     try {
-      const mod = container.get(this.type) as { init?: Promise<void> }
-      if (!(mod instanceof this.type)) throw new Error('invalid module instance')
+      const mod = container.get(this.target) as { init?: Promise<void> }
+      if (!(mod instanceof this.target)) throw new Error('invalid module instance')
       if (mod.init instanceof Promise) await mod.init
     } catch (catched) {
       logger.error('MODULE_BOOTSTRAP_FAILED', catched)
@@ -80,7 +81,7 @@ export class ModuleMeta<TVars extends Record<string, string> = {}> extends Resou
   }
 
   buildContext(): ModuleContext<TVars> {
-    const {crash, env, logger} = getContainerContext()
+    const {crash, env, logger} = injectContext()
     const modTags = {src: 'mod', mod: this.name}
     return {
       kind: 'module',
@@ -101,3 +102,8 @@ export class ModuleMeta<TVars extends Record<string, string> = {}> extends Resou
     return env.extract({...pluginsVarsTpl, ...this.vars}, prefix)
   }
 }
+
+/** Decorates a class with module meta. */
+export const Module = (name: string, vars: Record<string, string>, ...pluginsAndProviders: Function[]) => (
+  defineResourceMeta('module', ModuleMeta)({name, vars, pluginsAndProviders})
+)

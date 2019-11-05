@@ -1,7 +1,9 @@
 import Container from 'typedi'
 
 import { LogMetricValue } from '../log'
-import { getContainerContext, ResourceMeta, ResourceContext } from './resource'
+import { injectContext } from '../di'
+import { ResourceMeta, ResourceContext } from './resource'
+import { defineResourceMeta } from './resource_di'
 
 export interface ProviderMetric extends LogMetricValue {
   name: string,
@@ -18,13 +20,13 @@ export class ProviderMeta<TVars extends Record<string, string> = {}> extends Res
   readonly providers: ProviderMeta[]
 
   async bootstrap(): Promise<void> {
-    const {logger} = getContainerContext()
+    const {logger} = injectContext()
     logger.metrics(`bootstrap provider '${this.name}'`, {
       providers: {insert: [{name: this.name, status: 'bootstrap'} as ProviderMetric]}
     })
     let provider: { init?: Promise<void> }
     try {
-      provider = Container.get(this.type)
+      provider = Container.get(this.target)
       if (provider.init instanceof Promise) await provider.init
       logger.info('PROVIDER_READY', {prov: this.name}, {
         providers: {
@@ -39,7 +41,7 @@ export class ProviderMeta<TVars extends Record<string, string> = {}> extends Res
   }
 
   buildContext(): ProviderContext {
-    const {crash, env, logger} = getContainerContext()
+    const {crash, env, logger} = injectContext()
     const provTags = {src: 'prov', prov: this.name}
     return {
       name: this.name,
@@ -51,4 +53,8 @@ export class ProviderMeta<TVars extends Record<string, string> = {}> extends Res
     }
   }
 }
+
+export const Provider = (name: string, vars: Record<string, string>, ...providers: Function[]) => (
+  defineResourceMeta('provider', ProviderMeta)({name, vars, providers})
+)
 

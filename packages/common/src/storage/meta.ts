@@ -1,19 +1,11 @@
 import 'reflect-metadata'
 
 import { IndexSpecification } from 'mongodb'
-
-import { BsonType, decorateObjectSchema, ObjectRefSchema } from 'nnms'
 import pluralize from 'pluralize'
 
-export const PROPS_META_KEY = 'nnms:storage:props'
+import { Schema, defineClassMeta, SchemaRef, getClassMeta } from 'nnms'
 
-export interface DocPropMeta {
-  bsonType: BsonType
-  required: boolean
-  unique: boolean
-}
-
-export const DOC_METADATA_KEY = 'nnms:storage:doc'
+export const DOC_METADATA_KEY = 'doc'
 
 export interface DocOpts {
   collName: string
@@ -35,20 +27,20 @@ export class DocMeta {
 }
 
 export function reflectDocMeta(target: Function): DocMeta | null {
-  const meta = Reflect.getMetadata(DOC_METADATA_KEY, target)
+  const meta = getClassMeta(target, DOC_METADATA_KEY)
   if (!meta) return null
   if (!(meta instanceof DocMeta)) throw new Error('invalid doc meta')
   return meta
 }
 
-export function Doc(opts: Partial<DocOpts> & ObjectRefSchema = {}): ClassDecorator {
-  return target => {
-    const schema = {...opts}
+export const Doc = defineClassMeta<[(Partial<DocOpts & SchemaRef>) | undefined]>(
+  (target, opts = {}) => {
+    const schema = {...opts} as SchemaRef
     delete schema.collName
     delete schema.indexes
-    const schemaRef = decorateObjectSchema(target, schema)
-    const collName = opts.collName || pluralize(schemaRef.id.slice(1))
+    Schema(schema)(target)
+    const collName = opts.collName || pluralize(schema.id.slice(1))
     const meta = new DocMeta(target, {collName, indexes: opts.indexes})
-    Reflect.defineMetadata(DOC_METADATA_KEY, meta, target)
+    return {[DOC_METADATA_KEY]: meta}
   }
-}
+)

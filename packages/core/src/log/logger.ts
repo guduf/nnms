@@ -1,13 +1,13 @@
 import { LogMetricMutation } from './log_metric'
-import { Log, LogData } from './log'
 import { LogTags, LogLevel } from './log_record'
+import { Log, LogData } from './log'
 
 export class Logger {
   readonly id: string
 
   constructor(
     readonly tags: { src: string } & Record<string, string>,
-    private readonly _consumer: (e: Log) => void
+    private readonly _output: (e: Log) => void
   ) {
     if (!this.tags.src) throw new TypeError('missing src tag')
   }
@@ -31,11 +31,11 @@ export class Logger {
       )
       return {...acc, [tag]: tags[tag]}
     }, this.tags)
-    return new Logger(newTags, this._consumer)
+    return new Logger(newTags, this._output)
   }
 
   log(e: Pick<Log, 'level' | 'code' | 'data' | 'metrics'>): void {
-    this._consumer(Log.create({...e, tags: this.tags}))
+    this._output(Log.create({...e, tags: this.tags}))
   }
 
   debug(data?: string | LogData): void {
