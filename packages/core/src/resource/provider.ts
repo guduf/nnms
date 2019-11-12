@@ -28,14 +28,14 @@ export class ProviderMeta<TVars extends Record<string, string> = {}> extends Res
     try {
       provider = Container.get(this.target)
       if (provider.init instanceof Promise) await provider.init
-      logger.info('PROVIDER_READY', {prov: this.name}, {
+      logger.info('BOOTSTRAP_PROVIDER', {prov: this.name}, {
         providers: {
           index: 'name',
           patch: [{name: this.name, status: 'ready'} as ProviderMetric]
         }
       })
     } catch (catched) {
-      logger.error('PROVIDER_BOOTSTRAP_FAILED', catched)
+      logger.error('BOOTSTRAP_PROVIDER', catched)
       throw catched
     }
   }

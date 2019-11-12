@@ -26,10 +26,15 @@ export interface ResourceOpts<TVars extends Record<string, string> = {}> {
 }
 
 export function getResourceMeta<K extends 'module' | 'provider' | 'plugin'>(
-  type: K,
+  kind: K,
   target: Function
 ): ResourceMeta | null {
-  return getClassMeta(target, type)
+  const meta = getClassMeta(target, kind) as ResourceMeta
+  if (meta && !(meta instanceof ResourceMeta)) {
+    const found = (meta as any).constructor && (meta as any).constructor.__location || null
+    throw new Error(`Invalid resource meta\n  expected: '${ResourceMeta.__location}'${found ? `\n  found: '${found}'` : ''}`)
+  }
+  return meta
 }
 
 /** represents common properties shared across resource meta */
@@ -75,10 +80,16 @@ export abstract class ResourceMeta<TVars extends Record<string, string> = {}> {
 /** represents all kind of resources */
 export type ResourceKind = 'module' | 'plugin' | 'provider'
 
-/** represents common properties shared accross application and resource contexts */
-export abstract class CommonContext {
-  /** identifier for context kind */
+/** represents properties for shared accross resource contexts */
+export abstract class ResourceContext<TVars extends Record<string, string> = {}> {
+  /** identifier for resource context kind */
   abstract readonly kind: ResourceKind
+
+  /** retrieved meta object of the resource */
+  readonly meta: ResourceMeta<TVars>
+
+  /** environment variables template compiled for the resource */
+  readonly vars: { readonly [P in keyof TVars]: string }
 
   /** specific logger created for the resource */
   readonly logger: Logger
@@ -92,16 +103,4 @@ export abstract class CommonContext {
   protected constructor() {
     throw new Error('context cannot be injected without handler')
   }
-}
-
-/** represents properties for shared accross resource contexts */
-export abstract class ResourceContext<TVars extends Record<string, string> = {}> extends CommonContext {
-  /** identifier for resource context kind */
-  abstract readonly kind: ResourceKind
-
-  /** retrieved meta object of the resource */
-  readonly meta: ResourceMeta<TVars>
-
-  /** environment variables template compiled for the resource */
-  readonly vars: { readonly [P in keyof TVars]: string }
 }

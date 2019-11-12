@@ -1,7 +1,7 @@
-export * from 'bson'
-
 import { JSONSchema4 } from 'json-schema'
 import { Decimal128, Double, ObjectId, Timestamp, Binary } from 'bson'
+
+export { Binary, deserialize, ObjectId, serialize } from 'bson'
 
 export const BSON_TYPES = {
   'string': String,

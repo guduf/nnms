@@ -37,10 +37,7 @@ export function defineClassMeta<TArgs extends any[] = []>(
 ): (...opts: TArgs) => ClassDecorator {
   return (...opts: TArgs) => (
     target => {
-      let meta: Record<string, any>
-      try { meta = builder(target, ...opts) } catch(err) {
-        throw new Error('cannot build meta')
-      }
+      const meta = builder(target, ...opts)
       for (const key in meta) Reflect.defineMetadata(`${PREFIX}:class:${key}`, meta[key], target)
     }
   )
@@ -56,12 +53,9 @@ export function definePropMeta<TArgs extends any[] = []>(
   return (...opts: TArgs) => (
     (proto, prop) => {
       if (typeof prop !== 'string') return
-      let meta: Record<string, any>
-      try { meta = builder(proto, prop, ...opts) } catch(err) {
-        throw new Error('cannot build meta')
-      }
+      const meta = builder(proto, prop, ...opts)
       for (const key in meta) {
-        Reflect.defineMetadata(`${PREFIX}:prop:${key}:${prop}`, meta[key], proto, prop)
+        Reflect.defineMetadata(`${PREFIX}:prop:${key}:${prop}`, meta[key], proto)
       }
     }
   )
@@ -72,7 +66,7 @@ export function getPropsMeta<T>(proto: object, key: string): Record<string, T> {
     if (!metaKey.startsWith(`${PREFIX}:prop:${key}`)) return acc
     const prop = metaKey.split(':').slice(-1)[0]
     return {...acc, [prop]: Reflect.getMetadata(metaKey, proto)}
-  })
+  }, {} as Record<string, T>)
 }
 
 export function reflectMethodTypes(

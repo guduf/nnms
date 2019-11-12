@@ -19,7 +19,7 @@ export class ApiModule {
     this._ctx.logger.debug({initialList: await this._todos.list() as unknown as JsonArray})
   }
 
-  @HttpRoute()
+  @HttpRoute('/')
   async list(): Promise<Todo[]> {
     const todos = await this._todos.list()
     this._ctx.logger.info('GET_LIST', {length: todos.length})

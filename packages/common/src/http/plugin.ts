@@ -48,9 +48,9 @@ export class HttpHookMeta {
   constructor(readonly kind: 'before' | 'after') { }
 }
 
-export const HttpRoute = definePropMeta<
-  [string | Partial<HandlerOpts> | Handler, ...Handler[]]
->((_, __, arg, ...middlewares) => {
+export type HttpRouteArgs = [string | Partial<HandlerOpts> | Handler, ...Handler[]]
+
+export const HttpRoute = definePropMeta<HttpRouteArgs>((_, __, arg, ...middlewares) => {
   const opts = typeof arg === 'object' ? typeof arg === 'string' ? {path: arg} : arg : {}
   return {http: new HttpRouteMeta(opts, middlewares)}
 })

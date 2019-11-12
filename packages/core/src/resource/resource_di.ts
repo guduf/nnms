@@ -21,7 +21,7 @@ export function defineResourceMeta<
         typeof paramType !== 'function' ||
         Container.handlers.find(handler => handler.object === target && handler.index === index)
       ) return null
-      if (Object.getPrototypeOf(paramType) === ResourceContext) (
+      if (Object.getPrototypeOf(paramType) === ResourceContext) return (
         (container: ContainerInstance): ResourceContext => (
           kind === 'module' ? injectContext(container) : meta.buildContext(container)
         )
@@ -38,7 +38,7 @@ export function defineResourceMeta<
         Container.registerHandler({object: target, index, value})
       })
     const meta = new metaType(target, {...opts, providers})
-    return {kind: meta}
+    return {[kind]: meta}
   })
 }
 

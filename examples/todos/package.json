@@ -12,12 +12,12 @@
     "nnms": "nnms"
   },
   "devDependencies": {
-    "nnms-cli": "0.26.0",
+    "nnms-cli": "file:../../dist/nnms-cli-0.26.1.tgz",
     "typescript": "^3.5.0"
   },
   "dependencies": {
-    "nnms": "0.26.0",
-    "nnms-common": "0.26.0",
-    "nnms-process": "0.26.0"
+    "nnms": "file:../../dist/nnms-0.26.1.tgz",
+    "nnms-common": "file:../../dist/nnms-common-0.26.1.tgz",
+    "nnms-process": "file:../../dist/nnms-process-0.26.1.tgz"
   }
 }
