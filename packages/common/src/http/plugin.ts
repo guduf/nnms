@@ -80,7 +80,7 @@ export class HttpPlugin {
           ...acc.routes,
           ...(
             meta instanceof HttpRouteMeta ?
-              [{func: func as (req: Request) => any, meta: meta}] :
+              [{func: func.bind(this._ctx.moduleInstance) as (req: Request) => any, meta: meta}] :
               []
           )
         ],
@@ -133,6 +133,7 @@ export class HttpPlugin {
         if (!(promise instanceof Promise)) promise = Promise.resolve(promise)
         result = await promise
       } catch (err) {
+        this._ctx.logger.error('HTTP_REQUEST', err)
         res.status(500).end()
       }
       res.send(result)
