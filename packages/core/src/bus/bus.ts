@@ -29,11 +29,10 @@ export class Bus {
 
   buildTopic(id: string, schema: BsonSchema): AbstractTopic {
     const inputs = this.getTopicListener(id)
-    const validator = Validator.compile(schema)
     return {
       pipe: inputs.pipe.bind(inputs),
       subscribe: inputs.subscribe.bind(inputs),
-      publish: this.getTopicPublisher(id, validator),
+      publish: this.getTopicPublisher(id, schema),
       [Symbol.observable]: () => inputs
     }
   }
