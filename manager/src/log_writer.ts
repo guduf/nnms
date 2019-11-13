@@ -1,11 +1,11 @@
 import { MongoError } from 'mongodb'
 
-import { ModuleContext, Module, Log, LogMetricMutation, applyMetricMutation, Topic } from 'nnms'
+import { ModuleContext, Module, Log, Topic } from 'nnms'
 import { Collection, Database } from 'nnms-common'
 import { LogSocket } from 'nnms-process'
 
 import { LogRecord } from './schemas/log_record'
-import { LogMetric } from './schemas/log_metric'
+import { LogMetricMutation } from './schemas/log_metric_mutation'
 
 const LOG_REMOTE_VARS = {
   URL: 'ws://localhost:6390'
@@ -17,8 +17,8 @@ export class LogWriter {
     private readonly _ctx: ModuleContext<typeof LOG_REMOTE_VARS>,
     @Collection(LogRecord)
     private readonly _logs: Collection<LogRecord>,
-    @Collection(LogMetric)
-    private readonly _logMetrics: Collection<LogMetric>,
+    @Collection(LogMetricMutation)
+    private readonly _logMetricMutations: Collection<LogMetricMutation>,
     @Topic(LogRecord)
     private readonly _logTopic: Topic<LogRecord>
   ) {
@@ -30,7 +30,7 @@ export class LogWriter {
     logSocket.subscribe(
       (log: Log) => {
         if (log.level !== 'DBG') this._handleLog(log)
-        if (log.metrics) this._handleMetrics(log as Log & { metrics: Record<string, LogMetricMutation> })
+        if (log.metrics) this._handleMetricMutations(log as Log & { metrics: Record<string, LogMetricMutation> })
       },
       err => this._ctx.logger.error('CONNECT_LOG_SERVER', err)
     )
@@ -55,41 +55,22 @@ export class LogWriter {
     this._ctx.logger.info('HANDLE_LOG', {id: log.id.toHexString()})
   }
 
-  private async _handleMetrics(
+  private async _handleMetricMutations(
     {id, metrics, tags}: Log & { metrics: Record<string, LogMetricMutation> }
-  ) {
-    for (const name in metrics) {
-      const mutations = metrics[name]
-      // TODO - add projection
-      const [previous] = await this._logMetrics.find({name, tags})
-      const values = applyMetricMutation(previous ? previous.values : [], mutations)
-      try {
-        if (!previous) {
-          await this._logMetrics.insert({
-            name,
-            values,
-            tags,
-            mutations: [{id, ...mutations}]
-          })
-        } else {
-          const duplicate = previous.mutations.find(mut => mut.id.equals(id))
-          if (duplicate) {
-            this._ctx.logger.warn('INSERT_METRIC', {
-              message: 'duplicate entry',
-              id: id.toHexString(),
-              name
-            })
-            return
-          }
-          await this._logMetrics.update({name, tags}, {
-            $set: {values: values},
-            $push: {mutations: {id, ...mutations}}
-          })
-          this._ctx.logger.info('UPSERT_METRIC', {name, id: id.toHexString()})
-        }
-      } catch (err) {
-        this._ctx.crash(err)
-      }
+  ): Promise<void> {
+    const mutations: LogMetricMutation[] = Object.keys(metrics).map(name => ({
+      logId: id,
+      name,
+      tags,
+      ...metrics[name]
+    }))
+    try { await this._logMetricMutations.insert(...mutations) } catch (err) {
+      this._ctx.logger.error('INSERT_MUTATION', err)
+      this._ctx.crash(err)
     }
+    this._ctx.logger.info('HANDLE_MUTATION', {
+      logId: id.toHexString(),
+      names: Object.keys(metrics)
+    })
   }
 }

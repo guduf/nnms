@@ -72,17 +72,23 @@ export function buildObjectSchema(target: Function, input: ObjectRefSchema): Sch
     ]
     return {required, properties}
   }, {required: input.required || [], properties: input.properties || {}})
-  return {
+  const schema = {
     ...input,
     bsonType: 'object' as const,
     required,
     properties
   }
+  delete schema.type
+  return schema
 }
 
 export class SchemaMeta {
-  constructor(readonly id: string, input: SchemaInput) {
-    this.schema = buildSchema(input)
+  constructor(
+    readonly target: Function,
+    readonly id: string,
+    input: ObjectRefSchema
+) {
+    this.schema = buildObjectSchema(target, input)
     Validator.addSchema(id, this.schema)
   }
 
@@ -99,6 +105,6 @@ export const Schema = defineClassMeta<
 >((target, arg1, arg2) => {
   const id = typeof arg1 === 'string' ? arg1 : camelCase(target.name)
   const input = (typeof arg1 === 'string' ? arg2 : arg1) || {}
-  const meta = new SchemaMeta(id, input)
+  const meta = new SchemaMeta(target, id, input)
   return {[SCHEMA_METADATA_KEY]: meta}
 }) as SchemaDecorator
