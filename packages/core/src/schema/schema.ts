@@ -16,7 +16,7 @@ export function buildSchema(schema: SchemaInput, skipValidate = false): BsonSche
   if (typeof schema === 'function') {
     const reflected = reflectSchema(schema)
     if (!reflected) throw new Error('cannot reflect schema')
-    return reflected.schema
+    return{$ref: reflected.id}
   }
   if (typeof schema === 'string') {
     if (Object.keys(BSON_TYPES).includes(schema)) throw new Error('invalid bson type')
@@ -54,14 +54,14 @@ export const Prop = definePropMeta<PropDecoratorOpts>((_, key, arg1, arg2, arg3)
   return {[SCHEMA_METADATA_KEY]: {name, schema, required}}
 }) as PropDecorator
 
-export function reflectSchema(target: Function | Symbol): SchemaRef | null {
-  return getClassMeta(target, 'schema')
+export function reflectSchema(target: Function | Symbol): SchemaMeta | null {
+  return getClassMeta(target, SCHEMA_METADATA_KEY)
 }
 
 export type ObjectRefSchema = Partial<SchemaRef> & { bsonType?: 'object', type?: 'object' }
 
-export function buildObjectSchema(target: Function, schema: ObjectRefSchema): SchemaRef {
-  const propsOpts = getPropsMeta<SchemaPropOpts>(target.prototype, 'schema')
+export function buildObjectSchema(target: Function, input: ObjectRefSchema): SchemaRef {
+  const propsOpts = getPropsMeta<SchemaPropOpts>(target.prototype, SCHEMA_METADATA_KEY)
   const {required, properties} = Object.keys(propsOpts).reduce((acc, key) => {
     const propOpts = propsOpts[key] as SchemaPropOpts
     if (acc.properties[key]) throw new TypeError(`property '${key}' is already setted`)
@@ -71,17 +71,34 @@ export function buildObjectSchema(target: Function, schema: ObjectRefSchema): Sc
       ...(propOpts.required && !acc.required.includes(key) ? [key] : [])
     ]
     return {required, properties}
-  }, {required: schema.required || [], properties: schema.properties || {}})
+  }, {required: input.required || [], properties: input.properties || {}})
   return {
-    ...schema,
-    id: schema.id || `/${camelCase(target.name)}`,
+    ...input,
     bsonType: 'object' as const,
     required,
     properties
   }
 }
 
-export const Schema = defineClassMeta<[SchemaRef]>((_, schema) => {
-  Validator.addSchema(schema)
-  return {[SCHEMA_METADATA_KEY]: {$ref: schema.id.slice(1)}}
-})
+export class SchemaMeta {
+  constructor(readonly id: string, input: SchemaInput) {
+    this.schema = buildSchema(input)
+    Validator.addSchema(id, this.schema)
+  }
+
+  readonly schema: BsonSchema
+}
+
+export interface SchemaDecorator {
+  (input?: ObjectRefSchema): ClassDecorator
+  (id: string, input?: ObjectRefSchema): ClassDecorator
+}
+
+export const Schema = defineClassMeta<
+  Partial<[string | ObjectRefSchema, ObjectRefSchema]>
+>((target, arg1, arg2) => {
+  const id = typeof arg1 === 'string' ? arg1 : camelCase(target.name)
+  const input = (typeof arg1 === 'string' ? arg2 : arg1) || {}
+  const meta = new SchemaMeta(id, input)
+  return {[SCHEMA_METADATA_KEY]: meta}
+}) as SchemaDecorator

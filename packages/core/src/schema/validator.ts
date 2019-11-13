@@ -1,53 +1,54 @@
 
 import Ajv from 'ajv'
 import applyBsonTypes from 'ajv-bsontype'
+import { readFileSync } from 'fs'
+import { join } from 'path'
+import { JSONSchema7 } from 'json-schema'
 
-import BsonSchema, { BSON_TYPES, BsonTypeName } from './bson'
+import {BsonSchema , BsonTypeName } from './bson'
 
 export type ValidatorError = Ajv.ErrorObject
 export type ValidateFunction = (data: any) => ValidatorError[] | null
 
 const AJV_OPTIONS: Ajv.Options = {}
 
-const BSON_SCHEMA_METASCHEMA = {
-  $id: '#bsonSchema',
-  allOf: [
-    {$ref: 'http://json-schema.org/draft-04/schema'},
-    {properties: {bsonType: {type: 'string', enum: [Object.keys(BSON_TYPES)]}}}
-  ]
-}
+const BSON_SCHEMA_REF = 'bson-schema'
 
-const SCHEMA_ID_REGEX = /^\/[a-z][a-zA-Z0-9]{1,63}$/
-
-export type SchemaRef = BsonSchema & { id: string }
+export type SchemaRef = BsonSchema
 
 export class Validator {
   private static _ajv: Ajv.Ajv
 
-  private static _init(): void {
-    this._ajv = new Ajv(AJV_OPTIONS)
-    applyBsonTypes(this._ajv)
-    this._ajv.addSchema(BSON_SCHEMA_METASCHEMA, 'bsonSchema')
+  private static _init(): Ajv.Ajv {
+    const ajv = new Ajv(AJV_OPTIONS)
+    applyBsonTypes(ajv)
+    let bsonMetaSchema = {} as JSONSchema7
+    try {
+      const metaSchemaPath = join(__dirname, '../assets/bson-schema.json')
+      bsonMetaSchema = JSON.parse(readFileSync(metaSchemaPath, {encoding: 'utf8'}))
+    } catch (err) {
+      console.error(`cannot retrieve bson meta schema: ${err.message}`)
+    }
+    ajv.addMetaSchema(bsonMetaSchema, BSON_SCHEMA_REF)
+    return ajv
   }
 
-  static addSchema(schema: SchemaRef) {
-    if (!this._ajv) this._init()
-    if (!SCHEMA_ID_REGEX.test(schema.id)) throw new Error(`invalschema.id id '${schema.id}'`)
+  static addSchema(id: string, schema: SchemaRef): void {
+    if (!this._ajv) this._ajv = this._init()
     if (!schema.bsonType && schema.type) {
       schema = {...schema, bsonType: schema.type as BsonTypeName}
       delete schema.type
     }
-    delete schema.schema.type
     const errors = Validator.validateSchema(schema)
     if (errors) {
       console.error(errors)
       throw new TypeError('invalid schema')
     }
-    this._ajv.addSchema(schema)
+    this._ajv.addSchema(schema, id)
   }
 
   static compile(schema: BsonSchema): ValidateFunction {
-    if (!this._ajv) this._init()
+    if (!this._ajv) this._ajv = this._init()
     const validator = this._ajv.compile(schema)
     return data => {
       const valid = validator(data)
@@ -56,12 +57,12 @@ export class Validator {
   }
 
   static validate(schemaKeyRef: object | string, data: any): ValidatorError[] | null {
-    if (!this._ajv) this._init()
+    if (!this._ajv) this._ajv = this._init()
     this._ajv.validate(schemaKeyRef, data) as boolean
     return this._ajv.errors || null
   }
 
   static validateSchema(data: any): ValidatorError[] | null {
-    return this.validate(BSON_SCHEMA_METASCHEMA.$id, data)
+    return this.validate(BSON_SCHEMA_REF, data)
   }
 }

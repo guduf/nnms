@@ -8,8 +8,6 @@ import { ObjectId } from '../schema'
 import { applyMetricMutation, LogMetricMutation, LogMetricValue, LOG_METRIC_MUTATION_SCHEMA } from './log_metric'
 import { LogTags, LogLevel, LOG_RECORD_SCHEMA, LogRecord } from './log_record'
 
-
-
 export type LogData = JsonObject & { msg?: string }
 
 export interface LogValue {
@@ -51,7 +49,7 @@ export class Log<T extends LogData = LogData> {
     }
     const valid = Log._validator(input)
     if (!valid) {
-      console.error(Log._validator.errors)
+      console.error(input, Log._validator.errors)
       throw new TypeError('invalid log')
     }
     const date = new Date()

@@ -12,9 +12,9 @@ export class MongoDbCollection<T> {
     private readonly _db: Database,
     readonly target: { new(): T }
   ) {
-    const schema = reflectSchema(target)
-    if (!schema) throw new Error('invalid schema')
-    this.validate = Validator.compile(schema)
+    const meta = reflectSchema(target)
+    if (!meta) throw new Error('cannot reflect schema meta')
+    this.validate = Validator.compile({$ref: meta.id})
     this.native = this._db.connect(target)
   }
 

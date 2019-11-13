@@ -37,20 +37,20 @@ export class Database {
     this._ctx.logger.metrics('load collection', {
       collections: {insert: [{name: meta.collName, loaded: 'pending'}]}
     })
-    const schema = reflectSchema(meta.target)
-    if (!schema) throw new Error('invalid doc schema')
+    const schemaMeta = reflectSchema(meta.target)
+    if (!schemaMeta) throw new Error('invalid doc schema meta')
     const db = this._client.db(this._ctx.vars.DATABASE)
     try {
       const {ok} = await (db.command({
         collMod: meta.collName,
-        validator: {$jsonSchema: schema},
+        validator: {$jsonSchema: schemaMeta.schema},
         validationLevel: 'moderate',
         validationAction: 'error'
       }) as Promise<{ok: boolean}>)
       if (!ok) throw new Error(`collection check is not OK`)
     } catch (err) {
       if (!(err instanceof MongoError && err.code === 26)) throw err
-      await db.createCollection(meta.collName, {validator: {$jsonSchema: schema}})
+      await db.createCollection(meta.collName, {validator: {$jsonSchema: schemaMeta.schema}})
     }
     this._ctx.logger.info('LOAD_COLLECTION', {name: meta.collName}, {
       collections: {index: 'name', upsert: [{name: meta.collName, loaded: true}]}
@@ -68,7 +68,7 @@ export class Database {
         useUnifiedTopology: true
       })
     } catch (err) {
-      this._ctx.logger.error('CONNECTION', err.message)
+      this._ctx.logger.error('CONNECTION', err)
       throw err
     }
     this._ctx.logger.info(`CLIENT_LISTENING`, {url: this._ctx.vars.URL}, {

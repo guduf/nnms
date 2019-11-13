@@ -35,9 +35,9 @@ export function Topic(target: Function, sub?: string): ParameterDecorator {
   return registerParameter(() => {
     const {bus} = injectContext<RootContext>()
     if (!(bus instanceof Bus)) throw new Error('invalid bus')
-    const schema = reflectSchema(target)
-    if (!schema) throw new Error('cannot reflect schema')
-    return bus.buildTopic(sub || schema.id.slice(1), schema)
+    const meta = reflectSchema(target)
+    if (!meta) throw new Error('cannot reflect schema meta')
+    return bus.buildTopic(sub || meta.id, {$ref: meta.id})
   })
 }
 

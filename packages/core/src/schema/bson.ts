@@ -48,5 +48,3 @@ export function reflectBsonType(type: any): BsonTypeName | null {
     acc || BSON_TYPES[key as BsonTypeName] !== type ? acc : key as BsonTypeName
   ), null as BsonTypeName | null)
 }
-
-export default BsonSchema

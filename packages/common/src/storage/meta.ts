@@ -1,9 +1,10 @@
 import 'reflect-metadata'
 
+import camelCase from 'camelcase'
 import { IndexSpecification } from 'mongodb'
 import pluralize from 'pluralize'
 
-import { Schema, defineClassMeta, SchemaRef, getClassMeta } from 'nnms'
+import { Schema, defineClassMeta, SchemaRef, getClassMeta, ObjectRefSchema } from 'nnms'
 
 export const DOC_METADATA_KEY = 'doc'
 
@@ -38,8 +39,8 @@ export const Doc = defineClassMeta<[(Partial<DocOpts & SchemaRef>) | undefined]>
     const schema = {...opts} as SchemaRef
     delete schema.collName
     delete schema.indexes
-    Schema(schema)(target)
-    const collName = opts.collName || pluralize(schema.id.slice(1))
+    Schema(schema as ObjectRefSchema)(target)
+    const collName = opts.collName || pluralize(camelCase(target.name))
     const meta = new DocMeta(target, {collName, indexes: opts.indexes})
     return {[DOC_METADATA_KEY]: meta}
   }

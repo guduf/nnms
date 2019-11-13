@@ -1,9 +1,10 @@
+import { MongoError } from 'mongodb'
+
 import { ModuleContext, Module, Log, LogMetricMutation, applyMetricMutation, Topic } from 'nnms'
 import { Collection, Database } from 'nnms-common'
 import { LogSocket } from 'nnms-process'
 
 import { LogRecord } from './schemas/log_record'
-import { MongoError } from 'mongodb'
 import { LogMetric } from './schemas/log_metric'
 
 const LOG_REMOTE_VARS = {
