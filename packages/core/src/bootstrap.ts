@@ -1,4 +1,5 @@
 import Container from 'typedi'
+import shortid from 'shortid'
 
 import { setContext } from './di'
 import { Crash } from './error'
@@ -46,7 +47,7 @@ export function bootstrap(...mods: Function[]): { outputs: Observable<Event>, ne
   const env = new Environment()
   const inputs = new Subject<Event>()
   const outputs = new Subject<Event>()
-  const root = new RootContext('test', env, inputs, e => outputs.next(e))
+  const root = new RootContext(shortid(), env, inputs, e => outputs.next(e))
   setTimeout(async () => {
     try {
       root.logger.info('APPLICATION_BOOTSTRAP')
