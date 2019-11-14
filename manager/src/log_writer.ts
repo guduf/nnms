@@ -20,7 +20,9 @@ export class LogWriter {
     @Collection(LogMetricMutation)
     private readonly _logMetricMutations: Collection<LogMetricMutation>,
     @Topic(LogRecord)
-    private readonly _logTopic: Topic<LogRecord>
+    private readonly _logTopic: Topic<LogRecord>,
+    @Topic(LogMetricMutation)
+    private readonly _logMetricMutationTopic: Topic<LogMetricMutation>
   ) {
     this.connect(this._ctx.vars.URL)
   }
@@ -64,9 +66,21 @@ export class LogWriter {
       tags,
       ...metrics[name]
     }))
-    try { await this._logMetricMutations.insert(...mutations) } catch (err) {
-      this._ctx.logger.error('INSERT_MUTATION', err)
-      this._ctx.crash(err)
+    try {
+      await this._logMetricMutations.insert(...mutations)
+    } catch (err) {
+      if (err instanceof MongoError && err.code === 11000) {
+        return this._ctx.logger.warn('INSERT_MUTATION', {
+          message: 'duplicate entry',
+          id: id.toHexString()
+        })
+      }
+      return this._ctx.logger.error('INSERT_MUTATION', err)
+    }
+    try {
+      for (const mutation of mutations) this._logMetricMutationTopic.publish(mutation)
+    } catch (err) {
+      return this._ctx.logger.error('PUBLISH_MUTATION', err)
     }
     this._ctx.logger.info('HANDLE_MUTATION', {
       logId: id.toHexString(),

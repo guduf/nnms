@@ -1,4 +1,6 @@
 build: ./dist
+container:
+  logServer: null
 env:
   mongodb:
     default:

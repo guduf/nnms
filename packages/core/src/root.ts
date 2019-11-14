@@ -31,13 +31,19 @@ export class RootContext {
     readonly bus: Bus
 }
 
-export function Topic(target: Function, sub?: string): ParameterDecorator {
+export interface TopicOpts {
+  sub: string
+  queue: boolean | string
+}
+
+export function Topic(target: Function, opts = {} as Partial<TopicOpts>): ParameterDecorator {
   return registerParameter(() => {
     const {bus} = injectContext<RootContext>()
     if (!(bus instanceof Bus)) throw new Error('invalid bus')
     const meta = reflectSchema(target)
     if (!meta) throw new Error('cannot reflect schema meta')
-    return bus.buildTopic(sub || meta.id, {$ref: meta.id})
+    const queue = opts.queue ? typeof opts.queue === 'boolean' ? 'worker' : opts.queue : null
+    return bus.buildTopic(opts.sub || meta.id, {$ref: meta.id}, queue)
   })
 }
 

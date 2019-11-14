@@ -3,31 +3,31 @@ import { BsonValue, deserialize, serialize } from '../schema'
 
 export const BUS_TOPIC_SIGNALS = ['OFF', 'ON', 'IN', 'OUT'] as const
 
-export type BusTopicSignal = typeof BUS_TOPIC_SIGNALS[number]
+export type TopicSignal = typeof BUS_TOPIC_SIGNALS[number]
 
-export interface BusTopicEventValue {
+export interface TopicEventValue {
   u: string
   s: number
   d?: BsonValue
 }
 
-export class BusTopicEvent {
-  static create(sub: string, signal: BusTopicSignal, data?: BsonValue): BusTopicEvent {
-    return new BusTopicEvent({u: sub, s: BUS_TOPIC_SIGNALS.indexOf(signal), d: data})
+export class TopicEvent {
+  static create(sub: string, signal: TopicSignal, data?: BsonValue): TopicEvent {
+    return new TopicEvent({u: sub, s: BUS_TOPIC_SIGNALS.indexOf(signal), d: data})
   }
 
-  static fromEvent(e: Event): BusTopicEvent {
+  static fromEvent(e: Event): TopicEvent {
     if (e.type !== 'TOPIC') throw new Error('invalid event type')
-    return new BusTopicEvent(deserialize(e.data.buffer))
+    return new TopicEvent(deserialize(e.data.buffer))
   }
 
   private constructor(
-    private readonly _value: BusTopicEventValue
+    private readonly _value: TopicEventValue
   ) { }
 
   get sub(): string { return this._value.u }
 
-  get signal(): BusTopicSignal { return BUS_TOPIC_SIGNALS[this._value.s] }
+  get signal(): TopicSignal { return BUS_TOPIC_SIGNALS[this._value.s] }
 
   getValue(): BsonValue {
     if (['IN', 'OUT'].includes(this.signal)) {
