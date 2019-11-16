@@ -8,12 +8,25 @@ export type TopicSignal = typeof BUS_TOPIC_SIGNALS[number]
 export interface TopicEventValue {
   u: string
   s: number
+  q?: string
   d?: BsonValue
 }
 
+export interface TopicEventInput {
+  sub: string
+  signal: TopicSignal
+  queue?: string
+  data?: BsonValue
+}
+
 export class TopicEvent {
-  static create(sub: string, signal: TopicSignal, data?: BsonValue): TopicEvent {
-    return new TopicEvent({u: sub, s: BUS_TOPIC_SIGNALS.indexOf(signal), d: data})
+  static create(input: TopicEventInput): TopicEvent {
+    return new TopicEvent({
+      u: input.sub,
+      s: BUS_TOPIC_SIGNALS.indexOf(input.signal),
+      q: input.queue,
+      d: input.data
+    })
   }
 
   static fromEvent(e: Event): TopicEvent {
@@ -29,7 +42,12 @@ export class TopicEvent {
 
   get signal(): TopicSignal { return BUS_TOPIC_SIGNALS[this._value.s] }
 
-  getValue(): BsonValue { return this._value.d as BsonValue }
+  get queue(): string | null { return this._value.q || null }
+
+  // TODO - throw error on 'ON' 'OFF' signal
+  getValue(): BsonValue {
+    return this._value.d as BsonValue
+  }
 
   toEvent(): Event {
     const data = serialize(this._value)

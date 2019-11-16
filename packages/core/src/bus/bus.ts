@@ -31,7 +31,7 @@ export class Bus {
   buildTopic(id: string, schema: BsonSchema, queue = null as string | null): AbstractTopic {
     const inputs = this.getTopicListener(id, queue)
     return {
-      queue,
+      queue: queue || null,
       pipe: inputs.pipe.bind(inputs),
       subscribe: inputs.subscribe.bind(inputs),
       publish: this.getTopicPublisher(id, schema),
@@ -45,7 +45,7 @@ export class Bus {
       try {
         const errors = validator(data)
         if (errors) throw new Error('validation failed')
-        this._output(TopicEvent.create(sub, 'OUT', data).toEvent())
+        this._output(TopicEvent.create({signal: 'OUT', sub, data}).toEvent())
       } catch(err) {
         this._logger.warn('PUBLISH_SUB_VAL', err)
       }
@@ -55,12 +55,12 @@ export class Bus {
   getTopicListener(sub: string, queue: string | null): Observable<BsonValue> {
     if (this._topics[sub]) return this._topics[sub]
     return this._topics[sub] = new Observable<BsonValue>(observer => {
-      this._output(TopicEvent.create(sub, 'ON', {queue}).toEvent())
+      this._output(TopicEvent.create({signal: 'ON', sub, ...(queue ? {queue}: {})}).toEvent())
       const subscr = this._inputs.pipe(
         mergeMap(e => e.sub === sub ? of(e.value) : EMPTY)
       ).subscribe(observer)
       return () => {
-        this._output(TopicEvent.create(sub, 'OFF', {queue}).toEvent())
+        this._output(TopicEvent.create({signal: 'OFF', sub, ...(queue ? {queue}: {})}).toEvent())
         subscr.unsubscribe()
         delete this._topics[sub]
       }

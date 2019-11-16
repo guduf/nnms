@@ -14,7 +14,7 @@ const mods = process.argv.slice(2).map(path => {
 })
 const {nextInput, outputs} = bootstrap(...mods)
 outputs.subscribe(e => process.send(e.serialize()))
-process.on('message', ([{data}]) => nextInput(Event.deserialize(Buffer.from(data))))
+process.on('message', ({data}) => nextInput(Event.deserialize(Buffer.from(data))))
 process.on('unhandledRejection', err => {
   if (!(err instanceof Error)) err = new Error(`Unhandled rejection: ${err}`)
   process.send(Crash.serialize(err))

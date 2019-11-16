@@ -3,8 +3,8 @@ import { runFactory, FactoryConfig } from './run_factory'
 import { ForkedProcess } from './run_process'
 import { LogFormat } from './log_format'
 import { LogServer } from './log_server'
-import { Crash, Log, LogTags, BsonValue } from 'nnms'
-import { mergeMap, tap } from 'rxjs/operators'
+import { Crash, Log, LogTags } from 'nnms'
+import { mergeMap } from 'rxjs/operators'
 import { merge, Subscription, OperatorFunction, EMPTY } from 'rxjs'
 import { Server as WsServer } from 'ws'
 
@@ -63,8 +63,7 @@ export class Container {
     }
     const crashHandler = this._fork.crash.pipe(this._handleCrash())
     const logHandler = this._fork.logs.pipe(this._handleLog())
-    const topicOutputHandler = this._fork.topicOutputs.pipe(tap(e => this._handleTopicOuput(e.sub, e.value)))
-    this._subscr = merge(crashHandler, logHandler, topicOutputHandler).subscribe()
+    this._subscr = merge(crashHandler, logHandler).subscribe()
   }
 
   private readonly _logServer?: WsServer
@@ -84,9 +83,5 @@ export class Container {
       console.log(Container._format.renderLog(log))
       return EMPTY
     }))
-  }
-
-  private _handleTopicOuput(sub: string, value: BsonValue): void {
-    console.log(sub, value)
   }
 }
