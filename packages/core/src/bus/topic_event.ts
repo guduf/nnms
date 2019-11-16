@@ -29,12 +29,7 @@ export class TopicEvent {
 
   get signal(): TopicSignal { return BUS_TOPIC_SIGNALS[this._value.s] }
 
-  getValue(): BsonValue {
-    if (['IN', 'OUT'].includes(this.signal)) {
-      throw new Error('cannot get value of event with signal different than IN or OUT')
-    }
-    return this._value.d as BsonValue
-  }
+  getValue(): BsonValue { return this._value.d as BsonValue }
 
   toEvent(): Event {
     const data = serialize(this._value)

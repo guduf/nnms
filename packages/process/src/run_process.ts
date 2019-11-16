@@ -1,9 +1,9 @@
 import { fork } from 'child_process'
 import { join } from 'path'
-import { map, catchError, share, mergeMap } from 'rxjs/operators'
+import { map, catchError, share, mergeMap, tap } from 'rxjs/operators'
 import { fromEvent, Observable, EMPTY, Subscription, of, merge } from 'rxjs'
 
-import { Crash, Event, Log, TopicEvent } from 'nnms'
+import { Crash, Event, Log, TopicEvent, BsonValue } from 'nnms'
 
 import { Config } from './config'
 
@@ -15,12 +15,27 @@ export class ForkedProcess {
     const {outputs} = this._fork(paths)
     this.crash = outputs.pipe(mergeMap(e => e.type === 'CRASH' ? of(Crash.fromEvent(e)) : EMPTY), share())
     this.logs = outputs.pipe(mergeMap(e => e.type === 'LOG' ? of(Log.fromEvent(e)) : EMPTY), share())
-    outputs.pipe(mergeMap(e => e.type === 'TOPIC' ? of(TopicEvent.fromEvent(e)) : EMPTY), share()).subscribe(console.log)
-    this._subscr = merge(outputs, this.crash, this.logs).subscribe()
+    const topicEvents = outputs.pipe(mergeMap(e => e.type === 'TOPIC' ? of(TopicEvent.fromEvent(e)) : EMPTY), share())
+    this.topicOutputs = topicEvents.pipe(mergeMap(e => e.signal === 'OUT' ? of({sub: e.sub, value: e.getValue()}) : EMPTY))
+    const topicInputs = topicEvents.pipe(
+      mergeMap(e => ['ON', 'OFF'].includes(e.signal) ?
+        of({
+          sig: e.signal as 'ON' | 'OFF',
+          sub: e.sub,
+          queue: ((e.getValue() || {}) as { queue: string | null }).queue || null
+        }) :
+        EMPTY
+      )
+    )
+    const topicHandlers = topicInputs.pipe(tap(e => this._handleTopicSubscription()))
+    this._subscr = merge(outputs, this.crash, this.logs, topicHandlers).subscribe()
   }
 
   private readonly _subscr: Subscription
 
+  private _handler: (sub: string) => Observable<BsonValue> | null
+
+  readonly topicOutputs: Observable<{ sub: string, value: BsonValue }>
   readonly crash: Observable<Crash>
   readonly logs: Observable<Log>
 
@@ -47,6 +62,10 @@ export class ForkedProcess {
       }
     })
     return {nextInput, outputs}
+  }
+
+  attachTopicHandler(handler: (sub: string) => Observable<BsonValue>): void {
+    this._handler = handler
   }
 
   interrupt() { this._subscr.unsubscribe() }
