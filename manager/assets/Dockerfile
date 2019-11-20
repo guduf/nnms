@@ -1,1 +1,0 @@
-FROM nnms:latest

@@ -1,6 +1,6 @@
-import { ObjectId } from 'bson'
+import {  } from 'bson'
 
-import nnms, { Prop } from 'nnms'
+import nnms, { Prop, ObjectId } from 'nnms'
 import { Doc } from 'nnms-common'
 
 const {data, level, code, tags} = nnms.LOG_RECORD_SCHEMA.properties

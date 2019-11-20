@@ -1,8 +1,9 @@
+import { ObjectId, serialize, deserialize } from 'bson'
 import { first, map, mergeMap, shareReplay, tap } from 'rxjs/operators'
 import { fromEvent, Observable, Subject, EMPTY, throwError, of, Subscription, merge } from 'rxjs'
 import { ApiResponse, ApiRequest, ApiSuccessResponse } from '~shared/api'
-import { ObjectId, serialize, deserialize } from 'bson'
 import { deserializeError } from 'serialize-error'
+
 
 export class ApiClient {
   constructor(private readonly _ws: WebSocket) {
