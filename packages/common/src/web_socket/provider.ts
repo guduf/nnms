@@ -1,8 +1,6 @@
-import express from 'express'
-
 import { Provider, ProviderContext } from 'nnms'
 import WebSocket, { Server as WebSocketServer } from 'ws'
-import { fromEvent, merge, Subscription } from 'rxjs'
+import { fromEvent, merge } from 'rxjs'
 import { first, tap } from 'rxjs/operators'
 
 @Provider('ws', {})

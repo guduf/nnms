@@ -1,10 +1,12 @@
 import { Observable } from 'rxjs'
 
 import { BsonSchema, reflectBsonType, SchemaInput, reflectSchema, buildSchema } from '../schema'
-import { definePropMeta, reflectMethodTypes } from '../di'
+import { definePropMeta, reflectMethodTypes, getPropsMeta } from '../di'
 
 export type MethodArgInputs = [] | [SchemaInput] | [SchemaInput, SchemaInput] | [SchemaInput, SchemaInput, SchemaInput] | [SchemaInput, SchemaInput, SchemaInput, SchemaInput]
 export type MethodArgs = [] | [BsonSchema] | [BsonSchema, BsonSchema] | [BsonSchema, BsonSchema, BsonSchema] | [BsonSchema, BsonSchema, BsonSchema, BsonSchema]
+
+export const METHOD_METAKEY = 'method'
 
 export const METHOD_KINDS = {
   void: [undefined],
@@ -72,11 +74,13 @@ export class MethodMeta<TReturnKind extends MethodKind = 'void'> {
         buildSchema(opts.returnType || {})
       ) as TReturnKind extends 'void' ? never : BsonSchema
     }
-    console.log(this)
   }
 }
 
 export const Method = (
-  definePropMeta((_, __, opts) => ({method: opts}))
+  definePropMeta((proto, key, opts) => ({[METHOD_METAKEY]: new MethodMeta(proto, key, opts)}))
 ) as <TReturnKind extends MethodKind>(opts: MethodOpts<TReturnKind>) => MethodDecorator
 
+export function reflectMethod(proto: Record<string, Function>, key: string): MethodMeta {
+  return getPropsMeta<MethodMeta>(proto, METHOD_METAKEY)[key]
+}

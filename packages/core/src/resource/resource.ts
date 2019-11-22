@@ -3,7 +3,7 @@ import { ContainerInstance } from 'typedi'
 
 import { getPropsMeta, getClassMeta } from '../di'
 import { Logger } from '../log'
-import { MethodMeta, MethodOpts } from './method'
+import { MethodMeta, METHOD_METAKEY } from './method'
 
 const NAME_REGEX = /^[\w-]{2,32}$/
 
@@ -55,11 +55,7 @@ export abstract class ResourceMeta<TVars extends Record<string, string> = {}> {
       if (!providerMeta) throw new Error('missing provider meta')
       return providerMeta
     })
-    const propsMeta = getPropsMeta<MethodOpts<any>>(target.prototype, 'methods')
-    this.methods = Object.keys(propsMeta).reduce((acc, key) => {
-      const meta = new MethodMeta(target.prototype, key, propsMeta[key])
-      return {...acc, [meta.name]: meta}
-    }, {} as Record<string, MethodMeta>)
+    this.methods = getPropsMeta<MethodMeta>(target.prototype, METHOD_METAKEY)
   }
 
   /** unique identifier for the resource */

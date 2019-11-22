@@ -1,22 +1,20 @@
-import { Module, ModuleContext, Topic } from 'nnms'
-import { Server as WebSocketServer } from 'ws'
-import { fromEvent, merge as mergeObs, Observable, from } from 'rxjs'
-import { first, tap, merge, share, mergeMap } from 'rxjs/operators'
-import WebSocket from 'ws'
+import { Observable, from } from 'rxjs'
+import { merge, share, mergeMap } from 'rxjs/operators'
+
+import { Module, Topic } from 'nnms'
+import { Collection, WebSocketPlugin, WebSocketMethod } from 'nnms-common'
+
 import { LogRecord } from './schemas/log_record'
-import { Collection } from 'nnms-common'
 
 export const API_VARS = {
-  PORT: '9063'
+  WS_PORT: '9063'
 }
 
-@Module('api', API_VARS)
+@Module('api', API_VARS, WebSocketPlugin)
 export class Api {
-  init = this._init()
   private readonly _logStream: Observable<LogRecord>
 
   constructor(
-    private _ctx: ModuleContext<typeof API_VARS>,
     @Collection(LogRecord)
     private readonly _logs: Collection<LogRecord>,
     @Topic(LogRecord)
@@ -26,27 +24,11 @@ export class Api {
     this._logStream.subscribe()
   }
 
+  @WebSocketMethod({path: 'logs', returnType: LogRecord})
   getLogs(): Observable<LogRecord> {
     return from(this._logs.find({})).pipe(
       mergeMap(logs => from(logs)),
       merge(this._logStream)
     )
-  }
-
-  private _handleConnection(ws: WebSocket): void {
-    this._ctx.logger.info('HANDLE_CONNECTION', {url: ws.url})
-    this.getLogs().subscribe(log => ws.send(log))
-  }
-
-  private async _init(): Promise<void> {
-    const port = +this._ctx.vars.PORT
-    this._ctx.logger.debug('try to create web socket server')
-    const server = new WebSocketServer({port})
-    await fromEvent(server, 'listening').pipe(first()).toPromise()
-    this._ctx.logger.info('SERVER_LISTENING', {port})
-    mergeObs(
-      fromEvent<[WebSocket]>(server, 'connection').pipe(tap(([ws]) => this._handleConnection(ws))),
-      fromEvent(server, 'error').pipe(tap(err => this._ctx.crash(new Error(`server error\n${err}`))))
-    ).subscribe()
   }
 }

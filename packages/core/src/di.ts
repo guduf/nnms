@@ -48,12 +48,12 @@ export function getClassMeta<T>(target: any, key: string): T | null {
 }
 
 export function definePropMeta<TArgs extends any[] = []>(
-  builder: (proto: Object, prop: string, ...opts: TArgs) => Record<string, any>
+  builder: (proto: Record<string, Function>, prop: string, ...opts: TArgs) => Record<string, any>
 ): (...opts: TArgs) => PropertyDecorator {
   return (...opts: TArgs) => (
     (proto, prop) => {
       if (typeof prop !== 'string') return
-      const meta = builder(proto, prop, ...opts)
+      const meta = builder(proto as Record<string, Function>, prop, ...opts)
       for (const key in meta) {
         Reflect.defineMetadata(`${PREFIX}:prop:${key}:${prop}`, meta[key], proto)
       }
@@ -61,9 +61,9 @@ export function definePropMeta<TArgs extends any[] = []>(
   )
 }
 
-export function getPropsMeta<T>(proto: object, key: string): Record<string, T> {
+export function getPropsMeta<T>(proto: Record<string, Function>, metakey: string): Record<string, T> {
   return Reflect.getMetadataKeys(proto).reduce((acc, metaKey) => {
-    if (!metaKey.startsWith(`${PREFIX}:prop:${key}`)) return acc
+    if (!metaKey.startsWith(`${PREFIX}:prop:${metakey}`)) return acc
     const prop = metaKey.split(':').slice(-1)[0]
     return {...acc, [prop]: Reflect.getMetadata(metaKey, proto)}
   }, {} as Record<string, T>)
@@ -74,7 +74,7 @@ export function reflectMethodTypes(
   key: string
 ): { argTypes: any[], returnType: any } {
   const argTypes = Reflect.getMetadata('design:paramtypes', proto, key)
-  const returnType = Reflect.getMetadata('design:paramtypes', proto, key)
+  const returnType = Reflect.getMetadata('design:returntype', proto, key)
   return {argTypes, returnType}
 }
 
