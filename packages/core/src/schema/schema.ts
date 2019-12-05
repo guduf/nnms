@@ -16,10 +16,11 @@ export function buildSchema(schema: SchemaInput, skipValidate = false): BsonSche
   if (typeof schema === 'function') {
     const reflected = reflectSchema(schema)
     if (!reflected) throw new Error('cannot reflect schema')
-    return{$ref: reflected.id}
+    // WORKAROUND - Returns the object schema because MongoDB does not support $ref
+    return reflected.schema
   }
   if (typeof schema === 'string') {
-    if (Object.keys(BSON_TYPES).includes(schema)) throw new Error('invalid bson type')
+    if (!Object.keys(BSON_TYPES).includes(schema)) throw new Error('invalid bson type')
     return {bsonType: schema}
   }
   const errors = skipValidate ? null : Validator.validateSchema(schema)
