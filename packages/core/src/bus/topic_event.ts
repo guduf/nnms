@@ -1,5 +1,5 @@
 import { Event } from '../event'
-import { BsonValue, deserialize, serialize } from '../schema'
+import { BsonValue, deserializeBson, serializeBson } from '../schema'
 
 export const BUS_TOPIC_SIGNALS = ['OFF', 'ON', 'IN', 'OUT'] as const
 
@@ -31,7 +31,7 @@ export class TopicEvent {
 
   static fromEvent(e: Event): TopicEvent {
     if (e.type !== 'TOPIC') throw new Error('invalid event type')
-    return new TopicEvent(deserialize(e.data.buffer))
+    return new TopicEvent(deserializeBson(e.data.buffer))
   }
 
   private constructor(
@@ -50,7 +50,7 @@ export class TopicEvent {
   }
 
   toEvent(): Event {
-    const data = serialize(this._value)
+    const data = serializeBson(this._value)
     return Event.create({type: 'TOPIC', data})
   }
 }

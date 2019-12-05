@@ -2,7 +2,7 @@ import { fromEvent, merge, Subscription, Observable } from 'rxjs'
 import { tap, map } from 'rxjs/operators'
 import WebSocket from 'ws'
 
-import { definePropMeta, Plugin, PluginContext, getPropsMeta, Method, SchemaInput, MethodArgInputs, MethodOpts, reflectMethod, MethodMeta, deserialize, BsonValue, ObjectId, BsonArray, serialize } from 'nnms'
+import { definePropMeta, Plugin, PluginContext, getPropsMeta, Method, SchemaInput, MethodArgInputs, MethodOpts, reflectMethod, MethodMeta, deserializeBson, BsonValue, ObjectId, BsonArray, serializeBson } from 'nnms'
 
 import { WebSocketProvider } from './provider'
 
@@ -70,8 +70,8 @@ export class WebSocketPlugin {
 
   private _handleConnection(ws: WebSocket): void {
     const msgObs = fromEvent<Buffer>(ws, 'message').pipe(
-      tap(msg => this._handleRequest(deserialize(msg))),
-      tap(res => ws.send(serialize(res)))
+      tap(msg => this._handleRequest(deserializeBson(msg))),
+      tap(res => ws.send(serializeBson(res)))
     )
     let subscr: Subscription
     const closeObs = fromEvent(ws, 'close').pipe(tap(() => subscr && subscr.unsubscribe()))

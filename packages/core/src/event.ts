@@ -1,4 +1,4 @@
-import { Binary, deserialize, serialize, ObjectId } from './schema'
+import { Binary, deserializeBson, serializeBson, ObjectId } from './schema'
 
 const EVENT_DATA_MAX_SIZE = 10e6
 
@@ -44,7 +44,7 @@ export class Event {
     return Event.create({type, data, id, timestamp}).serialize()
   }
 
-  static deserialize(buffer: Buffer): Event { return new Event(deserialize(buffer)) }
+  static deserialize(buffer: Buffer): Event { return new Event(deserializeBson(buffer)) }
 
   static fromValue(value: EventValue): Event { return new Event(value) }
 
@@ -64,5 +64,5 @@ export class Event {
   get data(): Binary { return this._value.d }
   get timestamp(): Date { return new Date(this._value.i.getTimestamp().getTime() + this._value.t) }
 
-  serialize(): Buffer { return serialize(this._value) }
+  serialize(): Buffer { return serializeBson(this._value) }
 }

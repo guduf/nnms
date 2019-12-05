@@ -1,9 +1,8 @@
 import WebSocket, { Server as WebSocketServer } from 'ws'
 import { Config } from './config'
 import { Observable } from 'rxjs'
-import { Log, Event, EventValue } from 'nnms'
+import { serializeBson, deserializeBson, Binary, Log, Event, EventValue } from 'nnms'
 import { scan, shareReplay, first } from 'rxjs/operators'
-import { serialize, deserialize, Binary } from 'bson'
 
 const LOG_MEMORY_LENGTH = 1000
 
@@ -28,7 +27,7 @@ export class LogServer extends WebSocketServer {
   private async _handleConnection(socket: WebSocket): Promise<void> {
     console.log('📬  log socket incoming')
     const previousLogs = await this._previousLogs.pipe(first()).toPromise()
-    socket.send(serialize(previousLogs))
+    socket.send(serializeBson(previousLogs))
   }
 
   private _handleLog(previous: Buffer[], log: Log): Buffer[] {
@@ -53,7 +52,7 @@ export function LogSocket(url: string): Observable<Log> {
     })
     ws.on('message', msg => {
       try {
-        const val = deserialize(msg as Buffer) as EventValue | { [key: number]: Binary }
+        const val = deserializeBson(msg as Buffer) as EventValue | { [key: number]: Binary }
         if (+Object.keys(val)[0] === 0) {
           Object.values((val as { [key: number]: Binary })).forEach(binary => (
             eachEvent(Event.deserialize(binary.buffer))

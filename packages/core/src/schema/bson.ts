@@ -1,7 +1,8 @@
 import { JSONSchema4 } from 'json-schema'
-import { Decimal128, Double, ObjectId, Timestamp, Binary } from 'bson'
+import { Binary, Decimal128, Double, ObjectId, Timestamp } from 'bson'
 
-export { Binary, deserialize, ObjectId, serialize } from 'bson'
+export { Binary, Decimal128, Double, ObjectId, Timestamp } from 'bson'
+export { serialize as serializeBson, deserialize as deserializeBson } from 'bson'
 
 export const BSON_TYPES = {
   'string': String,
