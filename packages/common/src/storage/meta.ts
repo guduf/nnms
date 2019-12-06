@@ -44,4 +44,6 @@ export const Doc = defineClassMeta<[(Partial<DocOpts & SchemaRef>) | undefined]>
     const meta = new DocMeta(target, {collName, indexes: opts.indexes})
     return {[DOC_METADATA_KEY]: meta}
   }
-)
+) as {
+  (schemaInput?: Partial<DocOpts & SchemaRef>): ClassDecorator
+}

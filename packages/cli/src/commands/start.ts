@@ -5,22 +5,29 @@ import { Log, bootstrap, Crash } from 'nnms'
 import Command from '../command'
 import { LogFormat, loadConfig, runFactory } from 'nnms-process'
 
-export const START_COMMAND: Command<{ path?: string }> = {
-  schema: 'start [options]',
+export const START_COMMAND: Command<{ path?: string, modules: string[] }> = {
+  schema: 'start [modules..]',
   descr: 'Starts one or more N&M\'s modules',
   argv: (yargs) => (
-    (yargs as Argv<{ path?: string }>)
+    (yargs as Argv<{ modules: string[] }>)
       .option('path', {
         type: 'string',
         alias: 'p',
         descr: 'The filepath of N&M\'s configuration'
       })
   ),
-  cmd: async cmd => {
+  cmd: async (cmd) => {
     const format = new LogFormat()
     const cfg = await loadConfig(cmd.path)
     const {modules: moduleMap} = await runFactory(cfg)
-    const mods = Object.keys(moduleMap).map(key => {
+    let modNames = Object.keys(moduleMap)
+    if (cmd.modules.length) modNames = cmd.modules.map(name => {
+      if (!modNames.includes(name)) throw new Error(
+        `unknown module name '${name}'. available modules are ${modNames.map(n => `'${n}'`).join(', ')}`
+      )
+      return name
+    })
+    const mods = modNames.map(key => {
       const [filepath, exportKey] = moduleMap[key].path.split('#')
       return require(filepath)[exportKey]
     })
