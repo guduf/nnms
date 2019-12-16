@@ -78,8 +78,8 @@ export function reflectMethodTypes(
   return {argTypes, returnType}
 }
 
-export function reflectParamsTypes(target: Function): any[] {
-  return Reflect.getMetadata('design:paramtypes', target)
+export function reflectParamsTypes(target: Function): any[] | null {
+  return Reflect.getMetadata('design:paramtypes', target) || null
 }
 
 export function decorateParameter<T>(

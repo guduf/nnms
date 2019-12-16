@@ -15,7 +15,7 @@ export function defineResourceMeta<
 >(kind: ResourceKind, metaType: ResourceMetaType<TVars, TOpts>): (opts: TOpts) => ClassDecorator {
   return defineClassMeta<[TOpts]>((target, opts) => {
     let providers = opts.providers || []
-    const paramTypes = reflectParamsTypes(target)
+    const paramTypes = reflectParamsTypes(target) || []
     paramTypes.map((paramType, index) =>  {
       if (
         typeof paramType !== 'function' ||

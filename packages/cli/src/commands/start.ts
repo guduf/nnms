@@ -21,7 +21,7 @@ export const START_COMMAND: Command<{ path?: string, modules: string[] }> = {
     const cfg = await loadConfig(cmd.path)
     const {modules: moduleMap} = await runFactory(cfg)
     let modNames = Object.keys(moduleMap)
-    if (cmd.modules.length) modNames = cmd.modules.map(name => {
+    if (cmd.modules && cmd.modules.length) modNames = cmd.modules.map(name => {
       if (!modNames.includes(name)) throw new Error(
         `unknown module name '${name}'. available modules are ${modNames.map(n => `'${n}'`).join(', ')}`
       )
